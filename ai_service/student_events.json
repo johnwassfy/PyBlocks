@@ -1,0 +1,66 @@
+[
+  {
+    "timestamp": "2025-10-14 12:34:12",
+    "user_id": "student_demo",
+    "mission_id": "M001",
+    "code": "for i in 2:\n    print('Hello')\n",
+    "output": "\u274c Uh oh! Something went wrong:\n\nUnknown error\n\nDon't worry! Try fixing your code and run it again! \ud83c\udfaf",
+    "attempts": 1,
+    "errors": [
+      "Unknown error"
+    ],
+    "time_spent": 61
+  },
+  {
+    "timestamp": "2025-10-14 12:34:42",
+    "user_id": "student_demo",
+    "mission_id": "M001",
+    "code": "for i in 2:\n    print(\"'Hello'\")\n",
+    "output": "\u274c Uh oh! Something went wrong:\n\nUnknown error\n\nDon't worry! Try fixing your code and run it again! \ud83c\udfaf",
+    "attempts": 2,
+    "errors": [
+      "Unknown error"
+    ],
+    "time_spent": 92
+  },
+  {
+    "timestamp": "2025-10-14 12:35:48",
+    "user_id": "student_demo",
+    "mission_id": "M001",
+    "code": "for i in range(5):\n    print(\"Hello\")\n\n",
+    "output": "Hello\nHello\nHello\nHello\nHello\n",
+    "attempts": 3,
+    "errors": [],
+    "time_spent": 157
+  },
+  {
+    "timestamp": "2025-10-14 12:36:36",
+    "user_id": "student_demo",
+    "mission_id": "M001",
+    "code": "for i in range(5):\n    print('Hello')\n",
+    "output": "Hello\nHello\nHello\nHello\nHello\n",
+    "attempts": 4,
+    "errors": [],
+    "time_spent": 206
+  },
+  {
+    "timestamp": "2025-10-14 12:36:41",
+    "user_id": "student_demo",
+    "mission_id": "M001",
+    "code": "for i in range(2):\n    print('Hello')\n",
+    "output": "Hello\nHello\n",
+    "attempts": 5,
+    "errors": [],
+    "time_spent": 211
+  },
+  {
+    "timestamp": "2025-10-14 14:15:35",
+    "user_id": "student_demo",
+    "mission_id": "M001",
+    "code": "for i in range(2):\n    print('Hello')\n",
+    "output": "Hello\nHello\n",
+    "attempts": 6,
+    "errors": [],
+    "time_spent": 6145
+  }
+]

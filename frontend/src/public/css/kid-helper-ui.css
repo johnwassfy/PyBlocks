@@ -1,0 +1,473 @@
+/* ====================================
+   🎨 Welcome & Helper UI for Kids
+   Fun, encouraging interface elements
+   ==================================== */
+
+/* === WELCOME OVERLAY === */
+.kid-welcome-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+  z-index: 10000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.kid-welcome-card {
+  background: white;
+  border-radius: 30px;
+  padding: 40px;
+  max-width: 600px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.kid-welcome-card h1 {
+  font-size: 36px;
+  color: #396afc;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+.kid-welcome-card p {
+  font-size: 18px;
+  color: #555;
+  margin-bottom: 30px;
+  line-height: 1.6;
+}
+
+.kid-welcome-emoji {
+  font-size: 64px;
+  margin-bottom: 20px;
+  animation: bounce 1s infinite;
+}
+
+.kid-start-button {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 15px 40px;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 20px rgba(56, 239, 125, 0.4);
+  text-transform: uppercase;
+}
+
+.kid-start-button:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 8px 25px rgba(56, 239, 125, 0.6);
+}
+
+.kid-start-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* === HELP BUTTON === */
+.kid-help-button {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);
+  border: none;
+  color: white;
+  font-size: 28px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(252, 74, 26, 0.4);
+  transition: all 0.3s ease;
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.kid-help-button:hover {
+  transform: scale(1.1) rotate(10deg);
+  box-shadow: 0 8px 25px rgba(252, 74, 26, 0.6);
+}
+
+.kid-help-button:active {
+  transform: scale(0.95);
+}
+
+/* === ENCOURAGEMENT MESSAGES === */
+.kid-encouragement {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  color: white;
+  padding: 15px 30px;
+  border-radius: 25px;
+  font-size: 18px;
+  font-weight: bold;
+  box-shadow: 0 6px 20px rgba(56, 239, 125, 0.4);
+  z-index: 9998;
+  animation: slideDown 0.5s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateX(-50%) translateY(-100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+.kid-encouragement.success {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.kid-encouragement.error {
+  background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);
+}
+
+.kid-encouragement.info {
+  background: linear-gradient(135deg, #2948ff 0%, #396afc 100%);
+}
+
+/* === PROGRESS INDICATOR === */
+.kid-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.3);
+  z-index: 9997;
+}
+
+.kid-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%);
+  transition: width 0.3s ease;
+  box-shadow: 0 0 15px rgba(56, 239, 125, 0.6);
+}
+
+/* === ACHIEVEMENT BADGES === */
+.kid-achievement {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  background: white;
+  border-radius: 30px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  z-index: 10001;
+  animation: achievementPop 0.6s ease-out forwards;
+}
+
+@keyframes achievementPop {
+  0% {
+    transform: translate(-50%, -50%) scale(0) rotate(-180deg);
+    opacity: 0;
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(1.1) rotate(10deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+
+.kid-achievement-icon {
+  font-size: 80px;
+  margin-bottom: 20px;
+  animation: achievementRotate 0.8s ease-in-out infinite;
+}
+
+@keyframes achievementRotate {
+  0%, 100% {
+    transform: rotate(-10deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+}
+
+.kid-achievement h2 {
+  font-size: 32px;
+  color: #396afc;
+  margin-bottom: 15px;
+}
+
+.kid-achievement p {
+  font-size: 18px;
+  color: #555;
+}
+
+/* === TOOLTIP ENHANCEMENTS === */
+.kid-tooltip {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 15px;
+  font-size: 15px;
+  font-weight: bold;
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  z-index: 10002;
+  animation: tooltipBounce 0.4s ease-out;
+}
+
+@keyframes tooltipBounce {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.kid-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid #764ba2;
+}
+
+/* === LOADING SPINNER === */
+.kid-loading {
+  text-align: center;
+  padding: 40px;
+}
+
+.kid-loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 6px solid rgba(102, 126, 234, 0.2);
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.kid-loading-text {
+  font-size: 24px;
+  color: #667eea;
+  font-weight: bold;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* === CONFETTI EFFECT === */
+.kid-confetti {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10003;
+}
+
+.kid-confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #667eea;
+  animation: confettiFall 3s linear;
+  opacity: 0;
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(-100px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* === ERROR MESSAGES FOR KIDS === */
+.kid-error-friendly {
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+  border: 3px solid #fc4a1a;
+  border-radius: 20px;
+  padding: 20px;
+  margin: 15px 0;
+}
+
+.kid-error-friendly .error-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.kid-error-friendly h3 {
+  color: #fc4a1a;
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.kid-error-friendly p {
+  font-size: 16px;
+  color: #555;
+  line-height: 1.6;
+}
+
+.kid-error-friendly .error-hint {
+  background: white;
+  padding: 12px;
+  border-radius: 12px;
+  margin-top: 12px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* === SUCCESS CELEBRATION === */
+.kid-success-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(17, 153, 142, 0.95) 0%, rgba(56, 239, 125, 0.95) 100%);
+  z-index: 10004;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.kid-success-card {
+  background: white;
+  border-radius: 30px;
+  padding: 50px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: successBounce 0.8s ease-out;
+}
+
+@keyframes successBounce {
+  0% {
+    transform: scale(0) rotate(-180deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1) rotate(10deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+
+.kid-success-emoji {
+  font-size: 100px;
+  margin-bottom: 20px;
+  animation: successRotate 1s ease-in-out infinite;
+}
+
+@keyframes successRotate {
+  0%, 100% {
+    transform: rotate(-15deg) scale(1);
+  }
+  50% {
+    transform: rotate(15deg) scale(1.1);
+  }
+}
+
+.kid-success-card h1 {
+  font-size: 42px;
+  color: #11998e;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+.kid-success-card p {
+  font-size: 20px;
+  color: #555;
+  margin-bottom: 30px;
+}
+
+/* === RESPONSIVE ADJUSTMENTS === */
+@media (max-width: 768px) {
+  .kid-welcome-card {
+    padding: 30px 20px;
+    max-width: 90%;
+  }
+  
+  .kid-welcome-card h1 {
+    font-size: 28px;
+  }
+  
+  .kid-welcome-card p {
+    font-size: 16px;
+  }
+  
+  .kid-help-button {
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    bottom: 20px;
+    right: 20px;
+  }
+  
+  .kid-achievement {
+    padding: 30px 20px;
+    max-width: 90%;
+  }
+  
+  .kid-achievement-icon {
+    font-size: 60px;
+  }
+  
+  .kid-achievement h2 {
+    font-size: 24px;
+  }
+}

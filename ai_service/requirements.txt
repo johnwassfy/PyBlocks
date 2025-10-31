@@ -1,0 +1,27 @@
+# Core Framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+pydantic==2.10.3
+pydantic-settings==2.6.1
+python-multipart==0.0.20
+
+# HTTP Client for backend communication
+httpx==0.27.2
+
+# Logging and monitoring
+python-json-logger==2.0.7
+
+# 🔥 AI Model SDKs
+# OpenAI SDK (also works with OpenRouter!)
+openai==1.54.5
+
+# Optional: HuggingFace (Free tier available)
+huggingface_hub==0.26.5
+
+# Optional: Other providers (commented out)
+# anthropic==0.39.0  # Claude
+# google-generativeai==0.8.3  # Gemini
+
+# Optional: Code analysis tools
+# pylint==3.3.2
+# radon==6.0.1  # Code complexity metrics

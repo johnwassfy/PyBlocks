@@ -1,0 +1,483 @@
+/* ====================================
+   🎨 PyBlocks Kid-Friendly Theme
+   Inspired by EduBlocks for 5th-6th Grade
+   ==================================== */
+
+/* === GLOBAL STYLES === */
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Comic Sans MS', 'Segoe UI', 'Arial Rounded MT Bold', sans-serif;
+  font-size: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #333;
+}
+
+/* Remove all Bootstrap row/col margins and padding */
+.row, .col, .col-md-6, .col-md-12, [class*="col-"] {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Remove BlockPy content margins */
+.blockpy-content, .blockpy-content .row {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+.blockpy-content .blockpy-panel {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* === BLOCKPY CONTAINER === */
+#blockpy-editor {
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 100vh !important;
+  display: flex;
+  flex-direction: column;
+}
+
+/* === TOOLBAR STYLING (EduBlocks-inspired gradients) === */
+.blockpy-python-toolbar,
+.blockpy-toolbar,
+.btn-toolbar {
+  background: linear-gradient(to right, #2948ff, #396afc) !important;
+  padding: 15px 20px !important;
+  border-radius: 0;
+  box-shadow: 0 4px 15px rgba(57, 106, 252, 0.4);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+/* === BUTTON STYLES (Colorful & Rounded) === */
+.blockpy-python-toolbar .btn,
+.blockpy-toolbar button,
+.btn-toolbar button,
+button.btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  color: white !important;
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  margin: 0 5px;
+}
+
+.blockpy-python-toolbar .btn:hover,
+.blockpy-toolbar button:hover,
+.btn-toolbar button:hover,
+button.btn:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.blockpy-python-toolbar .btn:active,
+.blockpy-toolbar button:active,
+.btn-toolbar button:active,
+button.btn:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* === RUN BUTTON (Special highlighting) === */
+button.btn-success,
+button[data-action="run"],
+.blockpy-run,
+#blockpy-run {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 4px 15px rgba(56, 239, 125, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 25px rgba(56, 239, 125, 0.8);
+  }
+}
+
+button.btn-success:hover,
+button[data-action="run"]:hover,
+.blockpy-run:hover,
+#blockpy-run:hover {
+  background: linear-gradient(135deg, #38ef7d 0%, #11998e 100%) !important;
+}
+
+/* === MODE BUTTONS (Blocks, Split, Text) - HIDDEN === */
+.btn-group-vertical,
+.blockpy-mode-display,
+button[data-mode],
+.btn-group-vertical .btn {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* === ENSURE RUN BUTTON IS ALWAYS VISIBLE === */
+.btn-success,
+button.btn-success,
+.blockpy-run,
+button[onclick*="run"] {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Hide Reset, Import, Upload, History, and dropdown buttons */
+.blockpy-toolbar .dropdown,
+.blockpy-toolbar .dropdown-toggle,
+button[data-action="reset"],
+button[data-action="import"],
+button[data-action="upload"],
+button[data-action="history"] {
+  display: none !important;
+}
+
+/* === BLOCKLY WORKSPACE STYLING === */
+.blocklySvg {
+  background-color: #f5f7ff !important;
+  background-image: 
+    linear-gradient(rgba(102, 126, 234, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(102, 126, 234, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px !important;
+  border-radius: 0;
+}
+
+/* === BLOCKLY TOOLBOX (Block Categories) === */
+.blocklyToolboxDiv {
+  background: linear-gradient(180deg, #396afc 0%, #2948ff 100%) !important;
+  border-radius: 0;
+  padding: 10px 5px;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
+}
+
+.blocklyTreeRow {
+  padding: 12px 15px !important;
+  border-radius: 6px;
+  margin: 5px 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: white !important;
+  font-size: 15px !important;
+  font-weight: bold !important;
+}
+
+.blocklyTreeRow:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  transform: translateX(5px);
+}
+
+.blocklyTreeRow.blocklyTreeSelected {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* === BLOCKLY FLYOUT (Block preview) === */
+.blocklyFlyout {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border-radius: 0;
+}
+
+/* === TEXT EDITOR (CodeMirror) === */
+.CodeMirror {
+  font-size: 16px !important;
+  line-height: 1.6 !important;
+  border-radius: 0;
+  border: 3px solid #396afc;
+  background-color: #ffffff;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.CodeMirror-gutters {
+  background: linear-gradient(to right, #e0e7ff, #f0f4ff) !important;
+  border-right: 2px solid #396afc;
+  border-radius: 0;
+}
+
+.CodeMirror-linenumber {
+  color: #667eea !important;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* === CONSOLE/OUTPUT AREA === */
+.blockpy-printer,
+.blockpy-console {
+  background: white;
+  border-radius: 10px;
+  border: 3px solid #11998e;
+  padding: 15px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.blockpy-printer-output {
+  padding: 8px 12px;
+  margin: 5px 0;
+  background: #f0fff4;
+  border-left: 4px solid #38ef7d;
+  border-radius: 5px;
+}
+
+/* === FEEDBACK AREA === */
+.blockpy-feedback {
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  border: 3px solid #fc4a1a;
+  box-shadow: 0 4px 15px rgba(252, 74, 26, 0.2);
+}
+
+.blockpy-feedback h4 {
+  color: #fc4a1a;
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+/* === SUCCESS MESSAGES === */
+.label-success,
+.label-problem-complete {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 16px;
+  font-weight: bold;
+  box-shadow: 0 4px 10px rgba(56, 239, 125, 0.3);
+}
+
+/* === ERROR MESSAGES === */
+.label-syntax-error,
+.label-runtime-error {
+  background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%) !important;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 16px;
+  font-weight: bold;
+  box-shadow: 0 4px 10px rgba(252, 74, 26, 0.3);
+}
+
+/* === SCROLLBARS (Webkit browsers) === */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f0f4ff;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  border: 2px solid #f0f4ff;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+/* === MODALS & DIALOGS === */
+.blockpy-dialog .modal-content {
+  border-radius: 20px;
+  border: none;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.blockpy-dialog .modal-header {
+  background: linear-gradient(to right, #2948ff, #396afc);
+  color: white;
+  border-radius: 20px 20px 0 0;
+  padding: 20px 25px;
+}
+
+.blockpy-dialog .modal-title {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.blockpy-dialog .modal-body {
+  padding: 25px;
+  font-size: 16px;
+}
+
+.blockpy-dialog .modal-footer {
+  border-radius: 0 0 20px 20px;
+  padding: 20px 25px;
+}
+
+/* === BADGES & LABELS === */
+.badge,
+.label {
+  border-radius: 15px;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* === INSTRUCTIONS PANEL === */
+.blockpy-instructions {
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+  border-radius: 10px;
+  padding: 20px;
+  border: 3px solid #fc4a1a;
+  box-shadow: 0 4px 15px rgba(252, 74, 26, 0.2);
+}
+
+.blockpy-instructions h1,
+.blockpy-instructions h2,
+.blockpy-instructions h3 {
+  color: #fc4a1a;
+  font-weight: bold;
+}
+
+.blockpy-instructions p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #333;
+}
+
+/* === DROPDOWN MENUS === */
+.dropdown-menu {
+  border-radius: 15px;
+  border: none;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  padding: 10px;
+}
+
+.dropdown-item {
+  border-radius: 10px;
+  padding: 10px 20px;
+  transition: all 0.2s ease;
+  font-size: 15px;
+}
+
+.dropdown-item:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  transform: translateX(5px);
+}
+
+/* === LOADING SPINNER === */
+.loading-message {
+  color: white;
+  font-size: 48px;
+  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+/* === RESPONSIVE DESIGN === */
+@media (max-width: 768px) {
+  .blockpy-python-toolbar .btn,
+  .blockpy-toolbar button,
+  button.btn {
+    padding: 10px 18px;
+    font-size: 14px;
+  }
+  
+  body {
+    font-size: 14px;
+  }
+  
+  .CodeMirror {
+    font-size: 14px !important;
+  }
+}
+
+/* === FUN ANIMATIONS === */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.blockpy-content {
+  animation: slideIn 0.5s ease-out;
+}
+
+/* === BLOCK COLORS (Kid-Friendly Vibrant Colors) === */
+/* Override Blockly's default block colors */
+.blocklyTreeLabel {
+  font-size: 16px !important;
+  font-weight: bold !important;
+}
+
+/* === TOOLTIPS === */
+.blocklyTooltipDiv {
+  background-color: #396afc !important;
+  color: white !important;
+  border-radius: 10px !important;
+  padding: 10px 15px !important;
+  font-size: 14px !important;
+  box-shadow: 0 4px 15px rgba(57, 106, 252, 0.4) !important;
+}
+
+/* === CONTEXT MENU === */
+.blocklyContextMenu {
+  border-radius: 15px !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+}
+
+.blocklyMenuItem {
+  padding: 10px 20px !important;
+  font-size: 15px !important;
+  border-radius: 10px !important;
+  transition: all 0.2s ease !important;
+}
+
+.blocklyMenuItem:hover {
+  background-color: #667eea !important;
+  color: white !important;
+}
+
+/* === ZOOM CONTROLS === */
+.blocklyZoom {
+  border-radius: 15px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+}
+
+.blocklyZoom > image,
+.blocklyZoom > svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* === TRASHCAN === */
+.blocklyTrash {
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.2));
+}
