@@ -3,7 +3,10 @@ import { Document, Types } from 'mongoose';
 
 export type ProgressDocument = Progress & Document;
 
-@Schema({ timestamps: true })
+@Schema({
+  timestamps: true,
+  optimisticConcurrency: true, // Enable version control for concurrent updates
+})
 export class Progress {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true, unique: true })
   userId: Types.ObjectId;

@@ -1,4 +1,10 @@
-import { IsString, IsArray, IsOptional, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsArray,
+  IsOptional,
+  IsNumber,
+  IsInt,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
@@ -46,6 +52,36 @@ export class AiAnalysisRequestDto {
   @IsOptional()
   @IsString()
   difficulty?: string;
+
+  @ApiPropertyOptional({
+    description: 'Validation rules for anti-cheating',
+    example: {
+      disallowHardcodedOutput: true,
+      requiredConcepts: ['loops', 'conditionals'],
+      forbiddenPatterns: ['eval', 'exec'],
+    },
+  })
+  @IsOptional()
+  validationRules?: {
+    disallowHardcodedOutput?: boolean;
+    requiredConcepts?: string[];
+    forbiddenPatterns?: string[];
+  };
+
+  @ApiPropertyOptional({
+    description: 'Whether to enable AI checkpoints for this step',
+    example: true,
+  })
+  @IsOptional()
+  aiCheckpoints?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Current step number in step-based missions',
+    example: 2,
+  })
+  @IsOptional()
+  @IsNumber()
+  currentStep?: number;
 }
 
 /**
@@ -125,4 +161,20 @@ export class AiAnalysisResponseDto {
   @IsOptional()
   @IsNumber()
   executionTime?: number;
+
+  @ApiPropertyOptional({
+    description: 'Attempt count associated with the submission',
+    example: 2,
+  })
+  @IsOptional()
+  @IsInt()
+  attempts?: number;
+
+  @ApiPropertyOptional({
+    description: 'Time spent on the submission in seconds',
+    example: 185,
+  })
+  @IsOptional()
+  @IsNumber()
+  timeSpent?: number;
 }

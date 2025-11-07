@@ -54,16 +54,31 @@ export class MissionsService {
   async getAdaptiveMissions(
     weakSkills: string[],
     completedMissions: string[],
+    options: {
+      excludeMissionIds?: string[];
+      difficulty?: string;
+      limit?: number;
+    } = {},
   ): Promise<MissionDocument[]> {
-    // Find missions that target weak skills and haven't been completed
+    const excludedIds = [...completedMissions, ...(options.excludeMissionIds || [])];
+
+    const query: Record<string, unknown> = {
+      isActive: true,
+      _id: { $nin: excludedIds },
+    };
+
+    if (weakSkills.length > 0) {
+      query['tags'] = { $in: weakSkills };
+    }
+
+    if (options.difficulty) {
+      query['difficulty'] = options.difficulty;
+    }
+
     return this.missionModel
-      .find({
-        isActive: true,
-        _id: { $nin: completedMissions },
-        tags: { $in: weakSkills },
-      })
+      .find(query)
       .sort({ order: 1 })
-      .limit(5)
+      .limit(options.limit ?? 5)
       .exec();
   }
 

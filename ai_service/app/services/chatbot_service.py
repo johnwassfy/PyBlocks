@@ -49,8 +49,8 @@ class KidFriendlyChatbot:
             self.model = None
             logger.warning("[CHATBOT] No AI provider configured - using rule-based responses only")
         
-            # Kid-friendly system prompt
-            self.system_prompt = """You are CodeBuddy 🤖, a super friendly coding helper for kids!
+        # Kid-friendly system prompt (moved outside else block)
+        self.system_prompt = """You are CodeBuddy 🤖, a super friendly coding helper for kids!
 
 YOUR PERSONALITY:
 - You're encouraging, patient, and fun!
@@ -65,6 +65,9 @@ YOUR RULES (VERY IMPORTANT!):
 3. ❌ NEVER use technical jargon - use kid-friendly words
 4. ✅ ALWAYS be encouraging, even when they make mistakes
 5. ✅ Ask questions to guide their thinking
+6. ✅ WHEN CODE IS PROVIDED IN THE CONTEXT SECTION BELOW, YOU MUST REFERENCE IT! Say "I can see your code..." or "Looking at what you wrote..."
+7. ❌ NEVER EVER EVER ask "Could you share your code?" or "I don't see your code" when code is provided in the CONTEXT section
+8. 🚨 CRITICAL: If you see "Student's current code:" in the context, that means the student HAS ALREADY SHARED their code with you! ALWAYS acknowledge it and help them with it!
 
 HOW TO GIVE HINTS:
 - Instead of: "You need to add a colon after the function definition"
@@ -75,6 +78,12 @@ HOW TO GIVE HINTS:
   
 - Instead of: "You have a syntax error on line 5"
     Say: "I spotted something funny on line 5! Something is missing or in the wrong place. Can you check if all your words are spelled correctly and you have all the punctuation you need?"
+
+WHEN CODE IS PROVIDED:
+- ALWAYS acknowledge that you see their code: "I can see your code!" or "Looking at what you wrote..."
+- Reference specific lines or parts: "On the line where you wrote...", "I notice in your code that..."
+- Point to specific issues: "On that line with the 'print'..." or "Where you're using the 'for' loop..."
+- NEVER ask them to share code that's already provided - that's confusing and unhelpful!
 
 ENCOURAGEMENT STYLE:
 - "You're doing great! 🌟"
@@ -107,9 +116,13 @@ Remember: Your job is to help them LEARN, not to do it for them! Make coding fun
         """Build context about the student's current situation"""
         context_parts = []
         
-        # Add code context
+        # Add code context - MAKE IT IMPOSSIBLE TO MISS
         if request.code:
-            context_parts.append(f"Student's current code:\n```python\n{request.code}\n```")
+            context_parts.append(
+                f"🔴 THE STUDENT'S CURRENT CODE (YOU MUST ANALYZE THIS):\n"
+                f"```python\n{request.code}\n```\n"
+                f"⚠️ DO NOT ASK FOR CODE - YOU ALREADY HAVE IT ABOVE!"
+            )
         
         # Add error context
         if request.error_message:
@@ -122,6 +135,36 @@ Remember: Your job is to help them LEARN, not to do it for them! Make coding fun
         if request.strong_concepts:
             context_parts.append(f"Concepts they're good at: {', '.join(request.strong_concepts)}")
         
+        if request.mastery_snapshot:
+            sorted_mastery = sorted(
+                request.mastery_snapshot.items(),
+                key=lambda item: item[1],
+            )
+            weakest = ', '.join(
+                f"{concept}: {score}"
+                for concept, score in sorted_mastery[:3]
+            )
+            strongest = ', '.join(
+                f"{concept}: {score}"
+                for concept, score in sorted_mastery[-3:]
+            )
+            if weakest:
+                context_parts.append(
+                    f"Lowest mastery concepts (0-100): {weakest}"
+                )
+            if strongest:
+                context_parts.append(
+                    f"Highest mastery concepts (0-100): {strongest}"
+                )
+
+        if request.level:
+            context_parts.append(f"Learner level: {request.level}")
+
+        if request.streak:
+            context_parts.append(
+                f"They are on a {request.streak}-day coding streak—celebrate their consistency!"
+            )
+
         # Add attempt context
         if request.attempt_number > 1:
             context_parts.append(f"This is attempt #{request.attempt_number} - they've been trying hard!")
@@ -296,11 +339,12 @@ Remember: Your job is to help them LEARN, not to do it for them! Make coding fun
             # Build conversation for OpenAI
             messages = [{"role": "system", "content": self.system_prompt}]
             
-            # Add context
+            # Add context with CODE FIRST and EMPHASIZED
             if context:
+                context_message = "⚠️ IMPORTANT CONTEXT - THE STUDENT HAS ALREADY SHARED THEIR CODE WITH YOU:\n\n" + context
                 messages.append({
                     "role": "system",
-                    "content": f"CONTEXT ABOUT THE STUDENT:\n{context}"
+                    "content": context_message
                 })
             
             # Add hint type instruction
@@ -321,10 +365,27 @@ Remember: Your job is to help them LEARN, not to do it for them! Make coding fun
                     "content": msg.content
                 })
             
-            # Add current question
+            # Build the user message with code context if available
+            user_message = request.question
+            
+            # If the question doesn't already contain the code AND we have code in the request,
+            # prepend it to make it VERY visible to the AI
+            if request.code and request.code.strip():
+                # Check if code is already in the question
+                if request.code not in request.question:
+                    # Prepend code to the question to make it impossible for AI to miss
+                    user_message = (
+                        f"🔴 IMPORTANT - HERE IS MY CURRENT CODE (ANALYZE THIS FIRST):\n"
+                        f"```python\n{request.code}\n```\n\n"
+                        f"Now here's my question: {request.question}\n\n"
+                        f"⚠️ Remember: You already have my code above - don't ask for it!"
+                    )
+                    logger.info(f"[CHATBOT] Prepended EMPHASIZED code to user message")
+            
+            # Add current question with code context
             messages.append({
                 "role": "user",
-                "content": request.question
+                "content": user_message
             })
             
             # Call OpenAI/OpenRouter

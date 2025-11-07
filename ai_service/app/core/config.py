@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     GOOGLE_AI_API_KEY: str = os.getenv("GOOGLE_AI_API_KEY", "")  # For Gemini models
     
     # Model Configuration
-    AI_MODEL_PROVIDER: str = os.getenv("AI_MODEL_PROVIDER", "rule-based")  # Options: "openrouter", "openai", "huggingface", "anthropic", "google", "rule-based"
+    AI_MODEL_PROVIDER: str = os.getenv("AI_MODEL_PROVIDER", "openrouter")  # Options: "openrouter", "openai", "huggingface", "anthropic", "google", "rule-based"
     AI_MODEL_NAME: str = os.getenv("AI_MODEL_NAME", "z-ai/glm-4.5-air")  # Specific model to use
     AI_TEMPERATURE: float = float(os.getenv("AI_TEMPERATURE", "0.7"))  # Creativity level
     AI_MAX_TOKENS: int = int(os.getenv("AI_MAX_TOKENS", "500"))  # Response length

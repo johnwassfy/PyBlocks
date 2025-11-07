@@ -84,7 +84,9 @@ class FeedbackEngine:
         code: str,
         execution_result: Dict[str, Any],
         expected_concepts: List[str] = None,
-        difficulty: int = 5
+        difficulty: int = 5,
+        attempts: Optional[int] = None,
+        time_spent: Optional[float] = None,
     ) -> CodeAnalysisResponse:
         """
         Generate comprehensive code analysis with feedback
@@ -185,7 +187,9 @@ class FeedbackEngine:
             detected_concepts=detected_concepts,
             complexity_score=complexity,
             error_type=execution_result.get('error_type'),
-            error_message=execution_result.get('error_message')
+            error_message=execution_result.get('error_message'),
+            attempts=attempts,
+            time_spent=time_spent,
         )
     
     def generate_hint(

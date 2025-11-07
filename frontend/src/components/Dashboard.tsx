@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Star, 
@@ -37,6 +37,7 @@ import BlocklyWorkspace from './BlocklyWorkspace';
 import { sendChatMessage, getPredefinedPrompts, checkAIServiceHealth } from '../services/chatbotApi';
 import { useRouter } from 'next/navigation';
 import { useWorkspace } from '../context/WorkspaceContext';
+import type { AdaptiveInsights } from '../types/adaptivity';
 
 // User data type
 type UserData = {
@@ -111,9 +112,27 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
+  const [insights, setInsights] = useState<AdaptiveInsights | null>(null);
 
   // XP percentage (safe fallback)
   const xpPercentage = profile ? (profile.xp / (profile.level * 100 || 1)) * 100 : 0;
+
+  const recommendedMissionIds = useMemo(
+    () => new Set(insights?.recommendations.map((mission) => mission.id) ?? []),
+    [insights],
+  );
+
+  const topMastery = useMemo(() => {
+    if (!insights) return [] as Array<[string, number]>;
+    return Object.entries(insights.mastery)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+  }, [insights]);
+
+  const focusConcepts = useMemo(
+    () => insights?.weakConcepts.slice(0, 5) ?? [],
+    [insights],
+  );
 
   useEffect(() => {
     const handleScroll = () => {
@@ -151,8 +170,16 @@ export default function Dashboard() {
         if (!missionsRes.ok) throw new Error('Failed to fetch missions');
         const missionsData = await missionsRes.json();
         setMissions(missionsData);
+
+        const insightsRes = await fetch('http://localhost:5000/adaptivity/insights', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!insightsRes.ok) throw new Error('Failed to fetch adaptive insights');
+        const insightsData: AdaptiveInsights = await insightsRes.json();
+        setInsights(insightsData);
       } catch (err: any) {
         setError(err.message || 'Error loading user');
+        setInsights(null);
       } finally {
         setLoading(false);
       }
@@ -168,7 +195,7 @@ export default function Dashboard() {
   // Clicking a mission sets workspace data and navigates
   const handleMissionClick = (mission: Mission) => {
     if (!user || !profile) return;
-    setWorkspace({ mission, user, profile });
+    setWorkspace({ mission, user, profile, insights });
     router.push('/blockly-workspace');
   };
 
@@ -360,6 +387,164 @@ export default function Dashboard() {
         </div>
       </div>
 
+    {insights && (
+      <div className="container mx-auto px-4 py-6">
+        <div className="grid gap-6 lg:grid-cols-3">
+          <motion.div
+            whileHover={{ y: -4 }}
+            className="rounded-3xl border-2 border-indigo-100 bg-white/90 p-6 shadow-xl"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-indigo-700">Today's Focus</h3>
+              <Sparkles className="w-5 h-5 text-indigo-500" />
+            </div>
+            <p className="text-sm text-gray-600">Give extra love to these concepts:</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {focusConcepts.length > 0 ? (
+                focusConcepts.map((concept) => (
+                  <span
+                    key={concept}
+                    className="px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-medium"
+                  >
+                    {concept}
+                  </span>
+                ))
+              ) : (
+                <span className="text-xs text-gray-500">No focus areas right now — keep exploring! 🚀</span>
+              )}
+            </div>
+            {insights.strongConcepts.length > 0 && (
+              <div className="mt-6">
+                <p className="text-sm text-gray-600 mb-2">Super strengths:</p>
+                <div className="flex flex-wrap gap-2">
+                  {insights.strongConcepts.slice(0, 4).map((concept) => (
+                    <span
+                      key={concept}
+                      className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium"
+                    >
+                      {concept}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </motion.div>
+
+          <motion.div
+            whileHover={{ y: -4 }}
+            className="rounded-3xl border-2 border-purple-100 bg-white/90 p-6 shadow-xl"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-purple-700">Recommended Missions</h3>
+              <Trophy className="w-5 h-5 text-purple-500" />
+            </div>
+            {insights.recommendations.length > 0 ? (
+              <ul className="space-y-3">
+                {insights.recommendations.map((mission) => (
+                  <li
+                    key={mission.id}
+                    className="rounded-2xl border border-purple-100 bg-purple-50/50 p-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-purple-700">{mission.title}</p>
+                        <p className="text-xs text-gray-500">
+                          {mission.difficulty ? mission.difficulty.toUpperCase() : 'Mission'}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs"
+                        onClick={() => {
+                          const nextMission = missions.find((m) => m._id === mission.id);
+                          if (nextMission) {
+                            handleMissionClick(nextMission);
+                          }
+                        }}
+                      >
+                        Start
+                      </Button>
+                    </div>
+                    {mission.tags && mission.tags.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {mission.tags.slice(0, 3).map((tag) => (
+                          <span
+                            key={tag}
+                            className="px-2 py-0.5 rounded-full bg-white text-[10px] text-purple-500 border border-purple-100"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-purple-200 bg-purple-50/40 p-4 text-sm text-purple-700">
+                We’re preparing new adventures for you. Keep coding to unlock more quests!
+              </div>
+            )}
+            {insights.fallbackMission && (
+              <div className="mt-4 rounded-2xl bg-indigo-50 border border-indigo-100 p-3 text-xs text-indigo-600">
+                Next in path: {insights.fallbackMission.title}
+              </div>
+            )}
+          </motion.div>
+
+          <motion.div
+            whileHover={{ y: -4 }}
+            className="rounded-3xl border-2 border-pink-100 bg-white/90 p-6 shadow-xl"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-pink-700">Progress Pulse</h3>
+              <Target className="w-5 h-5 text-pink-500" />
+            </div>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Improvement boost</span>
+                <span className="font-semibold text-pink-600">
+                  {Math.round((insights.improvementFactor || 0) * 100)}%
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Missions completed</span>
+                <span className="font-semibold text-gray-700">
+                  {insights.totals.missionsCompleted}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Average score</span>
+                <span className="font-semibold text-gray-700">
+                  {Math.round(insights.totals.averageScore)}%
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Daily streak</span>
+                <span className="font-semibold text-orange-500">
+                  {insights.gamification.streak}🔥
+                </span>
+              </div>
+            </div>
+            {topMastery.length > 0 && (
+              <div className="mt-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Mastery Snapshot</p>
+                <ul className="mt-2 space-y-1 text-xs text-gray-600">
+                  {topMastery.map(([concept, score]) => (
+                    <li key={concept} className="flex items-center justify-between">
+                      <span>{concept}</span>
+                      <span className="font-semibold text-gray-700">{score}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </motion.div>
+        </div>
+      </div>
+    )}
+
       {/* Main Content - Mission Map */}
       <div className="px-4 py-8">
         <motion.div
@@ -426,6 +611,10 @@ export default function Dashboard() {
               const colorClass = missionColors[index % missionColors.length];
               const leftPosition = index * 220 + [20, 60, 35, 80, 45, 25, 70, 40, 55, 30, 65, 50][index % 12];
               const topPosition = `${[20, 55, 28, 60, 35, 48, 25, 58, 32, 52, 38, 56, 30, 50, 36, 45][index % 16]}%`;
+              const isRecommended = recommendedMissionIds.has(mission._id);
+              const ringClasses = isRecommended
+                ? 'border-amber-300 shadow-amber-200 animate-pulse'
+                : 'border-indigo-300 shadow-indigo-200';
               return (
                 <motion.div
                   key={mission._id}
@@ -445,7 +634,7 @@ export default function Dashboard() {
                   <div className="relative">
                     {/* Main Circle */}
                     <div 
-                      className={`w-36 h-36 rounded-full border-4 shadow-2xl transition-all border-indigo-300 shadow-indigo-200`}
+                      className={`w-36 h-36 rounded-full border-4 shadow-2xl transition-all ${ringClasses}`}
                     >
                       {/* Gradient Background */}
                       <div className={`w-full h-full rounded-full bg-gradient-to-br ${colorClass} flex flex-col items-center justify-center p-4 relative overflow-hidden`}>
@@ -471,6 +660,11 @@ export default function Dashboard() {
                       <p className="text-sm text-gray-800 mb-1">
                         {mission.title}
                       </p>
+                      {isRecommended && (
+                        <span className="inline-block text-[10px] px-2 py-1 rounded-full bg-amber-100 text-amber-700 font-semibold">
+                          Recommended ⭐
+                        </span>
+                      )}
                     </div>
                   </div>
                 </motion.div>

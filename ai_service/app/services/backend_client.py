@@ -210,6 +210,11 @@ class BackendClient:
                     "score": analysis.get("score", 0)
                 }
             }
+
+            if analysis.get("attempts") is not None:
+                payload["analysis"]["attempts"] = analysis["attempts"]
+            if analysis.get("timeSpent") is not None:
+                payload["analysis"]["timeSpent"] = analysis["timeSpent"]
             
             async with httpx.AsyncClient() as client:
                 response = await client.post(
@@ -229,12 +234,22 @@ class BackendClient:
                 else:
                     logger.warning(
                         f"[BACKEND] Failed to update learning state: "
-                        f"{response.status_code} - {response.text}"
+                        f"{response.status_code} - {response.text}",
+                        extra={
+                            "user_id": user_id,
+                            "submission_id": submission_id,
+                        }
                     )
                     return False
                     
         except Exception as e:
-            logger.error(f"[BACKEND] Error updating learning state: {e}")
+            logger.error(
+                f"[BACKEND] Error updating learning state: {e}",
+                extra={
+                    "user_id": user_id,
+                    "submission_id": submission_id,
+                }
+            )
             return False
 
     async def notify_analysis_complete(

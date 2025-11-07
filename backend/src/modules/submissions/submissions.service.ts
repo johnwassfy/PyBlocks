@@ -9,10 +9,25 @@ import { MissionsService } from '../missions/missions.service';
 import { AiService } from '../ai/ai.service';
 import { SubmissionCompletedEvent } from '../../common/events/submission.events';
 import { AdaptivityService } from '../adaptivity/adaptivity.service';
+import { AiAnalysisResponseDto } from '../ai-connector/dto/ai-analysis.dto';
 
 @Injectable()
 export class SubmissionsService {
   private readonly logger = new Logger(SubmissionsService.name);
+  private readonly EMPTY_ANALYSIS_MESSAGE =
+    'AI service returned an incomplete analysis payload. Default values will be used.';
+
+  private getAnalysisResult(
+    payload: unknown,
+  ): (AiAnalysisResponseDto & { attempts?: number; timeSpent?: number }) | null {
+    if (!payload || typeof payload !== 'object') {
+      return null;
+    }
+    return payload as AiAnalysisResponseDto & {
+      attempts?: number;
+      timeSpent?: number;
+    };
+  }
 
   constructor(
     @InjectModel(Submission.name)
@@ -43,17 +58,42 @@ export class SubmissionsService {
 
     // 2. Call AI service for analysis (fast, synchronous part)
     this.logger.log(`Sending code to AI service for analysis`);
-    const aiResult = await this.aiService.analyzeSubmission({
-      mission_id: createSubmissionDto.missionId,
-      user_id: userId,
-      code: createSubmissionDto.code,
-      output: createSubmissionDto.output || '',
-      attempts: createSubmissionDto.attempts || 1,
-      time_spent: createSubmissionDto.timeSpent || 0,
-    });
+    
+    // Prepare test cases for validation
+    const testCases: string[] = [];
+    if (mission.testCases && Array.isArray(mission.testCases)) {
+      // Convert test cases to executable format
+      for (const tc of mission.testCases) {
+        testCases.push(`${tc.input} => ${tc.expectedOutput}`);
+      }
+    }
+    
+    const aiResult = this.getAnalysisResult(
+      await this.aiService.analyzeSubmission({
+        mission_id: createSubmissionDto.missionId,
+        user_id: userId,
+        code: createSubmissionDto.code,
+        output: createSubmissionDto.output || '',
+        test_cases: testCases,
+        expected_output: mission.expectedOutput,
+        concepts: mission.concepts || [],
+        difficulty: this.getDifficultyLevel(mission.difficulty),
+        attempts: createSubmissionDto.attempts || 1,
+        time_spent: createSubmissionDto.timeSpent || 0,
+      }),
+    );
+
+    if (!aiResult) {
+      this.logger.warn(this.EMPTY_ANALYSIS_MESSAGE);
+    }
 
     // 3. Validate AI result structure
-    const isSuccessful = aiResult?.status === 'success';
+    const isSuccessful = aiResult?.success === true;
+    if (typeof aiResult?.success !== 'boolean') {
+      this.logger.warn(
+        `AI analysis result missing success flag for user ${userId}, submission pending mission ${createSubmissionDto.missionId}`,
+      );
+    }
     const baseScore = isSuccessful
       ? mission.xpReward
       : Math.floor(mission.xpReward * 0.3);
@@ -69,10 +109,10 @@ export class SubmissionsService {
       attempts: createSubmissionDto.attempts || 1,
       timeSpent: createSubmissionDto.timeSpent || 0,
       isSuccessful,
-      detectedConcepts: aiResult?.concepts_detected || [],
+  detectedConcepts: (aiResult as any)?.detectedConcepts || [],
       aiAnalysis: {
-        weaknesses: aiResult?.weaknesses || [],
-        strengths: aiResult?.strengths || [],
+        weaknesses: aiResult?.weakConcepts || [],
+        strengths: aiResult?.strongConcepts || [],
         suggestions: aiResult?.suggestions || [],
       },
     });
@@ -90,7 +130,7 @@ export class SubmissionsService {
       score: baseScore,
       success: isSuccessful,
       concepts: mission.concepts || [],
-      weakConcepts: aiResult?.weaknesses || [],
+      weakConcepts: aiResult?.weakConcepts || [],
       difficulty: mission.difficulty,
       timeSpent: createSubmissionDto.timeSpent,
       attempts: createSubmissionDto.attempts,
@@ -114,14 +154,21 @@ export class SubmissionsService {
           success: isSuccessful,
           score: baseScore,
           feedback: aiResult?.feedback || '',
-          weakConcepts: aiResult?.weaknesses || [],
-          strongConcepts: aiResult?.strengths || [],
+          weakConcepts: aiResult?.weakConcepts || [],
+          strongConcepts: aiResult?.strongConcepts || [],
           hints: aiResult?.hints || [],
           suggestions: aiResult?.suggestions || [],
+          attempts: aiResult?.attempts,
+          timeSpent: aiResult?.timeSpent,
         },
         {
           difficulty: mission.difficulty,
           concepts: mission.concepts || [],
+          attempts: aiResult?.attempts || createSubmissionDto.attempts,
+          timeSpent:
+            aiResult?.timeSpent !== undefined
+              ? aiResult.timeSpent
+              : createSubmissionDto.timeSpent,
         },
       );
 
@@ -151,6 +198,16 @@ export class SubmissionsService {
       .populate('userId')
       .sort({ createdAt: -1 })
       .exec();
+  }
+
+  private getDifficultyLevel(difficulty: string): number {
+    const difficultyMap: Record<string, number> = {
+      'easy': 3,
+      'medium': 5,
+      'hard': 7,
+      'expert': 9,
+    };
+    return difficultyMap[difficulty.toLowerCase()] || 5;
   }
 
   async findById(id: string): Promise<SubmissionDocument> {

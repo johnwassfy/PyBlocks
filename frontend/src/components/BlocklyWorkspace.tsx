@@ -1,8 +1,41 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { submitCode, type SubmissionResponse } from '../services/submissionsApi';
+import { useChatbot } from './KidSidebar';
+import { useBehaviorTracker } from '../hooks/useBehaviorTracker';
+import '../styles/kid-sidebar.css';
 
 // Type definitions (move to top)
+export type MissionStep = {
+  title: string;
+  instructions: string;
+  starterCode?: string;
+  expectedOutput?: string;
+  testCases?: { input: string; expectedOutput: string }[];
+  concepts?: string[];
+  hints?: string[];
+  aiCheckpoints?: boolean;
+  xpReward?: number;
+};
+
+export type ValidationRules = {
+  disallowHardcodedOutput?: boolean;
+  requiredConcepts?: string[];
+  forbiddenPatterns?: string[];
+};
+
+export type MissionConfig = {
+  allowSkipSteps?: boolean;
+};
+
+export type MissionAnalytics = {
+  averageStepsCompleted?: number;
+  averageCompletionTime?: number;
+  completionRate?: number;
+};
+
 export type Mission = {
   _id: string;
   title: string;
@@ -17,9 +50,13 @@ export type Mission = {
   expectedOutput?: string;
   estimatedTime?: number;
   testCases?: { input: string; expectedOutput: string }[];
-  config?: any;
-  concepts: string[];
-  analytics?: any;
+  concepts?: string[];
+  
+  // NEW: Step-based mission structure
+  steps?: MissionStep[];
+  validationRules?: ValidationRules;
+  config?: MissionConfig;
+  analytics?: MissionAnalytics;
 };
 export type UserData = {
   username: string;
@@ -62,16 +99,501 @@ export default function BlocklyWorkspace({
   getPredefinedPrompts,
   checkAIServiceHealth,
 }: BlocklyWorkspaceProps) {
+  const router = useRouter();
   const editorRef = useRef<any>(null);
   const initializedRef = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [executionResult, setExecutionResult] = useState<SubmissionResponse | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [attempts, setAttempts] = useState(1);
+  const startTimeRef = useRef<number>(Date.now());
+  
+  // 🧠 NEW: Live AI Observation System
+  const [blockActivity, setBlockActivity] = useState<any[]>([]);
+  const [idleTime, setIdleTime] = useState(0);
+  const [lastEditTime, setLastEditTime] = useState(Date.now());
+  const [liveHint, setLiveHint] = useState<string | null>(null);
+  const [errorCount, setErrorCount] = useState(0);
+  const [lastError, setLastError] = useState<string | null>(null);
+  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const behaviorSyncRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 🤖 Chatbot integration
+  const chatbot = useChatbot();
+
+  // 🧠 Behavior Tracking for Proactive Hints
+  const behaviorTracker = useBehaviorTracker({
+    userId: user?.username || 'anonymous',
+    missionId: mission?._id || 'free-play',
+    weakConcepts: profile?.weakSkills || [],
+    strongConcepts: profile?.strongSkills || [],
+    masterySnapshot: profile?.skillScores,
+    enabled: true, // Always enabled for testing - change back to !!user && !!mission in production
+  });
 
     // Reset editor to starter code when mission changes
     useEffect(() => {
       if (editorRef.current?.components?.editor?.python?.bm?.textEditor && mission?.starterCode !== undefined) {
         editorRef.current.components.editor.python.bm.textEditor.setValue(mission.starterCode || '');
       }
-    }, [mission?.starterCode]);
+      // Reset tracking variables when mission changes
+      setAttempts(1);
+      startTimeRef.current = Date.now();
+      setExecutionResult(null);
+      setShowFeedback(false);
+      // Reset behavioral tracking
+      setBlockActivity([]);
+      setIdleTime(0);
+      setLastEditTime(Date.now());
+      setLiveHint(null);
+      setErrorCount(0);
+      setLastError(null);
+    }, [mission?.starterCode, mission?._id]);
+  
+  /**
+   * Handle code execution when Run button is clicked
+   * This intercepts BlockPy's run action and submits to backend
+   */
+  const handleRunCode = async () => {
+    if (!editorRef.current || !user) {
+      return;
+    }
+
+    // Force BlockPy to sync BEFORE extraction
+    try {
+      const pythonEditor = editorRef.current.components?.pythonEditor;
+      
+      if (pythonEditor?.bm?.textEditor) {
+        const textEditor = pythonEditor.bm.textEditor;
+        let currentText = '';
+        
+        // Try BlockMirror's getCode() method (BlockMirror-specific)
+        if (pythonEditor.bm && typeof pythonEditor.bm.getCode === 'function') {
+          try {
+            currentText = pythonEditor.bm.getCode();
+          } catch (e) {
+            // Silent fail, try next method
+          }
+        }
+        
+        // Try textEditor.getCode() if it exists
+        if (!currentText && typeof textEditor.getCode === 'function') {
+          try {
+            currentText = textEditor.getCode();
+          } catch (e) {
+            // Silent fail, try next method
+          }
+        }
+        
+        // Check if it's a CodeMirror instance with doc
+        if (!currentText && textEditor.doc && typeof textEditor.doc.getValue === 'function') {
+          try {
+            currentText = textEditor.doc.getValue();
+          } catch (e) {
+            // Silent fail, try next method
+          }
+        }
+        
+        // Try getDoc() then getValue()
+        if (!currentText && typeof textEditor.getDoc === 'function') {
+          try {
+            const doc = textEditor.getDoc();
+            if (doc && typeof doc.getValue === 'function') {
+              currentText = doc.getValue();
+            }
+          } catch (e) {
+            // Silent fail, try next method
+          }
+        }
+        
+        // Try direct getValue() 
+        if (!currentText && typeof textEditor.getValue === 'function') {
+          try {
+            currentText = textEditor.getValue();
+          } catch (e) {
+            // Silent fail, try next method
+          }
+        }
+        
+        // Try accessing the value property directly
+        if (!currentText && textEditor.value) {
+          currentText = textEditor.value;
+        }
+        
+        // Try CodeMirror instance stored in textEditor
+        if (!currentText && textEditor.cm && typeof textEditor.cm.getValue === 'function') {
+          try {
+            currentText = textEditor.cm.getValue();
+          } catch (e) {
+            // Silent fail
+          }
+        }
+        
+        // Now force update the file with the extracted text
+        if (currentText && pythonEditor.file) {
+          if (typeof pythonEditor.file.set === 'function') {
+            pythonEditor.file.set(currentText);
+          } else {
+            pythonEditor.file.contents = currentText;
+          }
+        }
+        
+        // Also try to force model update
+        if (pythonEditor.bm && typeof pythonEditor.bm.updateModel === 'function') {
+          pythonEditor.bm.updateModel();
+        }
+      }
+      
+      // Wait for sync to complete
+      await new Promise(resolve => setTimeout(resolve, 200));
+    } catch (e) {
+      // Silent fail - will try extraction anyway
+    }
+
+    // Get the current code from the editor - try multiple methods
+    let code = '';
+    
+    // Method 1: Try to get directly from textEditor using multiple approaches
+    try {
+      const pythonEditor = editorRef.current.components?.pythonEditor;
+      const textEditor = pythonEditor?.bm?.textEditor;
+      const bm = pythonEditor?.bm;
+      
+      if (bm) {
+        // Try BlockMirror's getCode() first (BlockMirror-specific)
+        if (typeof bm.getCode === 'function') {
+          code = bm.getCode();
+        }
+      }
+      
+      if (!code && textEditor) {
+        // Try textEditor.getCode()
+        if (typeof textEditor.getCode === 'function') {
+          code = textEditor.getCode();
+        }
+        // Try doc.getValue() (most common in CodeMirror)
+        else if (textEditor.doc && typeof textEditor.doc.getValue === 'function') {
+          code = textEditor.doc.getValue();
+        }
+        // Try getDoc().getValue()
+        else if (typeof textEditor.getDoc === 'function') {
+          const doc = textEditor.getDoc();
+          if (doc && typeof doc.getValue === 'function') {
+            code = doc.getValue();
+          }
+        }
+        // Try textEditor.cm (CodeMirror instance)
+        else if (textEditor.cm && typeof textEditor.cm.getValue === 'function') {
+          code = textEditor.cm.getValue();
+        }
+        // Try direct value property
+        else if (textEditor.value) {
+          code = textEditor.value;
+        }
+      }
+    } catch (e) {
+      // Silent fail, try next method
+    }
+    
+    // Method 2: Try the file model as fallback
+    if (!code) {
+      try {
+        const fileContents = editorRef.current.components?.pythonEditor?.file?.contents;
+        if (fileContents && fileContents.trim()) {
+          code = fileContents;
+        }
+      } catch (e) {
+        // Silent fail, try next method
+      }
+    }
+    
+    // Method 3: Try the model's program main code
+    if (!code) {
+      try {
+        const mainCode = editorRef.current.model?.programs?.['__main__']?.code;
+        if (mainCode && mainCode.trim()) {
+          code = mainCode;
+        }
+      } catch (e) {
+        // Silent fail, try next method
+      }
+    }
+    
+    // Method 4: Try accessing through main property
+    if (!code) {
+      try {
+        const mainCode = editorRef.current.main?.model?.programs?.['__main__']?.code;
+        if (mainCode && mainCode.trim()) {
+          code = mainCode;
+        }
+      } catch (e) {
+        // Silent fail
+      }
+    }
+
+    
+    // Check if we got actual code (not just default/empty)
+    const defaultPatterns = [
+      '# Write your code here',
+      '# Use a for loop here',
+      '# Your code goes here',
+      '# TODO',
+    ];
+    
+    const codeToCheck = code.trim();
+    const isDefaultCode = defaultPatterns.some(pattern => codeToCheck === pattern || codeToCheck === pattern + '\n');
+    
+    if (!code || !code.trim()) {
+      alert('Please write some code before running!');
+      return;
+    }
+    
+    if (isDefaultCode) {
+      alert('It looks like you haven\'t modified the code yet. Please write your solution first!');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setShowFeedback(false);
+
+    try {
+      // Calculate time spent (in seconds)
+      const timeSpent = Math.floor((Date.now() - startTimeRef.current) / 1000);
+
+      // Submit code to backend for analysis
+      const result = await submitCode({
+        missionId: mission._id,
+        code: code,
+        attempts: attempts,
+        timeSpent: timeSpent,
+      });
+
+      // Store the result
+      setExecutionResult(result);
+      setShowFeedback(true);
+
+      // Track run in behavior tracker
+      behaviorTracker.trackRun(
+        result.aiResult.success,
+        result.aiResult.error_type,
+        result.aiResult.error_message
+      );
+
+      // Increment attempts if failed
+      if (!result.aiResult.success) {
+        setAttempts(prev => prev + 1);
+        
+        // Auto-open chatbot with error context if code failed
+        if (result.aiResult.error_message) {
+          setTimeout(() => {
+            const errorQuestion = `I got this error: ${result.aiResult.error_message}. Can you help me fix it?`;
+            sendChatMessage({
+              userId: user.username,
+              missionId: mission._id,
+              question: errorQuestion,
+              code: code,
+              error_message: result.aiResult.error_message,
+              weak_concepts: result.aiResult.weak_concepts,
+              strong_concepts: result.aiResult.strong_concepts,
+              attempt_number: attempts,
+            }).catch(err => {
+              // Silent error - chatbot is optional
+            });
+          }, 1000);
+        }
+      }
+
+    } catch (error) {
+      alert('Failed to run code. Please try again.');
+      
+      // Track error for behavioral analysis
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setLastError(errorMessage);
+      setErrorCount(prev => prev + 1);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /**
+   * 🧠 Track code editing activity
+   * Called whenever the user makes changes to the code
+   */
+  const trackCodeEdit = (changeType: 'create' | 'delete' | 'modify', details?: any) => {
+    const now = Date.now();
+    
+    // 🔍 LOG: Track edit
+    console.log(`✏️ [Edit Tracked] Type: ${changeType}`, details || '');
+    
+    setBlockActivity(prev => [...prev, {
+      type: changeType,
+      timestamp: now,
+      details
+    }]);
+    setLastEditTime(now);
+    setIdleTime(0); // Reset idle timer
+    
+    // Track edit in behavior tracker
+    const currentCode = editorRef.current?.components?.editor?.python?.bm?.textEditor?.getValue() || '';
+    behaviorTracker.trackEdit(currentCode);
+    
+    // 🔍 LOG: Current activity count
+    setBlockActivity(prev => {
+      console.log(`📊 [Activity Count] Total edits: ${prev.length + 1}`);
+      return prev;
+    });
+  };
+
+  /**
+   * 🧠 Analyze user behavior and send to AI for live hints
+   */
+  const analyzeBehavior = async () => {
+    if (!user || !mission) {
+      console.log('⚠️ [AI Behavior] Skipping analysis - no user or mission');
+      return;
+    }
+
+    try {
+      // Get current code
+      let currentCode = '';
+      try {
+        const pythonEditor = editorRef.current?.components?.pythonEditor;
+        if (pythonEditor?.bm && typeof pythonEditor.bm.getCode === 'function') {
+          currentCode = pythonEditor.bm.getCode();
+        }
+      } catch (e) {
+        // Can't get code, skip analysis
+        console.log('⚠️ [AI Behavior] Could not extract code');
+        return;
+      }
+
+      // Prepare behavior summary
+      const behaviorSummary = {
+        userId: user.username,
+        missionId: mission._id,
+        step: 0, // TODO: Track current step
+        activity: {
+          blocksCreated: blockActivity.filter(a => a.type === 'create').length,
+          blocksDeleted: blockActivity.filter(a => a.type === 'delete').length,
+          blocksModified: blockActivity.filter(a => a.type === 'modify').length,
+          idleTime: Math.floor((Date.now() - lastEditTime) / 1000),
+          totalEdits: blockActivity.length,
+          errorCount: errorCount,
+          lastError: lastError,
+          codeSnapshot: currentCode,
+          concepts: mission.concepts || [],
+          difficulty: mission.difficulty
+        }
+      };
+
+      // 🔍 LOG: Behavior analysis request
+      console.log('🧠 [AI Behavior] Sending behavior analysis...', {
+        userId: behaviorSummary.userId,
+        missionId: behaviorSummary.missionId,
+        activity: {
+          created: behaviorSummary.activity.blocksCreated,
+          deleted: behaviorSummary.activity.blocksDeleted,
+          modified: behaviorSummary.activity.blocksModified,
+          totalEdits: behaviorSummary.activity.totalEdits,
+          idleTime: `${behaviorSummary.activity.idleTime}s`,
+          errors: behaviorSummary.activity.errorCount
+        },
+        codeLength: currentCode.length,
+        concepts: behaviorSummary.activity.concepts
+      });
+
+      // Send to AI service for analysis
+      const response = await fetch('http://localhost:8000/api/v1/behavior/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': 'dev-key-12345'
+        },
+        body: JSON.stringify(behaviorSummary)
+      });
+
+      // 🔍 LOG: Response status
+      console.log(`🧠 [AI Behavior] Response status: ${response.status} ${response.statusText}`);
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        // 🔍 LOG: AI response
+        console.log('🧠 [AI Behavior] AI Response:', result);
+        
+        if (result.hint) {
+          console.log(`💡 [AI Hint] Displaying hint: "${result.hint}"`);
+          console.log(`   Type: ${result.type}, Priority: ${result.priority}`);
+          
+          setLiveHint(result.hint);
+          // Auto-dismiss hint after 15 seconds
+          setTimeout(() => setLiveHint(null), 15000);
+        } else {
+          console.log('🧠 [AI Behavior] No hint generated (normal behavior)');
+        }
+      } else {
+        const errorText = await response.text();
+        console.error('❌ [AI Behavior] Error response:', errorText);
+      }
+    } catch (error) {
+      // Silent fail - behavioral analysis is optional
+      console.error('❌ [AI Behavior] Request failed:', error);
+    }
+
+    // Reset activity tracking
+    console.log('🔄 [AI Behavior] Resetting activity tracking');
+    setBlockActivity([]);
+  };
+
+  // 🧠 Track idle time every second
+  useEffect(() => {
+    idleTimerRef.current = setInterval(() => {
+      const timeSinceLastEdit = Date.now() - lastEditTime;
+      const idleSeconds = Math.floor(timeSinceLastEdit / 1000);
+      setIdleTime(idleSeconds);
+
+      // Log idle time every 10 seconds
+      if (idleSeconds % 10 === 0 && idleSeconds > 0) {
+        console.log(`⏱️ [Idle Timer] User idle for ${idleSeconds}s`);
+      }
+
+      // Trigger hint if idle for 30 seconds (only trigger once at 30s, not every second after)
+      if (idleSeconds === 30) {
+        console.log('🚨 [Idle Timer] 30s idle threshold reached! Triggering behavior analysis...');
+        analyzeBehavior();
+      }
+    }, 1000);
+
+    return () => {
+      if (idleTimerRef.current) clearInterval(idleTimerRef.current);
+    };
+  }, [lastEditTime]);
+
+  // 🧠 Send behavior summary every 10 seconds if there's activity
+  useEffect(() => {
+    behaviorSyncRef.current = setInterval(() => {
+      if (blockActivity.length > 0) {
+        console.log(`🔄 [Behavior Sync] 10s interval - Activity detected (${blockActivity.length} edits), analyzing...`);
+        analyzeBehavior();
+      }
+    }, 10000);
+
+    return () => {
+      if (behaviorSyncRef.current) clearInterval(behaviorSyncRef.current);
+    };
+  }, [blockActivity.length, user, mission]);
+
+  // 🧠 Detect repeated errors (frustration signal)
+  useEffect(() => {
+    if (errorCount >= 3 && lastError) {
+      console.log(`😤 [Frustration Detected] ${errorCount} errors detected! Showing encouragement hint`);
+      // Student is frustrated - trigger encouraging hint
+      setLiveHint("🌟 I see you're working hard on this! Take a deep breath. Want me to show you a similar example?");
+      setTimeout(() => setLiveHint(null), 20000);
+    }
+  }, [errorCount, lastError]);
+
   // Load kid-friendly theme CSS
   useEffect(() => {
     // Load main theme
@@ -92,11 +614,7 @@ export default function BlocklyWorkspace({
     helperUI.href = '/css/kid-helper-ui.css';
     document.head.appendChild(helperUI);
     
-    // Load sidebar styles
-    const sidebarStyles = document.createElement('link');
-    sidebarStyles.rel = 'stylesheet';
-    sidebarStyles.href = '/css/kid-sidebar.css';
-    document.head.appendChild(sidebarStyles);
+    // Sidebar styles are now imported at the top of the file
     
     // Load Font Awesome for icons
     const fontAwesome = document.createElement('link');
@@ -109,7 +627,6 @@ export default function BlocklyWorkspace({
       document.head.removeChild(mainTheme);
       document.head.removeChild(blocklyTheme);
       document.head.removeChild(helperUI);
-      document.head.removeChild(sidebarStyles);
       document.head.removeChild(fontAwesome);
     };
   }, []);
@@ -173,6 +690,36 @@ export default function BlocklyWorkspace({
           }
         };
         trySetStarterCode();
+        
+        // Hook into BlockPy's run button to trigger our submission handler
+        setTimeout(() => {
+          const runButton = document.querySelector('.blockpy-run');
+          if (runButton) {
+            runButton.addEventListener('click', (e) => {
+              // Prevent BlockPy from running (we'll handle it ourselves)
+              e.preventDefault();
+              e.stopPropagation();
+              
+              // But first, force BlockPy to sync the editor content to its model
+              try {
+                const pythonEditor = editorRef.current?.components?.pythonEditor;
+                if (pythonEditor?.updateModel) {
+                  pythonEditor.updateModel();
+                }
+                if (pythonEditor?.bm?.updateModel) {
+                  pythonEditor.bm.updateModel();
+                }
+              } catch (err) {
+                // Silent fail
+              }
+              
+              // Now run our handler with a tiny delay to ensure sync is complete
+              setTimeout(() => {
+                handleRunCode();
+              }, 100); // 100ms to ensure model sync
+            });
+          }
+        }, 1500);
         
         // Set split mode in the model after initialization
         setTimeout(() => {
@@ -345,16 +892,52 @@ export default function BlocklyWorkspace({
                   button.style.display = 'none';
                 }
               });
-            } else {
-              console.log('❌ Toolbar not found yet');
             }
           }, 1000);
         }, 500);
         
+        // Add Blockly event listeners for live behavioral tracking
+        setTimeout(() => {
+          try {
+            const blockEditor = editorRef.current?.components?.editor?.python?.bm?.blockEditor;
+            const textEditor = editorRef.current?.components?.editor?.python?.bm?.textEditor;
+            
+            // Track Blockly block changes
+            if (blockEditor?.workspace) {
+              blockEditor.workspace.addChangeListener((event: any) => {
+                // Only track user-initiated changes (not programmatic changes)
+                if (event.isUiEvent) return;
+                
+                // Track different types of block events
+                if (event.type === 'create') {
+                  trackCodeEdit('create', { eventType: event.type });
+                } else if (event.type === 'delete') {
+                  trackCodeEdit('delete', { eventType: event.type });
+                } else if (event.type === 'change' || event.type === 'move') {
+                  trackCodeEdit('modify', { eventType: event.type });
+                }
+              });
+            }
+            
+            // Track text editor changes (CodeMirror)
+            if (textEditor?.on) {
+              textEditor.on('change', (cm: any, change: any) => {
+                // Only track user-initiated changes
+                if (change.origin === 'setValue') return;
+                
+                trackCodeEdit('modify', { source: 'text-editor' });
+              });
+            }
+          } catch (err) {
+            console.warn('Could not attach event listeners for behavioral tracking:', err);
+          }
+        }, 2000); // Wait 2s for editor to be fully ready
+        
         initializedRef.current = true;
         setIsLoading(false);
       } catch (err) {
-        console.error('BlockPy init error:', err);
+        // BlockPy initialization error
+        setIsLoading(false);
       }
     };
 
@@ -374,11 +957,381 @@ export default function BlocklyWorkspace({
     <div className="h-full w-full" style={{ margin: 0, padding: 0, display: 'flex', flexDirection: 'column' }}>
       {/* Blockly Editor only, mission info panel removed */}
       <div id="blockpy-editor" className="h-full w-full" style={{ margin: 0, padding: 0, flex: 1 }} />
+      
+      {/* Loading state */}
       {isLoading && (
         <div className="absolute inset-0 bg-white flex items-center justify-center">
           <p>Loading BlockPy...</p>
         </div>
       )}
+      
+      {/* Submitting state */}
+      {isSubmitting && (
+        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 shadow-xl">
+            <div className="flex flex-col items-center gap-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <p className="text-lg font-semibold">Running your code...</p>
+              <p className="text-sm text-gray-600">Analyzing with AI 🤖</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Feedback Panel */}
+      {showFeedback && executionResult && (
+        <div className="absolute top-4 right-4 bg-white rounded-lg shadow-2xl p-6 max-w-md z-40 border-2" 
+             style={{ 
+               borderColor: executionResult.aiResult.success ? '#10b981' : '#ef4444',
+               maxHeight: '80vh',
+               overflowY: 'auto'
+             }}>
+          {/* Close button */}
+          <button 
+            onClick={() => setShowFeedback(false)}
+            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+          >
+            ✕
+          </button>
+          
+          {/* Success/Fail header */}
+          <div className="mb-4">
+            {executionResult.aiResult.success ? (
+              <div className="flex items-center gap-2 text-green-600">
+                <span className="text-3xl">✅</span>
+                <div>
+                  <h3 className="text-xl font-bold">Great Job!</h3>
+                  <p className="text-sm text-gray-600">Score: {executionResult.aiResult.score}/100</p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-red-600">
+                <span className="text-3xl">❌</span>
+                <div>
+                  <h3 className="text-xl font-bold">Not Quite Right</h3>
+                  <p className="text-sm text-gray-600">Keep trying! Attempt #{attempts}</p>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* XP Gained (if successful) */}
+          {executionResult.aiResult.success && executionResult.xpGained > 0 && (
+            <div className="mb-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+              <p className="text-sm font-semibold text-yellow-800">
+                ⭐ +{executionResult.xpGained} XP Earned!
+              </p>
+            </div>
+          )}
+          
+          {/* AI Feedback */}
+          <div className="mb-4">
+            <h4 className="font-semibold text-gray-800 mb-2">AI Feedback:</h4>
+            <p className="text-sm text-gray-700 leading-relaxed">
+              {executionResult.aiResult.feedback}
+            </p>
+          </div>
+          
+          {/* Error message */}
+          {executionResult.aiResult.error_message && (
+            <div className="mb-4 p-3 bg-red-50 rounded-lg border border-red-200">
+              <h4 className="font-semibold text-red-800 mb-1 text-sm">Error:</h4>
+              <p className="text-xs text-red-700 font-mono">
+                {executionResult.aiResult.error_message}
+              </p>
+            </div>
+          )}
+          
+          {/* Hints */}
+          {executionResult.aiResult.hints && executionResult.aiResult.hints.length > 0 && (
+            <div className="mb-4">
+              <h4 className="font-semibold text-blue-800 mb-2 text-sm">💡 Hints:</h4>
+              <ul className="list-disc list-inside space-y-1">
+                {executionResult.aiResult.hints.map((hint, idx) => (
+                  <li key={idx} className="text-sm text-gray-700">{hint}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {/* Suggestions */}
+          {executionResult.aiResult.suggestions && executionResult.aiResult.suggestions.length > 0 && (
+            <div className="mb-4">
+              <h4 className="font-semibold text-purple-800 mb-2 text-sm">🎯 Suggestions:</h4>
+              <ul className="list-disc list-inside space-y-1">
+                {executionResult.aiResult.suggestions.map((suggestion, idx) => (
+                  <li key={idx} className="text-sm text-gray-700">{suggestion}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {/* Concepts detected */}
+          {executionResult.aiResult.detected_concepts && executionResult.aiResult.detected_concepts.length > 0 && (
+            <div className="mb-4">
+              <h4 className="font-semibold text-indigo-800 mb-2 text-sm">📚 Concepts Detected:</h4>
+              <div className="flex flex-wrap gap-2">
+                {executionResult.aiResult.detected_concepts.map((concept, idx) => (
+                  <span key={idx} className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs">
+                    {concept}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Weak concepts (areas to improve) */}
+          {executionResult.aiResult.weak_concepts && executionResult.aiResult.weak_concepts.length > 0 && (
+            <div className="mb-4">
+              <h4 className="font-semibold text-orange-800 mb-2 text-sm">📈 Areas to Improve:</h4>
+              <div className="flex flex-wrap gap-2">
+                {executionResult.aiResult.weak_concepts.map((concept, idx) => (
+                  <span key={idx} className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs">
+                    {concept}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Strong concepts */}
+          {executionResult.aiResult.strong_concepts && executionResult.aiResult.strong_concepts.length > 0 && (
+            <div className="mb-4">
+              <h4 className="font-semibold text-green-800 mb-2 text-sm">✨ You're Good At:</h4>
+              <div className="flex flex-wrap gap-2">
+                {executionResult.aiResult.strong_concepts.map((concept, idx) => (
+                  <span key={idx} className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                    {concept}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Next steps */}
+          {!executionResult.aiResult.success && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <p className="text-sm text-gray-600 mb-3">
+                💬 Need help? Click the chat button to ask the AI companion!
+              </p>
+              <button 
+                onClick={() => setShowFeedback(false)}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          )}
+          
+          {executionResult.aiResult.success && executionResult.nextMission && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <p className="text-sm text-green-700 mb-3">
+                🎉 Mission Complete! Ready to continue your journey?
+              </p>
+              <button 
+                onClick={() => {
+                  // Navigate back to dashboard
+                  console.log('[BlocklyWorkspace] Navigating to dashboard');
+                  setShowFeedback(false);
+                  router.push('/dashboard');
+                }}
+                className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Return to Dashboard 🏠
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* 🧠 Live AI Hint - Floating companion */}
+      {liveHint && (
+        <div className="fixed bottom-24 right-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl shadow-2xl p-5 max-w-sm z-50 animate-bounce-in">
+          <div className="flex items-start gap-3">
+            <div className="text-3xl flex-shrink-0">🤖</div>
+            <div className="flex-1">
+              <p className="text-sm font-medium leading-relaxed">{liveHint}</p>
+            </div>
+            <button 
+              onClick={() => setLiveHint(null)}
+              className="text-white hover:text-gray-200 text-xl leading-none"
+            >
+              ×
+            </button>
+          </div>
+          {/* Idle time indicator */}
+          {idleTime > 20 && (
+            <div className="mt-3 pt-3 border-t border-white/30 text-xs opacity-75">
+              💭 Thinking time: {idleTime}s
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* 🧠 Activity indicator (shows when AI is observing) */}
+      {blockActivity.length > 0 && (
+        <div className="fixed bottom-4 left-4 bg-blue-50 border border-blue-200 rounded-full px-4 py-2 shadow-lg z-40 flex items-center gap-2">
+          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+          <span className="text-xs text-blue-700 font-medium">
+            AI is watching... {blockActivity.length} edit{blockActivity.length > 1 ? 's' : ''}
+          </span>
+        </div>
+      )}
+
+      {/* 💡 Proactive Hint Dialog */}
+      {behaviorTracker.proactiveHint && (
+        <div className="proactive-hint-dialog">
+          <div className="proactive-hint-content">
+            <p className="proactive-hint-message">
+              {behaviorTracker.proactiveHint.message}
+            </p>
+            <div className="proactive-hint-actions">
+              <button 
+                className="proactive-hint-button proactive-hint-dismiss"
+                onClick={behaviorTracker.dismissHint}
+              >
+                No thanks
+              </button>
+              <button 
+                className="proactive-hint-button proactive-hint-accept"
+                onClick={() => {
+                  console.log('[BlocklyWorkspace] Yes please clicked!');
+                  behaviorTracker.acceptHint();
+                  chatbot.setIsChatOpen(true);
+                  
+                  // Trigger proactive help with full context
+                  if (behaviorTracker.chatbotContext) {
+                    console.log('[BlocklyWorkspace] Triggering proactive help with context:', behaviorTracker.chatbotContext);
+                    // Small delay to ensure chatbot is open and ready
+                    setTimeout(() => {
+                      chatbot.handleProactiveHelp(behaviorTracker.chatbotContext);
+                    }, 100);
+                  } else {
+                    console.warn('[BlocklyWorkspace] No chatbot context available!');
+                  }
+                }}
+              >
+                Yes please! 💡
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🤖 Floating Chatbot Button */}
+      <button
+        className={`chatbot-float-button ${behaviorTracker.proactiveHint ? 'has-notification' : ''}`}
+        onClick={() => chatbot.setIsChatOpen(true)}
+        title="Ask me anything!"
+      >
+        <span className="chatbot-icon-large">🤖</span>
+        <span className="chatbot-pulse"></span>
+      </button>
+
+      {/* 🤖 Chatbot Modal/Popup */}
+      {chatbot.isChatOpen && (
+        <div className="chatbot-modal-overlay" onClick={() => chatbot.setIsChatOpen(false)}>
+          <div className="chatbot-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="chatbot-modal-header">
+              <div className="chatbot-header-content">
+                <span className="chatbot-header-icon">🤖</span>
+                <h2 className="chatbot-header-title">Ask Me Anything!</h2>
+              </div>
+              <button 
+                className="chatbot-close-button"
+                onClick={() => chatbot.setIsChatOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="chatbot-modal-body">
+              {/* Quick Prompt Buttons */}
+              <div className="chatbot-quick-prompts">
+                {chatbot.quickPrompts.map((prompt, index) => (
+                  <button
+                    key={index}
+                    className="chatbot-prompt-button"
+                    onClick={() => chatbot.handlePromptClick(prompt.text)}
+                  >
+                    <span className="chatbot-prompt-emoji">{prompt.emoji}</span>
+                    <span className="chatbot-prompt-text">{prompt.text}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Chat Messages */}
+              <div className="chatbot-messages">
+                {chatbot.messages.map((message, index) => (
+                  <div
+                    key={index}
+                    className={`chatbot-message ${message.isUser ? 'chatbot-message-user' : 'chatbot-message-bot'}`}
+                  >
+                    <div className="chatbot-message-avatar">
+                      {message.isUser ? '😊' : '🤖'}
+                    </div>
+                    <div className="chatbot-message-bubble">
+                      {message.text}
+                    </div>
+                  </div>
+                ))}
+                {chatbot.isTyping && (
+                  <div className="chatbot-message chatbot-message-bot">
+                    <div className="chatbot-message-avatar">🤖</div>
+                    <div className="chatbot-message-bubble">
+                      <div className="chatbot-typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={chatbot.messagesEndRef} />
+              </div>
+
+              {/* Chat Input */}
+              <div className="chatbot-input-container">
+                <input
+                  type="text"
+                  className="chatbot-input"
+                  placeholder="Type your question here... ✨"
+                  value={chatbot.inputValue}
+                  onChange={(e) => chatbot.setInputValue(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && chatbot.handleSendMessage()}
+                />
+                <button className="chatbot-send-button" onClick={chatbot.handleSendMessage}>
+                  <span className="chatbot-send-icon">📤</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CSS for animations */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes bounce-in {
+          0% {
+            transform: translateY(100px);
+            opacity: 0;
+          }
+          60% {
+            transform: translateY(-10px);
+            opacity: 1;
+          }
+          80% {
+            transform: translateY(5px);
+          }
+          100% {
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-bounce-in {
+          animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+      `}} />
     </div>
   );
 }

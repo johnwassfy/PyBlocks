@@ -199,6 +199,19 @@ class ChatbotRequest(BaseModel):
         alias="strongConcepts",
         description="User's strong concepts for personalization"
     )
+    mastery_snapshot: Optional[Dict[str, int]] = Field(
+        default=None,
+        alias="masterySnapshot",
+        description="Concept mastery scores (0-100)"
+    )
+    streak: Optional[int] = Field(
+        default=None,
+        description="Current learning streak"
+    )
+    level: Optional[int] = Field(
+        default=None,
+        description="Learner level for tone adjustments"
+    )
     attempt_number: int = Field(default=1, alias="attemptNumber", ge=1, description="Attempt number")
     
     class Config:
@@ -218,6 +231,10 @@ class ChatbotRequest(BaseModel):
                     }
                 ],
                 "weakConcepts": ["loops"],
+                "strongConcepts": ["variables"],
+                "masterySnapshot": {"loops": 40, "functions": 80},
+                "streak": 3,
+                "level": 2,
                 "attemptNumber": 2
             }
         }

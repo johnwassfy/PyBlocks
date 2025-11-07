@@ -19,9 +19,14 @@ export interface ChatRequest {
   promptId?: string;
   code?: string;
   weakConcepts?: string[];
+  strongConcepts?: string[];
   attemptNumber?: number;
   submissionId?: string;
   conversationHistory?: ChatMessage[];
+  masterySnapshot?: Record<string, number> | null;
+  streak?: number;
+  level?: number;
+  context?: any; // NEW: Allow passing additional context (e.g., from proactive hints)
 }
 
 export interface ChatResponse {
@@ -57,6 +62,9 @@ export interface PromptsResponse {
  */
 export async function sendChatMessage(request: ChatRequest): Promise<ChatResponse> {
   try {
+    console.log('[ChatAPI] Sending request to:', `${AI_SERVICE_URL}/api/v1/chat`);
+    console.log('[ChatAPI] Request payload:', request);
+    
     const response = await fetch(`${AI_SERVICE_URL}/api/v1/chat`, {
       method: 'POST',
       headers: {
@@ -70,18 +78,26 @@ export async function sendChatMessage(request: ChatRequest): Promise<ChatRespons
         promptId: request.promptId,
         code: request.code || '',
         weakConcepts: request.weakConcepts || [],
+        strongConcepts: request.strongConcepts || [],
         attemptNumber: request.attemptNumber || 1,
         submissionId: request.submissionId,
         conversationHistory: request.conversationHistory || [],
+        masterySnapshot: request.masterySnapshot || undefined,
+        streak: request.streak,
+        level: request.level,
       }),
     });
 
+    console.log('[ChatAPI] Response status:', response.status);
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      console.error('[ChatAPI] Error response:', errorData);
       throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
+    console.log('[ChatAPI] Response data:', data);
     
     return {
       success: data.success || true,

@@ -4,20 +4,162 @@ import { UsersService } from '../modules/users/users.service';
 import { MissionsService } from '../modules/missions/missions.service';
 
 const sampleMissions = [
-  // Beginner Missions
+  // Beginner Missions - Step-based examples
   {
     title: 'Hello World',
-    description: 'Print "Hello, World!" to the console',
-    starterCode: '# Write your code here\n',
-    expectedOutput: 'Hello, World!',
+    description: 'Learn to print messages in Python through progressive steps',
     difficulty: 'easy',
     tags: ['basics', 'print', 'strings'],
     objectives: ['Use the print() function', 'Understand string output'],
-    hints: ['Use print() function', 'Put text in quotes'],
-    xpReward: 10,
+    xpReward: 30, // Total XP for all steps
     order: 1,
-    estimatedTime: 5,
+    estimatedTime: 15,
+    steps: [
+      {
+        title: 'Print a Simple Message',
+        instructions: 'Use the print() function to display "Hello"',
+        starterCode: '# Write your code here\n',
+        expectedOutput: 'Hello',
+        concepts: ['print', 'strings'],
+        hints: ['Use print() function', 'Put text in quotes'],
+        aiCheckpoints: true,
+        xpReward: 10,
+      },
+      {
+        title: 'Print with Exclamation',
+        instructions: 'Now print "Hello!" with an exclamation mark',
+        starterCode: '# Add an exclamation mark\n',
+        expectedOutput: 'Hello!',
+        concepts: ['print', 'strings'],
+        hints: ['Include the ! inside the quotes'],
+        aiCheckpoints: true,
+        xpReward: 10,
+      },
+      {
+        title: 'Complete Hello World',
+        instructions: 'Print the complete message: "Hello, World!"',
+        starterCode: '# Print the full message\n',
+        expectedOutput: 'Hello, World!',
+        concepts: ['print', 'strings'],
+        hints: ['Include comma and space: ", "'],
+        aiCheckpoints: true,
+        xpReward: 10,
+      },
+    ],
+    validationRules: {
+      disallowHardcodedOutput: true,
+      requiredConcepts: ['print'],
+    },
+    config: {
+      allowSkipSteps: false,
+    },
   },
+  {
+    title: 'Simple Math',
+    description: 'Learn arithmetic operations step by step',
+    difficulty: 'easy',
+    tags: ['basics', 'math', 'operators'],
+    objectives: ['Use arithmetic operators', 'Print calculation results'],
+    xpReward: 30,
+    order: 3,
+    estimatedTime: 15,
+    concepts: ['math', 'operators', 'variables'],
+    steps: [
+      {
+        title: 'Add Two Numbers',
+        instructions: 'Calculate 5 + 3 and print the result',
+        starterCode: '# Do the addition\n',
+        expectedOutput: '8',
+        concepts: ['math', 'operators'],
+        hints: ['Add numbers using +', 'Print the result'],
+        aiCheckpoints: true,
+        xpReward: 10,
+      },
+      {
+        title: 'Use a Variable',
+        instructions:
+          'Store the result of 5 + 3 in a variable called "result" and print it',
+        starterCode: '# Create a variable and store the sum\n',
+        expectedOutput: '8',
+        concepts: ['math', 'operators', 'variables'],
+        hints: ['Use = to assign: result = 5 + 3', 'Then print the variable'],
+        aiCheckpoints: true,
+        xpReward: 10,
+      },
+      {
+        title: 'Multiple Operations',
+        instructions: 'Calculate (10 + 5) - 7 and print the result',
+        starterCode: '# Use parentheses for order\n',
+        expectedOutput: '8',
+        concepts: ['math', 'operators'],
+        hints: [
+          'Parentheses control order of operations',
+          'Calculate and print',
+        ],
+        aiCheckpoints: true,
+        xpReward: 10,
+      },
+    ],
+    validationRules: {
+      disallowHardcodedOutput: true,
+      requiredConcepts: ['math', 'operators'],
+    },
+    config: {
+      allowSkipSteps: false,
+    },
+  },
+  {
+    title: 'Count to Five',
+    description: 'Master loops by counting from 1 to 5',
+    difficulty: 'easy',
+    tags: ['basics', 'loops', 'for-loops'],
+    objectives: ['Use for loops', 'Understand range()'],
+    xpReward: 45,
+    order: 5,
+    estimatedTime: 20,
+    concepts: ['for-loop', 'range'],
+    steps: [
+      {
+        title: 'Print Numbers 1 to 3',
+        instructions: 'Use a for loop to print numbers 1, 2, 3',
+        starterCode: '# Use for i in range():\n',
+        expectedOutput: '1\n2\n3',
+        concepts: ['for-loop', 'range'],
+        hints: ['Use for i in range(1, 4):', 'Remember to print i'],
+        aiCheckpoints: true,
+        xpReward: 15,
+      },
+      {
+        title: 'Count to Five',
+        instructions: 'Extend your loop to print 1 through 5',
+        starterCode: '# Modify the range\n',
+        expectedOutput: '1\n2\n3\n4\n5',
+        concepts: ['for-loop', 'range'],
+        hints: ['Use range(1, 6)', 'The end value is exclusive'],
+        aiCheckpoints: true,
+        xpReward: 15,
+      },
+      {
+        title: 'Add a Message',
+        instructions: 'Print "Number: " before each number (e.g., "Number: 1")',
+        starterCode: '# Use string concatenation or f-strings\n',
+        expectedOutput: 'Number: 1\nNumber: 2\nNumber: 3\nNumber: 4\nNumber: 5',
+        concepts: ['for-loop', 'range', 'strings'],
+        hints: ['Use f"Number: {i}" or "Number: " + str(i)'],
+        aiCheckpoints: true,
+        xpReward: 15,
+      },
+    ],
+    validationRules: {
+      disallowHardcodedOutput: true,
+      requiredConcepts: ['for-loop', 'range'],
+    },
+    config: {
+      allowSkipSteps: false,
+    },
+  },
+
+  // Traditional missions (backward compatibility)
   {
     title: 'Create a Variable',
     description: 'Create a variable named "age" and assign it your age',
@@ -27,22 +169,13 @@ const sampleMissions = [
     tags: ['basics', 'variables'],
     objectives: ['Understand variables', 'Assign values to variables'],
     hints: ['Use = to assign values', 'Example: name = "John"'],
+    concepts: ['variables'],
     xpReward: 10,
     order: 2,
     estimatedTime: 5,
-  },
-  {
-    title: 'Simple Math',
-    description: 'Calculate 5 + 3 and print the result',
-    starterCode: '# Do the math\n',
-    expectedOutput: '8',
-    difficulty: 'easy',
-    tags: ['basics', 'math', 'operators'],
-    objectives: ['Use arithmetic operators', 'Print calculation results'],
-    hints: ['Add numbers using +', 'Print the result'],
-    xpReward: 10,
-    order: 3,
-    estimatedTime: 5,
+    validationRules: {
+      requiredConcepts: ['variables'],
+    },
   },
   {
     title: 'Make a Decision',
@@ -53,22 +186,14 @@ const sampleMissions = [
     tags: ['basics', 'conditions', 'if-statements'],
     objectives: ['Use if statements', 'Compare numbers'],
     hints: ['Use if number > 10:', 'Remember to indent'],
+    concepts: ['conditionals', 'comparison'],
     xpReward: 15,
     order: 4,
     estimatedTime: 10,
-  },
-  {
-    title: 'Count to Five',
-    description: 'Use a loop to print numbers 1 to 5',
-    starterCode: '# Use a for loop here\n',
-    expectedOutput: '1\n2\n3\n4\n5',
-    difficulty: 'easy',
-    tags: ['basics', 'loops', 'for-loops'],
-    objectives: ['Use for loops', 'Understand range()'],
-    hints: ['Use for i in range(1, 6):', 'Print each number'],
-    xpReward: 15,
-    order: 5,
-    estimatedTime: 10,
+    validationRules: {
+      disallowHardcodedOutput: true,
+      requiredConcepts: ['conditionals'],
+    },
   },
   {
     title: 'Even or Odd',
@@ -79,9 +204,14 @@ const sampleMissions = [
     tags: ['basics', 'conditions', 'modulo'],
     objectives: ['Use modulo operator', 'Use if-else statements'],
     hints: ['Use % (modulo) operator', 'If number % 2 == 0, it is even'],
+    concepts: ['conditionals', 'modulo', 'variables'],
     xpReward: 15,
     order: 6,
     estimatedTime: 10,
+    validationRules: {
+      disallowHardcodedOutput: true,
+      requiredConcepts: ['conditionals', 'modulo'],
+    },
   },
   {
     title: 'Sum of Two Numbers',
@@ -92,9 +222,14 @@ const sampleMissions = [
     tags: ['basics', 'variables', 'math'],
     objectives: ['Use variables', 'Perform addition', 'Print results'],
     hints: ['Add a and b', 'Store in a variable', 'Print the result'],
+    concepts: ['variables', 'math', 'operators'],
     xpReward: 10,
     order: 7,
     estimatedTime: 5,
+    validationRules: {
+      disallowHardcodedOutput: true,
+      requiredConcepts: ['variables', 'math'],
+    },
   },
   {
     title: 'Greeting Message',
@@ -105,9 +240,14 @@ const sampleMissions = [
     tags: ['basics', 'strings', 'concatenation'],
     objectives: ['Concatenate strings', 'Use variables in strings'],
     hints: ['Use + to join strings', 'Or use f-strings: f"Hello, {name}!"'],
+    concepts: ['strings', 'variables', 'concatenation'],
     xpReward: 10,
     order: 8,
     estimatedTime: 8,
+    validationRules: {
+      disallowHardcodedOutput: true,
+      requiredConcepts: ['strings', 'variables'],
+    },
   },
   {
     title: 'Max of Two Numbers',
@@ -118,9 +258,14 @@ const sampleMissions = [
     tags: ['basics', 'conditions', 'comparison'],
     objectives: ['Compare two numbers', 'Use if-else statements'],
     hints: ['Use if a > b:', 'Print the larger number'],
+    concepts: ['conditionals', 'comparison', 'variables'],
     xpReward: 15,
     order: 9,
     estimatedTime: 10,
+    validationRules: {
+      disallowHardcodedOutput: true,
+      requiredConcepts: ['conditionals', 'comparison'],
+    },
   },
   {
     title: 'Countdown Timer',
@@ -131,9 +276,14 @@ const sampleMissions = [
     tags: ['basics', 'loops', 'range'],
     objectives: ['Use range() with reverse order', 'Use for loops'],
     hints: ['Use range(5, 0, -1)', 'The third parameter is the step'],
+    concepts: ['for-loop', 'range'],
     xpReward: 15,
     order: 10,
     estimatedTime: 10,
+    validationRules: {
+      disallowHardcodedOutput: true,
+      requiredConcepts: ['for-loop', 'range'],
+    },
   },
 
   // Intermediate Missions
@@ -146,9 +296,13 @@ const sampleMissions = [
     tags: ['functions', 'math', 'return'],
     objectives: ['Define functions', 'Use return statement', 'Call functions'],
     hints: ['Multiply n by n', 'Use return keyword'],
+    concepts: ['functions', 'return', 'math'],
     xpReward: 20,
     order: 11,
     estimatedTime: 15,
+    validationRules: {
+      requiredConcepts: ['functions', 'return'],
+    },
   },
   {
     title: 'List Operations',
@@ -159,9 +313,13 @@ const sampleMissions = [
     tags: ['lists', 'data-structures'],
     objectives: ['Create lists', 'Use append() method', 'Print lists'],
     hints: ['Use .append() method', 'Print the updated list'],
+    concepts: ['lists', 'methods'],
     xpReward: 20,
     order: 12,
     estimatedTime: 12,
+    validationRules: {
+      requiredConcepts: ['lists'],
+    },
   },
   {
     title: 'Sum a List',
@@ -172,9 +330,14 @@ const sampleMissions = [
     tags: ['lists', 'loops', 'math'],
     objectives: ['Iterate through lists', 'Calculate sum', 'Use loops'],
     hints: ['Use a for loop', 'Keep a running total', 'Or use sum() function'],
+    concepts: ['lists', 'for-loop', 'math'],
     xpReward: 20,
     order: 13,
     estimatedTime: 15,
+    validationRules: {
+      disallowHardcodedOutput: true,
+      requiredConcepts: ['lists', 'for-loop'],
+    },
   },
   {
     title: 'Find the Largest',
@@ -189,9 +352,14 @@ const sampleMissions = [
       'Compare each number',
       'Or use max() function',
     ],
+    concepts: ['lists', 'for-loop', 'comparison'],
     xpReward: 20,
     order: 14,
     estimatedTime: 15,
+    validationRules: {
+      disallowHardcodedOutput: true,
+      requiredConcepts: ['lists'],
+    },
   },
   {
     title: 'Reverse a String',
@@ -202,9 +370,14 @@ const sampleMissions = [
     tags: ['strings', 'slicing'],
     objectives: ['Use string slicing', 'Understand negative indices'],
     hints: ['Use [::-1] for reversal', 'This is called string slicing'],
+    concepts: ['strings', 'slicing'],
     xpReward: 20,
     order: 15,
     estimatedTime: 12,
+    validationRules: {
+      disallowHardcodedOutput: true,
+      requiredConcepts: ['strings', 'slicing'],
+    },
   },
 ];
 
@@ -233,8 +406,6 @@ async function seed() {
     // Create sample users
     console.log('👤 Creating sample users...');
     const sampleUsers = [
-      { username: 'student1', password: 'password123', ageRange: '8-10', avatar: '🐱' },
-      { username: 'student2', password: 'password123', ageRange: '11-13', avatar: '🐶' },
       { username: 'demo', password: 'demo123', ageRange: '14+', avatar: '🦊' },
     ];
 

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
@@ -25,6 +25,7 @@ import { LearningProfileService } from '../learning-profile/learning-profile.ser
 export class AiService {
   private aiServiceUrl: string;
   private aiServiceApiKey: string;
+  private readonly logger = new Logger(AiService.name);
 
   constructor(
     private httpService: HttpService,
@@ -56,32 +57,52 @@ export class AiService {
   }
 
   async analyzeSubmission(submissionData: any): Promise<any> {
+    // Contract note: matches ai_service/app/api/endpoints/analyze.py response structure.
+    // Expected keys include success, score, feedback, weakConcepts, strongConcepts,
+    // detectedConcepts, suggestions, hints, attempts, and timeSpent.
     try {
       const response = await firstValueFrom(
         this.httpService.post(
-          `${this.aiServiceUrl}/api/analyze`,
+          `${this.aiServiceUrl}/api/v1/analyze`,
           {
             code: submissionData.code,
             concepts: submissionData.concepts || [],
+            test_cases: submissionData.test_cases || [],
+            expected_output: submissionData.expected_output,
+            difficulty: submissionData.difficulty,
             user_id: submissionData.userId || submissionData.user_id,
             mission_id: submissionData.missionId || submissionData.mission_id,
+            submission_id:
+              submissionData.submissionId || submissionData.submission_id,
+            attempts: submissionData.attempts || 1,
+            time_spent: submissionData.timeSpent || submissionData.time_spent || 0,
           },
           { headers: this.getHeaders() },
         ),
       );
       return response.data;
     } catch (error: unknown) {
-      console.error(
-        'AI Service Error:',
-        error instanceof Error ? error.message : String(error),
+      this.logger.error(
+        `AI Service Error: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
       );
       // Return fallback response if AI service is unavailable
       return {
+        success: false,
+        score: 0,
         feedback: 'Your submission has been received. Keep practicing!',
-        status: 'pending',
-        encouragement: 'Great effort!',
-        hint: null,
-        concepts_detected: [],
+        weakConcepts: [],
+        strongConcepts: [],
+        hints: ['Our AI helper is warming up. Try running your code again soon!'],
+        suggestions: [],
+        testResults: [],
+        executionTime: 0,
+        detectedConcepts: [],
+        complexityScore: 0,
+        errorType: 'ServiceUnavailable',
+        errorMessage: 'AI analysis service is currently unavailable.',
+        attempts: submissionData.attempts || 1,
+        timeSpent: submissionData.timeSpent || 0,
       };
     }
   }
@@ -93,7 +114,7 @@ export class AiService {
     try {
       const response = await firstValueFrom(
         this.httpService.post(
-          `${this.aiServiceUrl}/api/recommend`,
+          `${this.aiServiceUrl}/api/v1/recommend`,
           {
             user_id: userId,
             weak_skills: weakSkills,
@@ -103,9 +124,9 @@ export class AiService {
       );
       return response.data;
     } catch (error: unknown) {
-      console.error(
-        'AI Recommendation Error:',
-        error instanceof Error ? error.message : String(error),
+      this.logger.error(
+        `AI Recommendation Error: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
       );
       return {
         recommendations: [],
@@ -118,7 +139,7 @@ export class AiService {
     try {
       const response = await firstValueFrom(
         this.httpService.post(
-          `${this.aiServiceUrl}/api/hint`,
+          `${this.aiServiceUrl}/api/v1/hint`,
           {
             mission_id: missionId,
             code: currentCode,
@@ -128,9 +149,9 @@ export class AiService {
       );
       return response.data;
     } catch (error: unknown) {
-      console.error(
-        'AI Hint Error:',
-        error instanceof Error ? error.message : String(error),
+      this.logger.error(
+        `AI Hint Error: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
       );
       return {
         hint: 'Try breaking down the problem into smaller steps.',
@@ -157,7 +178,7 @@ export class AiService {
       }
 
       // Update submission with AI analysis
-      await this.submissionModel.findByIdAndUpdate(submissionId, {
+      const submissionUpdate: Record<string, unknown> = {
         aiAnalysis: {
           weaknesses: analysis.weaknesses,
           strengths: analysis.strengths,
@@ -166,7 +187,16 @@ export class AiService {
         detectedConcepts: analysis.detectedConcepts,
         score: analysis.score,
         isSuccessful: analysis.isSuccessful,
-      });
+      };
+
+      if (typeof analysis.attempts === 'number') {
+        submissionUpdate.attempts = analysis.attempts;
+      }
+      if (typeof analysis.timeSpent === 'number') {
+        submissionUpdate.timeSpent = analysis.timeSpent;
+      }
+
+      await this.submissionModel.findByIdAndUpdate(submissionId, submissionUpdate);
 
       // Update or create progress document
       let progress = await this.progressModel.findOne({
@@ -191,9 +221,14 @@ export class AiService {
       const conceptMastery = progress.conceptMastery || new Map();
       const weightFactor = 0.3; // New score weight
 
-      for (const [concept, newScore] of Object.entries(
-        analysis.conceptScores,
-      )) {
+      const conceptScores = analysis.conceptScores || {};
+      if (!analysis.conceptScores) {
+        this.logger.warn(
+          `Learning state update for user ${userId} missing conceptScores. Defaulting to existing mastery values.`,
+        );
+      }
+
+      for (const [concept, newScore] of Object.entries(conceptScores)) {
         const currentMastery = conceptMastery.get(concept) || 0;
         const updatedMastery = Math.round(
           currentMastery * (1 - weightFactor) + newScore * weightFactor,
@@ -266,9 +301,9 @@ export class AiService {
         },
       };
     } catch (error: unknown) {
-      console.error(
-        'Learning State Update Error:',
-        error instanceof Error ? error.message : String(error),
+      this.logger.error(
+        `Learning State Update Error: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
       );
       throw error;
     }

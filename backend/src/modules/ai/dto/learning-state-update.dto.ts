@@ -1,6 +1,15 @@
-import { IsString, IsBoolean, IsNumber, IsArray, IsObject, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsBoolean,
+  IsNumber,
+  IsArray,
+  IsObject,
+  ValidateNested,
+  IsOptional,
+  IsInt,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 class AnalysisDto {
   @ApiProperty({ example: ['loops', 'conditionals', 'functions'] })
@@ -34,6 +43,16 @@ class AnalysisDto {
   @ApiProperty({ example: 85 })
   @IsNumber()
   score: number;
+
+  @ApiPropertyOptional({ example: 2 })
+  @IsOptional()
+  @IsInt()
+  attempts?: number;
+
+  @ApiPropertyOptional({ example: 185 })
+  @IsOptional()
+  @IsNumber()
+  timeSpent?: number;
 }
 
 export class LearningStateUpdateDto {

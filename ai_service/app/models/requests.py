@@ -16,10 +16,18 @@ class CodeAnalysisRequest(BaseModel):
     user_id: Optional[str] = Field(None, alias="userId", description="User identifier")
     submission_id: Optional[str] = Field(None, alias="submissionId", description="Submission identifier for tracking learning state")
     test_cases: List[str] = Field(default_factory=list, alias="testCases", description="Test cases to run")
+    expected_output: Optional[str] = Field(None, alias="expectedOutput", description="Expected program output")
     concepts: Optional[List[str]] = Field(default_factory=list, description="Expected programming concepts")
     difficulty: Optional[int] = Field(default=5, ge=1, le=10, description="Mission difficulty (1-10)")
     max_attempts: Optional[int] = Field(default=None, alias="maxAttempts", description="Maximum allowed attempts")
     time_limit: Optional[int] = Field(default=None, alias="timeLimit", description="Time limit in seconds")
+    attempts: Optional[int] = Field(default=1, ge=1, description="Current attempt count for this mission")
+    time_spent: Optional[float] = Field(default=None, alias="timeSpent", ge=0, description="Time spent on the submission in seconds")
+    
+    # NEW: Validation rules from mission schema
+    validation_rules: Optional[Dict[str, Any]] = Field(None, alias="validationRules", description="Validation rules for anti-cheating")
+    ai_checkpoints: Optional[bool] = Field(True, alias="aiCheckpoints", description="Whether to enable AI checkpoints")
+    current_step: Optional[int] = Field(None, alias="currentStep", description="Current step number in step-based missions")
     
     class Config:
         populate_by_name = True  # Allow both camelCase and snake_case
@@ -30,7 +38,16 @@ class CodeAnalysisRequest(BaseModel):
                 "userId": "507f1f77bcf86cd799439011",
                 "testCases": ["greet('Alice') == 'Hello, Alice!'", "greet('Bob') == 'Hello, Bob!'"],
                 "concepts": ["function-definition", "return-statement", "string-formatting"],
-                "difficulty": 3
+                "difficulty": 3,
+                "attempts": 2,
+                "timeSpent": 120,
+                "validationRules": {
+                    "disallowHardcodedOutput": True,
+                    "requiredConcepts": ["functions", "return"],
+                    "forbiddenPatterns": ["eval", "exec"]
+                },
+                "aiCheckpoints": True,
+                "currentStep": 1
             }
         }
     

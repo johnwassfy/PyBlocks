@@ -37,6 +37,8 @@ class CodeAnalysisResponse(BaseModel):
     complexity_score: Optional[int] = Field(None, alias="complexityScore", ge=0, le=10, description="Code complexity (0-10)")
     error_type: Optional[str] = Field(None, alias="errorType", description="Type of error if any")
     error_message: Optional[str] = Field(None, alias="errorMessage", description="Error message if any")
+    attempts: Optional[int] = Field(None, description="Attempt count associated with the submission")
+    time_spent: Optional[float] = Field(None, alias="timeSpent", description="Time spent on the submission in seconds")
     
     class Config:
         populate_by_name = True
@@ -54,7 +56,9 @@ class CodeAnalysisResponse(BaseModel):
                 ],
                 "executionTime": 0.023,
                 "detectedConcepts": ["function-definition", "return-statement", "string-formatting"],
-                "complexityScore": 2
+                "complexityScore": 2,
+                "attempts": 2,
+                "timeSpent": 120
             }
         }
 

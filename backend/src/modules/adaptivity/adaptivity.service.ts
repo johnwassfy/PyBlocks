@@ -3,6 +3,8 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { ProgressService } from '../progress/progress.service';
 import { GamificationService } from '../gamification/gamification.service';
 import { MissionsService } from '../missions/missions.service';
+import { LearningProfileService } from '../learning-profile/learning-profile.service';
+import { Types } from 'mongoose';
 import { SubmissionCompletedEvent } from '../../common/events/submission.events';
 import { AiAnalysisResponseDto } from '../ai-connector/dto/ai-analysis.dto';
 
@@ -22,11 +24,17 @@ import { AiAnalysisResponseDto } from '../ai-connector/dto/ai-analysis.dto';
 @Injectable()
 export class AdaptivityService {
   private readonly logger = new Logger(AdaptivityService.name);
+  private submissionMetrics = {
+    processed: 0,
+    failed: 0,
+    lastLatencyMs: 0,
+  };
 
   constructor(
     private readonly progressService: ProgressService,
     private readonly gamificationService: GamificationService,
     private readonly missionsService: MissionsService,
+    private readonly learningProfileService: LearningProfileService,
   ) {}
 
   /**
@@ -38,18 +46,30 @@ export class AdaptivityService {
     missionId: string,
     submissionId: string,
     aiFeedback: AiAnalysisResponseDto,
-    missionData: { difficulty: string; concepts: string[] },
+    missionData: {
+      difficulty: string;
+      concepts: string[];
+      attempts?: number;
+      timeSpent?: number;
+    },
   ) {
     this.logger.log(
       `Processing adaptive analysis for user ${userId}, mission ${missionId}`,
     );
+
+    const startTime = Date.now();
 
     try {
       // 1. Update progress with concept mastery
       const progressUpdate = await this.updateProgressWithFeedback(
         userId,
         aiFeedback,
-        missionData.concepts,
+        {
+          concepts: missionData.concepts,
+          missionId,
+          timeSpent: missionData.timeSpent,
+          isSuccessful: aiFeedback.success,
+        },
       );
 
       // 2. Calculate and award XP based on performance
@@ -59,6 +79,7 @@ export class AdaptivityService {
         progressUpdate.improvementFactor,
       );
       await this.gamificationService.awardXp(userId, xpReward);
+      await this.gamificationService.updateStreak(userId);
 
       // 3. Check for badge achievements
       await this.checkAndAwardBadges(userId, aiFeedback, progressUpdate);
@@ -74,6 +95,8 @@ export class AdaptivityService {
         userId,
         weakConcepts,
         missionData.difficulty,
+        missionId,
+        aiFeedback.success,
       );
 
       // 6. Analyze learning patterns
@@ -81,6 +104,9 @@ export class AdaptivityService {
         userId,
         aiFeedback,
       );
+
+      this.submissionMetrics.processed += 1;
+      this.submissionMetrics.lastLatencyMs = Date.now() - startTime;
 
       return {
         xpGained: xpReward,
@@ -94,6 +120,7 @@ export class AdaptivityService {
         ),
       };
     } catch (error) {
+      this.submissionMetrics.failed += 1;
       this.logger.error(
         `Error processing adaptive analysis: ${error.message}`,
         error.stack,
@@ -142,12 +169,17 @@ export class AdaptivityService {
   private async updateProgressWithFeedback(
     userId: string,
     aiFeedback: AiAnalysisResponseDto,
-    missionConcepts: string[],
+    context: {
+      concepts: string[];
+      missionId: string;
+      timeSpent?: number;
+      isSuccessful: boolean;
+    },
   ) {
-    const conceptMastery = new Map<string, number>();
+    const masteryAdjustments = new Map<string, number>();
 
     // Calculate mastery change for each concept
-    for (const concept of missionConcepts) {
+    for (const concept of context.concepts) {
       const isWeak = aiFeedback.weakConcepts?.includes(concept);
       const isStrong = aiFeedback.strongConcepts?.includes(concept);
 
@@ -160,18 +192,29 @@ export class AdaptivityService {
         masteryChange = 0.05; // Neutral performance slight increase
       }
 
-      conceptMastery.set(concept, masteryChange);
+      masteryAdjustments.set(concept, masteryChange);
     }
 
-    // Get current progress for improvement calculation
-    const currentProgress = await this.progressService.getProgress(userId);
-    const improvementFactor = this.calculateImprovementFactor(currentProgress);
+    const persisted = await this.progressService.applyAdaptiveMasteryUpdate(
+      userId,
+      masteryAdjustments,
+      {
+        score: aiFeedback.score,
+        weakConcepts: aiFeedback.weakConcepts || [],
+        strongConcepts: aiFeedback.strongConcepts || [],
+        timeSpent: context.timeSpent,
+        missionId: context.missionId,
+        isSuccessful: context.isSuccessful,
+      },
+    );
+
+    const improvementFactor = this.calculateImprovementFactor(persisted.progress);
 
     return {
-      conceptMastery,
+      conceptMastery: persisted.masterySnapshot,
       improvementFactor,
-      weakConcepts: aiFeedback.weakConcepts || [],
-      strongConcepts: aiFeedback.strongConcepts || [],
+      weakConcepts: persisted.progress.weakConcepts,
+      strongConcepts: persisted.progress.strongConcepts,
     };
   }
 
@@ -231,7 +274,7 @@ export class AdaptivityService {
 
     // Add concepts with low mastery scores
     conceptMastery.forEach((mastery, concept) => {
-      if (mastery < 0.5) {
+      if (mastery < 50) {
         weakConcepts.add(concept);
       }
     });
@@ -243,24 +286,148 @@ export class AdaptivityService {
    * Recommend next mission based on adaptive logic
    */
   private async recommendNextMission(
-    _userId: string,
+    userId: string,
     weakConcepts: string[],
-    _currentDifficulty: string,
+    currentDifficulty: string,
+    currentMissionId: string,
+    wasSuccessful: boolean,
   ) {
-    // For now, use empty completed missions array
-    // TODO: Implement proper progress tracking with completed missions array
-    const completedMissions: string[] = [];
+    const profile = await this.learningProfileService.findByUserId(
+      new Types.ObjectId(userId),
+    );
+    const completedMissions = profile?.completedMissions || [];
+    const excludeMissionIds = Array.from(
+      new Set<string>([...completedMissions, currentMissionId]),
+    );
 
-    // If there are weak concepts, prioritize missions that address them
+    const difficultyPreference = this.getAdaptiveDifficulty(
+      currentDifficulty,
+      wasSuccessful,
+    );
+
     if (weakConcepts.length > 0) {
-      return await this.missionsService.getAdaptiveMissions(
+      const adaptive = await this.missionsService.getAdaptiveMissions(
         weakConcepts,
         completedMissions,
+        {
+          excludeMissionIds,
+          difficulty: difficultyPreference,
+        },
       );
+
+      if (adaptive.length > 0) {
+        return adaptive;
+      }
     }
 
-    // Otherwise, suggest next mission in progression
-    return await this.missionsService.getNextMission(completedMissions);
+    return await this.missionsService.getNextMission(excludeMissionIds);
+  }
+
+  private getAdaptiveDifficulty(
+    currentDifficulty: string,
+    wasSuccessful: boolean,
+  ): string | undefined {
+    const difficultyOrder = ['easy', 'medium', 'hard'];
+    const index = difficultyOrder.indexOf(currentDifficulty);
+
+    if (index === -1) {
+      return undefined;
+    }
+
+    if (!wasSuccessful && index > 0) {
+      return difficultyOrder[index - 1];
+    }
+
+    if (wasSuccessful && index < difficultyOrder.length - 1) {
+      return difficultyOrder[index + 1];
+    }
+
+    return currentDifficulty;
+  }
+
+  async getUserInsights(userId: string) {
+    const [progress, profile, gamification] = await Promise.all([
+      this.progressService.getOrCreateProgress(userId),
+      this.learningProfileService.findByUserId(new Types.ObjectId(userId)),
+      this.gamificationService.getOrCreateGamification(userId),
+    ]);
+
+    const masterySnapshot = Object.fromEntries(
+      progress.conceptMastery ? Array.from(progress.conceptMastery.entries()) : [],
+    );
+
+    const recommendedRaw = progress.weakConcepts.length
+      ? await this.missionsService.getAdaptiveMissions(
+          progress.weakConcepts,
+          profile?.completedMissions || [],
+          { limit: 3 },
+        )
+      : await this.missionsService.getNextMission(profile?.completedMissions || []);
+
+    const recommendedMissions = Array.isArray(recommendedRaw)
+      ? recommendedRaw
+      : recommendedRaw
+      ? [recommendedRaw]
+      : [];
+
+    const fallbackMission =
+      recommendedMissions.length === 0
+        ? await this.missionsService.getNextMission(profile?.completedMissions || [])
+        : null;
+
+    return {
+      mastery: masterySnapshot,
+      weakConcepts: progress.weakConcepts,
+      strongConcepts: progress.strongConcepts,
+      completedConcepts: progress.completedConcepts,
+      improvementFactor: this.calculateImprovementFactor(progress),
+      totals: {
+        missionsCompleted: progress.totalMissionsCompleted,
+        totalTimeSpent: progress.totalTimeSpent,
+        averageScore: progress.averageScore,
+      },
+      profile: profile
+        ? {
+            weakSkills: profile.weakSkills,
+            strongSkills: profile.strongSkills,
+            completedMissions: profile.completedMissions,
+            level: profile.level,
+            xp: profile.xp,
+            badges: profile.badges,
+            avgAccuracy: profile.avgAccuracy,
+          }
+        : null,
+      gamification: {
+        xp: gamification.xp,
+        level: gamification.level,
+        streak: gamification.streak,
+        badges: gamification.badges,
+      },
+      recommendations: recommendedMissions.map((mission) => ({
+  id: String(mission._id),
+        title: mission.title,
+        description: mission.description,
+        difficulty: mission.difficulty,
+        tags: mission.tags,
+        order: mission.order,
+      })),
+      fallbackMission: fallbackMission
+        ? {
+            id: String(fallbackMission._id),
+            title: fallbackMission.title,
+            difficulty: fallbackMission.difficulty,
+            description: fallbackMission.description,
+          }
+        : null,
+    };
+  }
+
+  getMetrics() {
+    return {
+      submissionsProcessed: this.submissionMetrics.processed,
+      submissionsFailed: this.submissionMetrics.failed,
+      lastLatencyMs: this.submissionMetrics.lastLatencyMs,
+    };
   }
 
   /**
