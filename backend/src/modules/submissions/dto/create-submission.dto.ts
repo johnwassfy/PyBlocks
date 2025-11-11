@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsObject,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateSubmissionDto {
@@ -41,4 +47,42 @@ export class CreateSubmissionDto {
   @IsNumber()
   @IsOptional()
   attempts?: number;
+
+  @ApiPropertyOptional({
+    description: 'AI model metadata for analytics tracking',
+    example: {
+      model: 'glm-4.5-air',
+      provider: 'z-ai',
+      version: '1.0',
+      hintsRequested: 2,
+      proactiveHelp: 1,
+      chatbotInteractions: 3,
+      responseTime: 450,
+      sessionId: 'sess_123',
+    },
+  })
+  @IsObject()
+  @IsOptional()
+  aiMetadata?: {
+    model?: string;
+    provider?: string;
+    version?: string;
+    hintsRequested?: number;
+    proactiveHelp?: number;
+    chatbotInteractions?: number;
+    responseTime?: number;
+    sessionId?: string;
+    errors?: string[];
+    idleTime?: number;
+    usedStarterCode?: boolean;
+    proactiveIntervention?: boolean;
+    interventionReason?: string;
+    learningState?: string;
+    confidenceLevel?: number;
+    frustrationLevel?: number;
+    sessionDuration?: number;
+    experimentGroup?: string;
+    additionalMetrics?: Record<string, any>;
+  };
 }
+

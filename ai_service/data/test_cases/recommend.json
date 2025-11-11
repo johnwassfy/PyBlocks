@@ -1,0 +1,806 @@
+[
+  {
+    "id": "recommend_beginner_01",
+    "name": "Complete Beginner - First Mission",
+    "evaluation_category": "beginner",
+    "difficulty_level": 1,
+    "expected_behavior": "Recommend absolute beginner missions focusing on print and basic syntax",
+    "payload": {
+      "userId": "benchmark_user",
+      "weakConcepts": [
+        "print",
+        "strings",
+        "syntax"
+      ],
+      "strongConcepts": [],
+      "completedMissions": [],
+      "averageScore": 0,
+      "learningVelocity": "slow",
+      "studentLevel": 1,
+      "studentXP": 0
+    }
+  },
+  {
+    "id": "recommend_beginner_02",
+    "name": "Beginner - Struggling with Variables",
+    "evaluation_category": "beginner",
+    "difficulty_level": 1,
+    "expected_behavior": "Focus recommendations on variable practice missions",
+    "payload": {
+      "userId": "benchmark_user",
+      "weakConcepts": [
+        "variables",
+        "assignment"
+      ],
+      "strongConcepts": [
+        "print"
+      ],
+      "completedMissions": [
+        "hello_world",
+        "print_practice"
+      ],
+      "averageScore": 55,
+      "learningVelocity": "slow",
+      "studentLevel": 1,
+      "studentXP": 80
+    }
+  },
+  {
+    "id": "recommend_intermediate_01",
+    "name": "Intermediate - Loop Mastery Needed",
+    "evaluation_category": "intermediate",
+    "difficulty_level": 3,
+    "expected_behavior": "Recommend missions combining loops with previously mastered concepts",
+    "payload": {
+      "userId": "benchmark_user",
+      "weakConcepts": [
+        "loops",
+        "range"
+      ],
+      "strongConcepts": [
+        "print",
+        "variables",
+        "conditionals"
+      ],
+      "completedMissions": [
+        "hello_world",
+        "variables_intro",
+        "if_else_basics"
+      ],
+      "averageScore": 75,
+      "learningVelocity": "medium",
+      "studentLevel": 3,
+      "studentXP": 350
+    }
+  },
+  {
+    "id": "recommend_intermediate_02",
+    "name": "Intermediate - Mixed Weak Concepts",
+    "evaluation_category": "intermediate",
+    "difficulty_level": 3,
+    "expected_behavior": "Balance recommendations between multiple weak areas",
+    "payload": {
+      "userId": "benchmark_user",
+      "weakConcepts": [
+        "lists",
+        "loops",
+        "string_methods"
+      ],
+      "strongConcepts": [
+        "print",
+        "variables",
+        "arithmetic"
+      ],
+      "completedMissions": [
+        "hello_world",
+        "variables_intro",
+        "calculator"
+      ],
+      "averageScore": 68,
+      "learningVelocity": "medium",
+      "studentLevel": 3,
+      "studentXP": 400
+    }
+  },
+  {
+    "id": "recommend_advanced_01",
+    "name": "Advanced - Ready for Challenge",
+    "evaluation_category": "advanced",
+    "difficulty_level": 5,
+    "expected_behavior": "Recommend creative or complex problem-solving missions",
+    "payload": {
+      "userId": "benchmark_user",
+      "weakConcepts": [],
+      "strongConcepts": [
+        "print",
+        "variables",
+        "loops",
+        "conditionals",
+        "functions",
+        "lists"
+      ],
+      "completedMissions": [
+        "hello_world",
+        "loops_basics",
+        "conditionals",
+        "functions_intro",
+        "lists_intro"
+      ],
+      "averageScore": 92,
+      "learningVelocity": "fast",
+      "studentLevel": 6,
+      "studentXP": 1200
+    }
+  },
+  {
+    "id": "recommend_advanced_02",
+    "name": "Advanced - Optimization Focus",
+    "evaluation_category": "advanced",
+    "difficulty_level": 5,
+    "expected_behavior": "Suggest missions involving efficiency and advanced patterns",
+    "payload": {
+      "userId": "benchmark_user",
+      "weakConcepts": [],
+      "strongConcepts": [
+        "print",
+        "variables",
+        "loops",
+        "conditionals",
+        "functions",
+        "lists",
+        "dictionaries"
+      ],
+      "completedMissions": [
+        "loops_basics",
+        "nested_loops",
+        "functions_advanced",
+        "data_structures"
+      ],
+      "averageScore": 95,
+      "learningVelocity": "fast",
+      "studentLevel": 7,
+      "studentXP": 1800
+    }
+  },
+  {
+    "id": "recommend_adaptive_01",
+    "name": "Slow Learner - Extra Practice",
+    "evaluation_category": "adaptive",
+    "difficulty_level": 2,
+    "expected_behavior": "Recommend repetitive practice missions at same difficulty level",
+    "payload": {
+      "userId": "benchmark_user",
+      "weakConcepts": [
+        "print",
+        "variables"
+      ],
+      "strongConcepts": [],
+      "completedMissions": [
+        "hello_world"
+      ],
+      "averageScore": 50,
+      "learningVelocity": "slow",
+      "studentLevel": 1,
+      "studentXP": 60,
+      "consecutiveFailures": 3
+    }
+  },
+  {
+    "id": "recommend_adaptive_02",
+    "name": "Fast Learner - Accelerated Path",
+    "evaluation_category": "adaptive",
+    "difficulty_level": 4,
+    "expected_behavior": "Skip easier missions and recommend more challenging content",
+    "payload": {
+      "userId": "benchmark_user",
+      "weakConcepts": [],
+      "strongConcepts": [
+        "print",
+        "variables",
+        "conditionals"
+      ],
+      "completedMissions": [
+        "hello_world",
+        "variables_intro"
+      ],
+      "averageScore": 98,
+      "learningVelocity": "fast",
+      "studentLevel": 2,
+      "studentXP": 250,
+      "consecutiveSuccesses": 5
+    }
+  },
+  {
+    "id": "recommend_xp_scaling_01",
+    "name": "XP-Based Difficulty - Low XP",
+    "evaluation_category": "xp_scaling",
+    "difficulty_level": 1,
+    "expected_behavior": "Recommend easy missions appropriate for low XP student",
+    "payload": {
+      "userId": "benchmark_user",
+      "weakConcepts": [
+        "print"
+      ],
+      "strongConcepts": [],
+      "completedMissions": [
+        "hello_world"
+      ],
+      "averageScore": 70,
+      "learningVelocity": "medium",
+      "studentLevel": 1,
+      "studentXP": 50
+    }
+  },
+  {
+    "id": "recommend_xp_scaling_02",
+    "name": "XP-Based Difficulty - High XP",
+    "evaluation_category": "xp_scaling",
+    "difficulty_level": 4,
+    "expected_behavior": "Recommend challenging missions matching high XP level",
+    "payload": {
+      "userId": "benchmark_user",
+      "weakConcepts": [
+        "recursion"
+      ],
+      "strongConcepts": [
+        "print",
+        "variables",
+        "loops",
+        "conditionals",
+        "functions"
+      ],
+      "completedMissions": [
+        "loops_basics",
+        "functions_intro",
+        "lists_advanced"
+      ],
+      "averageScore": 85,
+      "learningVelocity": "medium",
+      "studentLevel": 5,
+      "studentXP": 900
+    }
+  },
+  {
+    "id": "recommend_diversity_01",
+    "name": "Diversity Check - Avoid Duplicates",
+    "evaluation_category": "diversity",
+    "difficulty_level": 2,
+    "expected_behavior": "Ensure recommended missions are varied, not all same type",
+    "payload": {
+      "userId": "benchmark_user",
+      "weakConcepts": [
+        "loops",
+        "conditionals"
+      ],
+      "strongConcepts": [
+        "print",
+        "variables"
+      ],
+      "completedMissions": [
+        "hello_world",
+        "variables_intro",
+        "loops_intro"
+      ],
+      "averageScore": 72,
+      "learningVelocity": "medium",
+      "studentLevel": 2,
+      "studentXP": 200
+    }
+  },
+  {
+    "id": "recommend_cross_concept_01",
+    "name": "Cross-Concept Integration",
+    "evaluation_category": "cross_concept",
+    "difficulty_level": 3,
+    "expected_behavior": "Recommend missions that combine multiple previously learned concepts",
+    "payload": {
+      "userId": "benchmark_user",
+      "weakConcepts": [],
+      "strongConcepts": [
+        "print",
+        "variables",
+        "conditionals"
+      ],
+      "completedMissions": [
+        "hello_world",
+        "variables_intro",
+        "if_else"
+      ],
+      "averageScore": 80,
+      "learningVelocity": "medium",
+      "studentLevel": 3,
+      "studentXP": 350
+    }
+  },
+  {
+    "id": "recommend_trap_skill_inversion_01",
+    "name": "Recommends Weak Skill Missions",
+    "evaluation_category": "adaptive",
+    "difficulty_level": 4,
+    "trap_category": "skill_inversion",
+    "expected_behavior": "Model should recommend missions targeting WEAK skills (loops), not strong ones",
+    "payload": {
+      "userId": "trap_test_user",
+      "weakConcepts": [
+        "loops",
+        "while"
+      ],
+      "strongConcepts": [
+        "print",
+        "variables",
+        "strings"
+      ],
+      "completedMissions": [
+        "hello_world",
+        "variables_intro",
+        "string_basics"
+      ],
+      "averageScore": 75,
+      "learningVelocity": "medium"
+    }
+  },
+  {
+    "id": "recommend_trap_skill_inversion_02",
+    "name": "Avoids Strong Skills",
+    "evaluation_category": "adaptive",
+    "difficulty_level": 3,
+    "trap_category": "skill_inversion",
+    "expected_behavior": "Model should NOT recommend missions on already-strong concepts",
+    "payload": {
+      "userId": "trap_test_user",
+      "weakConcepts": [
+        "functions"
+      ],
+      "strongConcepts": [
+        "print",
+        "for",
+        "if"
+      ],
+      "completedMissions": [
+        "loops_intro",
+        "conditionals_intro"
+      ],
+      "averageScore": 88,
+      "learningVelocity": "fast"
+    }
+  },
+  {
+    "id": "recommend_trap_difficulty_mismatch_01",
+    "name": "Too Easy for High Performer",
+    "evaluation_category": "difficulty_calibration",
+    "difficulty_level": 4,
+    "trap_category": "difficulty_mismatch",
+    "expected_behavior": "Model should recommend challenging missions for 95% average score",
+    "payload": {
+      "userId": "trap_test_user",
+      "weakConcepts": [],
+      "strongConcepts": [
+        "print",
+        "variables",
+        "loops",
+        "conditionals",
+        "functions"
+      ],
+      "completedMissions": [
+        "hello_world",
+        "loops_intro",
+        "conditionals_intro",
+        "functions_basics"
+      ],
+      "averageScore": 95,
+      "learningVelocity": "fast"
+    }
+  },
+  {
+    "id": "recommend_trap_difficulty_mismatch_02",
+    "name": "Too Hard for Struggling Student",
+    "evaluation_category": "difficulty_calibration",
+    "difficulty_level": 3,
+    "trap_category": "difficulty_mismatch",
+    "expected_behavior": "Model should recommend easier/foundational missions for 45% average",
+    "payload": {
+      "userId": "trap_test_user",
+      "weakConcepts": [
+        "print",
+        "variables",
+        "syntax"
+      ],
+      "strongConcepts": [],
+      "completedMissions": [
+        "hello_world"
+      ],
+      "averageScore": 45,
+      "learningVelocity": "slow"
+    }
+  },
+  {
+    "id": "recommend_trap_velocity_ignored_01",
+    "name": "Fast Learner Treated as Slow",
+    "evaluation_category": "adaptive",
+    "difficulty_level": 4,
+    "trap_category": "velocity_mismatch",
+    "expected_behavior": "Model should recommend more/harder missions for fast learner",
+    "payload": {
+      "userId": "trap_test_user",
+      "weakConcepts": [
+        "lists"
+      ],
+      "strongConcepts": [
+        "print",
+        "variables",
+        "loops"
+      ],
+      "completedMissions": [
+        "hello_world",
+        "variables_intro",
+        "loops_intro"
+      ],
+      "averageScore": 90,
+      "learningVelocity": "fast",
+      "missionsCompletedLastWeek": 12
+    }
+  },
+  {
+    "id": "recommend_trap_velocity_ignored_02",
+    "name": "Slow Learner Overwhelmed",
+    "evaluation_category": "adaptive",
+    "difficulty_level": 3,
+    "trap_category": "velocity_mismatch",
+    "expected_behavior": "Model should recommend fewer, well-paced missions for slow learner",
+    "payload": {
+      "userId": "trap_test_user",
+      "weakConcepts": [
+        "variables",
+        "print"
+      ],
+      "strongConcepts": [],
+      "completedMissions": [
+        "hello_world"
+      ],
+      "averageScore": 60,
+      "learningVelocity": "slow",
+      "missionsCompletedLastWeek": 2
+    }
+  },
+  {
+    "id": "recommend_trap_no_personalization_01",
+    "name": "Generic Recommendations",
+    "evaluation_category": "personalization",
+    "difficulty_level": 3,
+    "trap_category": "missing_personalization",
+    "expected_behavior": "Model should personalize based on student history and weak skills",
+    "payload": {
+      "userId": "trap_test_user",
+      "weakConcepts": [
+        "conditionals"
+      ],
+      "strongConcepts": [
+        "print",
+        "variables"
+      ],
+      "completedMissions": [
+        "hello_world",
+        "variables_intro"
+      ],
+      "averageScore": 78,
+      "learningVelocity": "medium"
+    }
+  },
+  {
+    "id": "recommend_trap_repetition_01",
+    "name": "Recommending Already Completed",
+    "evaluation_category": "consistency",
+    "difficulty_level": 2,
+    "trap_category": "repetition_error",
+    "expected_behavior": "Model should NOT recommend missions already completed",
+    "payload": {
+      "userId": "trap_test_user",
+      "weakConcepts": [
+        "loops"
+      ],
+      "strongConcepts": [
+        "print"
+      ],
+      "completedMissions": [
+        "hello_world",
+        "print_basics",
+        "string_intro"
+      ],
+      "averageScore": 70,
+      "learningVelocity": "medium"
+    }
+  },
+  {
+    "id": "recommend_trap_prerequisite_violation_01",
+    "name": "Missing Prerequisites",
+    "evaluation_category": "progression",
+    "difficulty_level": 4,
+    "trap_category": "prerequisite_violation",
+    "expected_behavior": "Model should not recommend advanced missions without prerequisites completed",
+    "payload": {
+      "userId": "trap_test_user",
+      "weakConcepts": [],
+      "strongConcepts": [
+        "print"
+      ],
+      "completedMissions": [
+        "hello_world"
+      ],
+      "averageScore": 85,
+      "learningVelocity": "fast"
+    }
+  },
+  {
+    "id": "recommend_trap_no_weak_concepts_01",
+    "name": "No Weak Concepts Identified",
+    "evaluation_category": "edge_cases",
+    "difficulty_level": 3,
+    "trap_category": "mastery_handling",
+    "expected_behavior": "Model should recommend advanced/creative missions when no weaknesses exist",
+    "payload": {
+      "userId": "trap_test_user",
+      "weakConcepts": [],
+      "strongConcepts": [
+        "print",
+        "variables",
+        "loops",
+        "conditionals",
+        "functions",
+        "lists"
+      ],
+      "completedMissions": [
+        "hello_world",
+        "variables_intro",
+        "loops_intro",
+        "conditionals_intro",
+        "functions_intro"
+      ],
+      "averageScore": 92,
+      "learningVelocity": "fast"
+    }
+  },
+  {
+    "id": "recommend_trap_contradictory_data_01",
+    "name": "High Score but Many Weak Skills",
+    "evaluation_category": "data_consistency",
+    "difficulty_level": 5,
+    "trap_category": "contradictory_signals",
+    "expected_behavior": "Model should prioritize weak skills over high average score",
+    "payload": {
+      "userId": "trap_test_user",
+      "weakConcepts": [
+        "loops",
+        "conditionals",
+        "functions",
+        "lists"
+      ],
+      "strongConcepts": [
+        "print"
+      ],
+      "completedMissions": [
+        "hello_world"
+      ],
+      "averageScore": 95,
+      "learningVelocity": "medium"
+    }
+  },
+  {
+    "id": "recommend_trap_empty_history_01",
+    "name": "New Student - No History",
+    "evaluation_category": "edge_cases",
+    "difficulty_level": 2,
+    "trap_category": "cold_start",
+    "expected_behavior": "Model should recommend beginner missions when no history exists",
+    "payload": {
+      "userId": "new_student",
+      "weakConcepts": [],
+      "strongConcepts": [],
+      "completedMissions": [],
+      "averageScore": 0,
+      "learningVelocity": "unknown"
+    }
+  },
+  {
+    "id": "recommend_trap_stale_data_01",
+    "name": "Student Hasn't Practiced Recently",
+    "evaluation_category": "engagement",
+    "difficulty_level": 3,
+    "trap_category": "re_engagement",
+    "expected_behavior": "Model should recommend review/refresher missions for inactive students",
+    "payload": {
+      "userId": "trap_test_user",
+      "weakConcepts": [
+        "loops"
+      ],
+      "strongConcepts": [
+        "print",
+        "variables"
+      ],
+      "completedMissions": [
+        "hello_world",
+        "variables_intro"
+      ],
+      "averageScore": 75,
+      "learningVelocity": "slow",
+      "lastActiveDate": "2024-10-01",
+      "daysSinceLastActivity": 42
+    }
+  },
+  {
+    "id": "recommend_trap_all_missions_completed_01",
+    "name": "Student Completed Everything",
+    "evaluation_category": "edge_cases",
+    "difficulty_level": 4,
+    "trap_category": "completion",
+    "expected_behavior": "Model should suggest creative projects, challenges, or peer teaching",
+    "payload": {
+      "userId": "trap_test_user",
+      "weakConcepts": [],
+      "strongConcepts": [
+        "print",
+        "variables",
+        "loops",
+        "conditionals",
+        "functions",
+        "lists",
+        "dictionaries"
+      ],
+      "completedMissions": [
+        "all_available_missions"
+      ],
+      "averageScore": 93,
+      "learningVelocity": "fast"
+    }
+  },
+  {
+    "id": "recommend_trap_recommend_count_01",
+    "name": "Too Many Recommendations",
+    "evaluation_category": "recommendation_quality",
+    "difficulty_level": 2,
+    "trap_category": "recommendation_count",
+    "expected_behavior": "Model should recommend 3-5 missions, not overwhelming list",
+    "payload": {
+      "userId": "trap_test_user",
+      "weakConcepts": [
+        "loops",
+        "conditionals"
+      ],
+      "strongConcepts": [
+        "print"
+      ],
+      "completedMissions": [
+        "hello_world"
+      ],
+      "averageScore": 70,
+      "learningVelocity": "medium"
+    }
+  },
+  {
+    "id": "recommend_trap_recommend_count_02",
+    "name": "Too Few Recommendations",
+    "evaluation_category": "recommendation_quality",
+    "difficulty_level": 2,
+    "trap_category": "recommendation_count",
+    "expected_behavior": "Model should provide at least 2-3 options, not just one",
+    "payload": {
+      "userId": "trap_test_user",
+      "weakConcepts": [
+        "functions"
+      ],
+      "strongConcepts": [
+        "print",
+        "variables",
+        "loops"
+      ],
+      "completedMissions": [
+        "hello_world",
+        "variables_intro",
+        "loops_intro"
+      ],
+      "averageScore": 80,
+      "learningVelocity": "medium"
+    }
+  },
+  {
+    "id": "recommend_trap_variety_01",
+    "name": "All Recommendations Same Type",
+    "evaluation_category": "recommendation_quality",
+    "difficulty_level": 3,
+    "trap_category": "variety",
+    "expected_behavior": "Model should recommend variety (practice, challenge, creative) not all same type",
+    "payload": {
+      "userId": "trap_test_user",
+      "weakConcepts": [
+        "loops"
+      ],
+      "strongConcepts": [
+        "print",
+        "variables"
+      ],
+      "completedMissions": [
+        "hello_world",
+        "variables_intro"
+      ],
+      "averageScore": 75,
+      "learningVelocity": "medium"
+    }
+  },
+  {
+    "id": "recommend_trap_explanation_missing_01",
+    "name": "No Explanation Why Recommended",
+    "evaluation_category": "transparency",
+    "difficulty_level": 3,
+    "trap_category": "explanation_quality",
+    "expected_behavior": "Model should explain WHY each mission is recommended",
+    "payload": {
+      "userId": "trap_test_user",
+      "weakConcepts": [
+        "conditionals"
+      ],
+      "strongConcepts": [
+        "print"
+      ],
+      "completedMissions": [
+        "hello_world"
+      ],
+      "averageScore": 72,
+      "learningVelocity": "slow"
+    }
+  },
+  {
+    "id": "recommend_trap_interest_ignored_01",
+    "name": "Student Interests Not Considered",
+    "evaluation_category": "personalization",
+    "difficulty_level": 4,
+    "trap_category": "interest_alignment",
+    "expected_behavior": "Model should incorporate student interests into recommendations",
+    "payload": {
+      "userId": "trap_test_user",
+      "weakConcepts": [
+        "loops"
+      ],
+      "strongConcepts": [
+        "print",
+        "variables"
+      ],
+      "completedMissions": [
+        "hello_world",
+        "variables_intro"
+      ],
+      "averageScore": 78,
+      "learningVelocity": "medium",
+      "interests": [
+        "games",
+        "art",
+        "storytelling"
+      ]
+    }
+  },
+  {
+    "id": "recommend_trap_time_constraint_01",
+    "name": "Recommendations Too Time-Intensive",
+    "evaluation_category": "practical_constraints",
+    "difficulty_level": 3,
+    "trap_category": "time_management",
+    "expected_behavior": "Model should consider available time and recommend appropriately sized missions",
+    "payload": {
+      "userId": "trap_test_user",
+      "weakConcepts": [
+        "functions"
+      ],
+      "strongConcepts": [
+        "print",
+        "variables",
+        "loops"
+      ],
+      "completedMissions": [
+        "hello_world",
+        "variables_intro",
+        "loops_intro"
+      ],
+      "averageScore": 82,
+      "learningVelocity": "medium",
+      "availableTimeMinutes": 15
+    }
+  }
+]

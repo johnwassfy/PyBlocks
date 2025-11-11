@@ -1,0 +1,301 @@
+[
+  {
+    "id": "meta_trap_missing_mission_context_01",
+    "name": "Missing Mission Context in Analyze",
+    "evaluation_category": "robustness",
+    "difficulty_level": 3,
+    "trap_category": "missing_fields",
+    "expected_behavior": "Model should handle gracefully or request mission context",
+    "service": "analyze",
+    "missionId": "unknown_mission",
+    "submission_context": {
+      "code": "print('Hello')",
+      "expected_output": "Hello",
+      "line_count": 1
+    },
+    "student_context": {
+      "user_id": "trap_test_user",
+      "level": 2,
+      "xp": 100
+    }
+  },
+  {
+    "id": "meta_trap_corrupted_history_01",
+    "name": "Malformed Conversation History",
+    "evaluation_category": "robustness",
+    "difficulty_level": 4,
+    "trap_category": "corrupted_data",
+    "expected_behavior": "Model should handle corrupted history without crashing",
+    "service": "chat",
+    "payload": {
+      "question": "Can you help me?",
+      "userId": "trap_test_user",
+      "missionId": "loops_intro",
+      "conversationHistory": [
+        {"role": "user"},
+        {"content": "How do loops work?"},
+        {"role": "assistant", "content": null},
+        "invalid_entry"
+      ]
+    }
+  },
+  {
+    "id": "meta_trap_very_long_input_01",
+    "name": "Extremely Long Student Story",
+    "evaluation_category": "performance",
+    "difficulty_level": 4,
+    "trap_category": "long_input",
+    "expected_behavior": "Model should handle/truncate very long input gracefully",
+    "service": "chat",
+    "payload": {
+      "question": "Once upon a time in a land far far away there lived a young coder who wanted to learn Python and they wrote a very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very very long story about their coding journey and all the adventures they had while learning to code and meeting other coders and building amazing projects together and...",
+      "userId": "trap_test_user",
+      "missionId": "creative_writing"
+    }
+  },
+  {
+    "id": "meta_trap_very_long_code_01",
+    "name": "500+ Line Code Submission",
+    "evaluation_category": "performance",
+    "difficulty_level": 5,
+    "trap_category": "long_input",
+    "expected_behavior": "Model should handle long code or politely request shorter snippet",
+    "service": "analyze",
+    "missionId": "advanced_project",
+    "submission_context": {
+      "code": "# This is intentionally very long code with 500 lines\nfor i in range(500):\n    print('line', i)",
+      "expected_output": "Very long output truncated",
+      "line_count": 500
+    },
+    "student_context": {
+      "user_id": "trap_test_user",
+      "level": 10,
+      "xp": 5000
+    }
+  },
+  {
+    "id": "meta_trap_null_values_01",
+    "name": "Null Values in Required Fields",
+    "evaluation_category": "robustness",
+    "difficulty_level": 3,
+    "trap_category": "null_handling",
+    "expected_behavior": "Model should validate required fields and handle nulls gracefully",
+    "service": "hint",
+    "payload": {
+      "userId": null,
+      "code": "print('test')",
+      "missionId": null,
+      "attemptNumber": 1
+    }
+  },
+  {
+    "id": "meta_trap_type_mismatch_01",
+    "name": "String Instead of Number",
+    "evaluation_category": "robustness",
+    "difficulty_level": 2,
+    "trap_category": "type_validation",
+    "expected_behavior": "Model should handle type mismatches in fields",
+    "service": "chat",
+    "payload": {
+      "question": "Help me with loops",
+      "userId": "trap_test_user",
+      "missionId": "loops_intro",
+      "attemptNumber": "not_a_number"
+    }
+  },
+  {
+    "id": "meta_trap_negative_values_01",
+    "name": "Negative Attempt Number",
+    "evaluation_category": "robustness",
+    "difficulty_level": 2,
+    "trap_category": "invalid_values",
+    "expected_behavior": "Model should validate attempt number is positive",
+    "service": "hint",
+    "payload": {
+      "userId": "trap_test_user",
+      "code": "print('test')",
+      "missionId": "hello_world",
+      "attemptNumber": -5
+    }
+  },
+  {
+    "id": "meta_trap_injection_attempt_01",
+    "name": "Code Injection in Question",
+    "evaluation_category": "security",
+    "difficulty_level": 5,
+    "trap_category": "injection_prevention",
+    "expected_behavior": "Model should sanitize input and not execute injected code",
+    "service": "chat",
+    "payload": {
+      "question": "What is print(exec('import os; os.system(\"ls\")'))?",
+      "userId": "trap_test_user",
+      "missionId": "security_test"
+    }
+  },
+  {
+    "id": "meta_trap_sql_injection_01",
+    "name": "SQL Injection Attempt",
+    "evaluation_category": "security",
+    "difficulty_level": 5,
+    "trap_category": "injection_prevention",
+    "expected_behavior": "Model should not process SQL-like injection patterns",
+    "service": "chat",
+    "payload": {
+      "question": "'; DROP TABLE students; --",
+      "userId": "trap_test_user",
+      "missionId": "database_intro"
+    }
+  },
+  {
+    "id": "meta_trap_special_chars_01",
+    "name": "Special Unicode Characters",
+    "evaluation_category": "encoding",
+    "difficulty_level": 3,
+    "trap_category": "unicode_handling",
+    "expected_behavior": "Model should handle emoji and special unicode correctly",
+    "service": "chat",
+    "payload": {
+      "question": "🤖 Can you explain variables? 🌟✨💻",
+      "userId": "trap_test_user",
+      "missionId": "variables_intro"
+    }
+  },
+  {
+    "id": "meta_trap_empty_payload_01",
+    "name": "Completely Empty Request",
+    "evaluation_category": "robustness",
+    "difficulty_level": 2,
+    "trap_category": "empty_payload",
+    "expected_behavior": "Model should return validation error for empty payload",
+    "service": "chat",
+    "payload": {}
+  },
+  {
+    "id": "meta_trap_cross_service_01",
+    "name": "Chat Question About Code Analysis",
+    "evaluation_category": "integration",
+    "difficulty_level": 4,
+    "trap_category": "cross_service",
+    "expected_behavior": "Model should understand context across service boundaries",
+    "service": "chat",
+    "payload": {
+      "question": "Why did my code analysis fail?",
+      "userId": "trap_test_user",
+      "missionId": "loops_intro",
+      "code": "for i in range(5)\n    print(i)",
+      "conversationHistory": []
+    }
+  },
+  {
+    "id": "meta_trap_timeout_simulation_01",
+    "name": "Extremely Complex Code Requiring Long Analysis",
+    "evaluation_category": "performance",
+    "difficulty_level": 5,
+    "trap_category": "timeout_handling",
+    "expected_behavior": "Model should complete analysis within timeout or gracefully indicate processing time",
+    "service": "analyze",
+    "missionId": "complex_algorithm",
+    "submission_context": {
+      "code": "def fibonacci(n):\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)\n\nfor i in range(100):\n    print(fibonacci(i))",
+      "expected_output": "0\n1\n1\n2\n3\n...",
+      "line_count": 9
+    },
+    "student_context": {
+      "user_id": "trap_test_user",
+      "level": 8,
+      "xp": 3000
+    }
+  },
+  {
+    "id": "meta_trap_concurrent_requests_01",
+    "name": "Same User Multiple Simultaneous Requests",
+    "evaluation_category": "concurrency",
+    "difficulty_level": 4,
+    "trap_category": "concurrent_handling",
+    "expected_behavior": "System should handle concurrent requests from same user",
+    "service": "chat",
+    "payload": {
+      "question": "Help with loops",
+      "userId": "trap_test_user",
+      "missionId": "loops_intro",
+      "requestId": "concurrent_1"
+    }
+  },
+  {
+    "id": "meta_trap_kid_sarcasm_01",
+    "name": "Sarcastic Kid Comment",
+    "evaluation_category": "tone_detection",
+    "difficulty_level": 3,
+    "trap_category": "sarcasm_detection",
+    "expected_behavior": "Model should detect sarcasm and respond appropriately with empathy",
+    "service": "chat",
+    "payload": {
+      "question": "Oh great, another error. Just what I needed.",
+      "userId": "trap_test_user",
+      "missionId": "debug_practice",
+      "errorMessage": "SyntaxError: invalid syntax",
+      "attemptNumber": 6
+    }
+  },
+  {
+    "id": "meta_trap_mixed_language_01",
+    "name": "Question in Mixed Languages",
+    "evaluation_category": "language",
+    "difficulty_level": 4,
+    "trap_category": "multilingual",
+    "expected_behavior": "Model should handle or politely indicate English-only support",
+    "service": "chat",
+    "payload": {
+      "question": "¿Cómo puedo usar print() in Python?",
+      "userId": "trap_test_user",
+      "missionId": "hello_world"
+    }
+  },
+  {
+    "id": "meta_trap_circular_reference_01",
+    "name": "Circular Mission Reference",
+    "evaluation_category": "robustness",
+    "difficulty_level": 3,
+    "trap_category": "circular_dependency",
+    "expected_behavior": "Model should detect and handle circular mission references",
+    "service": "recommend",
+    "payload": {
+      "userId": "trap_test_user",
+      "weakConcepts": ["loops"],
+      "strongConcepts": ["print"],
+      "completedMissions": ["mission_a", "mission_b"],
+      "prerequisites": {
+        "mission_a": ["mission_b"],
+        "mission_b": ["mission_a"]
+      }
+    }
+  },
+  {
+    "id": "meta_trap_rate_limit_simulation_01",
+    "name": "Rapid Repeated Requests",
+    "evaluation_category": "rate_limiting",
+    "difficulty_level": 4,
+    "trap_category": "rate_limiting",
+    "expected_behavior": "System should handle rate limiting gracefully",
+    "service": "chat",
+    "payload": {
+      "question": "Help",
+      "userId": "spam_user",
+      "missionId": "loops_intro",
+      "requestCount": 100
+    }
+  },
+  {
+    "id": "meta_trap_version_mismatch_01",
+    "name": "Old API Version Format",
+    "evaluation_category": "compatibility",
+    "difficulty_level": 3,
+    "trap_category": "version_compatibility",
+    "expected_behavior": "System should handle or gracefully reject old API formats",
+    "service": "analyze",
+    "legacy_format": true,
+    "code": "print('Hello')",
+    "mission_id": "hello_world",
+    "user": "trap_test_user"
+  }
+]

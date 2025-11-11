@@ -4,84 +4,292 @@ import {
   IsOptional,
   IsNumber,
   IsInt,
+  IsBoolean,
+  IsObject,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
- * Standardized request format for AI service
+ * Mission Context - Rich semantic data about the learning goal
  */
-export class AiAnalysisRequestDto {
-  @ApiProperty({
-    description: 'Python code to analyze',
-    example: 'def greet():\n    print("Hello, World!")',
-  })
+export class MissionContextDto {
+  @ApiProperty({ example: 'The Storyteller' })
   @IsString()
-  code: string;
+  title: string;
 
-  @ApiProperty({
-    description: 'Mission ID for context',
-    example: '6742a1b2c3d4e5f6a7b8c9d0',
-  })
+  @ApiProperty({ example: 'Print three lines to tell a short story.' })
   @IsString()
-  missionId: string;
+  description: string;
 
-  @ApiPropertyOptional({
-    description: 'Expected test cases',
-    type: [Object],
-  })
+  @ApiPropertyOptional({ example: ['Use print statements', 'Structure output in multiple lines'] })
   @IsOptional()
   @IsArray()
-  testCases?: Array<{
-    input: any;
-    expectedOutput: any;
-    description?: string;
-  }>;
+  objectives?: string[];
 
-  @ApiPropertyOptional({
-    description: 'Concepts being tested',
-    example: ['loops', 'functions'],
-  })
+  @ApiPropertyOptional({ example: ['print', 'strings', 'sequence'] })
   @IsOptional()
   @IsArray()
   concepts?: string[];
 
-  @ApiPropertyOptional({
-    description: 'Difficulty level',
-    example: 'medium',
-  })
+  @ApiPropertyOptional({ example: 'creative' })
+  @IsOptional()
+  @IsString()
+  validationMode?: 'strict' | 'creative' | 'line-count' | 'concept-only';
+
+  @ApiPropertyOptional({ example: 'Once upon a time...\nThere was a tiny dragon.\nIt loved to code.' })
+  @IsOptional()
+  @IsString()
+  expectedOutput?: string;
+
+  @ApiPropertyOptional({ example: 3 })
+  @IsOptional()
+  @IsNumber()
+  expectedLineCount?: number;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  isStoryBased?: boolean;
+
+  @ApiPropertyOptional({ example: 2 })
+  @IsOptional()
+  @IsNumber()
+  difficulty?: number;
+}
+
+/**
+ * Student Context - Personalization data for adaptive feedback
+ */
+export class StudentContextDto {
+  @ApiProperty({ example: 'user_123' })
+  @IsString()
+  userId: string;
+
+  @ApiPropertyOptional({ example: 3 })
+  @IsOptional()
+  @IsNumber()
+  level?: number;
+
+  @ApiPropertyOptional({ example: 450 })
+  @IsOptional()
+  @IsNumber()
+  xp?: number;
+
+  @ApiPropertyOptional({ example: ['loops'] })
+  @IsOptional()
+  @IsArray()
+  weakSkills?: string[];
+
+  @ApiPropertyOptional({ example: ['print', 'strings'] })
+  @IsOptional()
+  @IsArray()
+  strongSkills?: string[];
+
+  @ApiPropertyOptional({ example: 'hands-on' })
+  @IsOptional()
+  @IsString()
+  learningStyle?: string;
+
+  @ApiPropertyOptional({ example: 'short' })
+  @IsOptional()
+  @IsString()
+  feedbackPreference?: 'short' | 'detailed' | 'visual';
+
+  @ApiPropertyOptional({ example: 'friendly' })
+  @IsOptional()
+  @IsString()
+  aiTone?: 'friendly' | 'formal' | 'encouraging' | 'challenging';
+
+  @ApiPropertyOptional({ example: 2 })
+  @IsOptional()
+  @IsNumber()
+  attemptNumber?: number;
+
+  @ApiPropertyOptional({ example: 183 })
+  @IsOptional()
+  @IsNumber()
+  timeSpent?: number;
+
+  @ApiPropertyOptional({ example: 'Your story is missing one line!' })
+  @IsOptional()
+  @IsString()
+  previousFeedback?: string;
+}
+
+/**
+ * Submission Context - Technical data about code and execution
+ */
+export class SubmissionContextDto {
+  @ApiProperty({ example: "print('Hello')\nprint('World')" })
+  @IsString()
+  code: string;
+
+  @ApiPropertyOptional({ example: 'Hello\nWorld' })
+  @IsOptional()
+  @IsString()
+  output?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsObject()
+  executionResult?: {
+    success: boolean;
+    stdout: string;
+    stderr: string;
+    executionTime: number;
+  };
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsArray()
+  testCases?: any[];
+
+  @ApiPropertyOptional({ example: 42 })
+  @IsOptional()
+  @IsNumber()
+  complexityScore?: number;
+
+  @ApiPropertyOptional({ example: 100 })
+  @IsOptional()
+  @IsNumber()
+  syntaxScore?: number;
+
+  @ApiPropertyOptional({ example: 96 })
+  @IsOptional()
+  @IsNumber()
+  codeLength?: number;
+
+  @ApiPropertyOptional({ example: ['print', 'string-literals'] })
+  @IsOptional()
+  @IsArray()
+  conceptsDetected?: string[];
+
+  @ApiPropertyOptional({ example: 3 })
+  @IsOptional()
+  @IsNumber()
+  lineCount?: number;
+}
+
+/**
+ * Behavior Metrics - Engagement and frustration patterns
+ */
+export class BehaviorMetricsDto {
+  @ApiPropertyOptional({ example: 12.4 })
+  @IsOptional()
+  @IsNumber()
+  idleTime?: number;
+
+  @ApiPropertyOptional({ example: 3 })
+  @IsOptional()
+  @IsNumber()
+  correctionsMade?: number;
+
+  @ApiPropertyOptional({ example: 1 })
+  @IsOptional()
+  @IsNumber()
+  errorsLastAttempt?: number;
+
+  @ApiPropertyOptional({ example: 2 })
+  @IsOptional()
+  @IsNumber()
+  aiHintsUsed?: number;
+
+  @ApiPropertyOptional({ example: false })
+  @IsOptional()
+  @IsBoolean()
+  proactiveHelpTriggered?: boolean;
+}
+
+/**
+ * Validation Context - How the AI should judge correctness
+ */
+export class ValidationContextDto {
+  @ApiPropertyOptional({ example: false })
+  @IsOptional()
+  @IsBoolean()
+  checkExactOutput?: boolean;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  checkLineCount?: boolean;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  checkConcepts?: boolean;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  disallowHardcodedOutput?: boolean;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  allowCreativity?: boolean;
+
+  @ApiPropertyOptional({ example: ['eval', 'exec'] })
+  @IsOptional()
+  @IsArray()
+  forbiddenPatterns?: string[];
+}
+
+/**
+ * Enhanced AI Analysis Request with Rich Context
+ */
+export class AiAnalysisRequestDto {
+  @ApiProperty({ example: 'M_STORY_001' })
+  @IsString()
+  missionId: string;
+
+  @ApiPropertyOptional({ example: 'z-ai/glm-4.5-air' })
+  @IsOptional()
+  @IsString()
+  aiModel?: string;
+
+  @ApiProperty()
+  @IsObject()
+  missionContext: MissionContextDto;
+
+  @ApiProperty()
+  @IsObject()
+  studentContext: StudentContextDto;
+
+  @ApiProperty()
+  @IsObject()
+  submissionContext: SubmissionContextDto;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsObject()
+  behaviorMetrics?: BehaviorMetricsDto;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsObject()
+  validationContext?: ValidationContextDto;
+
+  // Legacy fields for backward compatibility
+  @ApiPropertyOptional({ deprecated: true })
+  @IsOptional()
+  @IsString()
+  code?: string;
+
+  @ApiPropertyOptional({ deprecated: true })
+  @IsOptional()
+  @IsArray()
+  testCases?: any[];
+
+  @ApiPropertyOptional({ deprecated: true })
+  @IsOptional()
+  @IsArray()
+  concepts?: string[];
+
+  @ApiPropertyOptional({ deprecated: true })
   @IsOptional()
   @IsString()
   difficulty?: string;
-
-  @ApiPropertyOptional({
-    description: 'Validation rules for anti-cheating',
-    example: {
-      disallowHardcodedOutput: true,
-      requiredConcepts: ['loops', 'conditionals'],
-      forbiddenPatterns: ['eval', 'exec'],
-    },
-  })
-  @IsOptional()
-  validationRules?: {
-    disallowHardcodedOutput?: boolean;
-    requiredConcepts?: string[];
-    forbiddenPatterns?: string[];
-  };
-
-  @ApiPropertyOptional({
-    description: 'Whether to enable AI checkpoints for this step',
-    example: true,
-  })
-  @IsOptional()
-  aiCheckpoints?: boolean;
-
-  @ApiPropertyOptional({
-    description: 'Current step number in step-based missions',
-    example: 2,
-  })
-  @IsOptional()
-  @IsNumber()
-  currentStep?: number;
 }
 
 /**

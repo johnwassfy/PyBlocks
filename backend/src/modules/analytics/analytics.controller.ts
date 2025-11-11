@@ -73,4 +73,36 @@ export class AnalyticsController {
   ) {
     return this.analyticsService.getUserAnalytics(user.userId);
   }
+
+  @Get('ai-models')
+  @ApiOperation({
+    summary: 'Compare AI model performance metrics for thesis research',
+  })
+  @ApiResponse({ status: 200, description: 'AI model comparison retrieved' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getAiModelComparison() {
+    return this.analyticsService.getAiModelComparison();
+  }
+
+  @Get('submission-logs')
+  @ApiOperation({
+    summary: 'Get detailed submission logs for data export',
+  })
+  @ApiResponse({ status: 200, description: 'Submission logs retrieved' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getSubmissionLogs() {
+    return this.analyticsService.getSubmissionLogs();
+  }
+
+  @Get('student-journey/:anonymizedUserId')
+  @ApiOperation({ summary: 'Get individual student learning journey' })
+  @ApiParam({
+    name: 'anonymizedUserId',
+    description: 'Anonymized Student ID',
+  })
+  @ApiResponse({ status: 200, description: 'Student journey retrieved' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getStudentJourney(@Param('anonymizedUserId') anonymizedUserId: string) {
+    return this.analyticsService.getStudentJourney(anonymizedUserId);
+  }
 }

@@ -5,6 +5,10 @@ import {
   Submission,
   SubmissionDocument,
 } from '../submissions/schemas/submission.schema';
+import {
+  SubmissionLog,
+  SubmissionLogDocument,
+} from '../submissions/schemas/submission-log.schema';
 import { User, UserDocument } from '../users/schemas/user.schema';
 import { Mission, MissionDocument } from '../missions/schemas/mission.schema';
 import {
@@ -17,6 +21,8 @@ export class AnalyticsService {
   constructor(
     @InjectModel(Submission.name)
     private submissionModel: Model<SubmissionDocument>,
+    @InjectModel(SubmissionLog.name)
+    private submissionLogModel: Model<SubmissionLogDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Mission.name) private missionModel: Model<MissionDocument>,
     @InjectModel(LearningProfile.name)
@@ -163,5 +169,203 @@ export class AnalyticsService {
         .slice(0, 5)
         .map(([concept, stats]) => ({ concept, ...stats })),
     };
+  }
+
+  /**
+   * 📊 AI MODEL COMPARISON ANALYTICS
+   * Compare performance metrics across different AI models for thesis research
+   */
+  async getAiModelComparison(): Promise<any> {
+    const logs = await this.submissionLogModel.find().exec();
+
+    // Group by AI model
+    const modelGroups = logs.reduce(
+      (acc, log) => {
+        const model = log.aiModel || 'unknown';
+        if (!acc[model]) {
+          acc[model] = [];
+        }
+        acc[model].push(log);
+        return acc;
+      },
+      {} as Record<string, typeof logs>,
+    );
+
+    // Calculate metrics for each model
+    const modelStats = Object.entries(modelGroups).map(([model, modelLogs]) => {
+      const total = modelLogs.length;
+      const successful = modelLogs.filter((l) => l.success).length;
+
+      return {
+        aiModel: model,
+        aiProvider: modelLogs[0]?.aiProvider || 'unknown',
+        totalSubmissions: total,
+        successRate: total > 0 ? (successful / total) * 100 : 0,
+        averageScore:
+          total > 0
+            ? modelLogs.reduce((sum, l) => sum + l.score, 0) / total
+            : 0,
+        averageTimeSpent:
+          total > 0
+            ? modelLogs.reduce((sum, l) => sum + l.timeSpent, 0) / total
+            : 0,
+        averageAttempts:
+          total > 0
+            ? modelLogs.reduce((sum, l) => sum + l.attempts, 0) / total
+            : 0,
+        averageHintsUsed:
+          total > 0
+            ? modelLogs.reduce((sum, l) => sum + l.aiHintsProvided, 0) / total
+            : 0,
+        averageProactiveHelp:
+          total > 0
+            ? modelLogs.reduce((sum, l) => sum + l.aiProactiveHelp, 0) / total
+            : 0,
+        averageChatbotInteractions:
+          total > 0
+            ? modelLogs.reduce((sum, l) => sum + l.chatbotInteractions, 0) /
+              total
+            : 0,
+        averageResponseTime:
+          total > 0
+            ? modelLogs.reduce((sum, l) => sum + l.aiResponseTime, 0) / total
+            : 0,
+        averageFeedbackLength:
+          total > 0
+            ? modelLogs.reduce((sum, l) => sum + l.feedbackLength, 0) / total
+            : 0,
+        uniqueStudents: new Set(
+          modelLogs.map((l) => l.anonymizedUserId),
+        ).size,
+      };
+    });
+
+    return {
+      totalModels: modelStats.length,
+      modelComparison: modelStats.sort((a, b) => b.successRate - a.successRate),
+      bestPerformingModel: modelStats.reduce((best, current) =>
+        current.successRate > best.successRate ? current : best,
+      ),
+      fastestModel: modelStats.reduce((fastest, current) =>
+        current.averageResponseTime < fastest.averageResponseTime
+          ? current
+          : fastest,
+      ),
+    };
+  }
+
+  /**
+   * 📊 DETAILED SUBMISSION LOGS FOR DATA EXPORT
+   * Get all submission logs with optional filtering for Python/CSV export
+   */
+  async getSubmissionLogs(filters?: {
+    aiModel?: string;
+    startDate?: Date;
+    endDate?: Date;
+    anonymizedUserId?: string;
+    missionId?: string;
+    success?: boolean;
+  }): Promise<SubmissionLogDocument[]> {
+    const query: any = {};
+
+    if (filters) {
+      if (filters.aiModel) query.aiModel = filters.aiModel;
+      if (filters.anonymizedUserId)
+        query.anonymizedUserId = filters.anonymizedUserId;
+      if (filters.missionId) query.missionId = filters.missionId;
+      if (typeof filters.success === 'boolean') query.success = filters.success;
+      if (filters.startDate || filters.endDate) {
+        query.timestamp = {};
+        if (filters.startDate) query.timestamp.$gte = filters.startDate;
+        if (filters.endDate) query.timestamp.$lte = filters.endDate;
+      }
+    }
+
+    return this.submissionLogModel.find(query).sort({ timestamp: -1 }).exec();
+  }
+
+  /**
+   * 📊 STUDENT LEARNING JOURNEY
+   * Track individual student progress across different AI models
+   */
+  async getStudentJourney(anonymizedUserId: string): Promise<any> {
+    const logs = await this.submissionLogModel
+      .find({ anonymizedUserId })
+      .sort({ timestamp: 1 })
+      .exec();
+
+    const totalSubmissions = logs.length;
+    const successfulSubmissions = logs.filter((l) => l.success).length;
+    const totalTimeSpent = logs.reduce((sum, l) => sum + l.timeSpent, 0);
+
+    // Group by mission to track progress
+    const missionProgress = logs.reduce(
+      (acc, log) => {
+        const missionId = log.missionId.toString();
+        if (!acc[missionId]) {
+          acc[missionId] = {
+            missionTitle: log.missionTitle,
+            attempts: 0,
+            timeSpent: 0,
+            success: false,
+          };
+        }
+        acc[missionId].attempts += 1;
+        acc[missionId].timeSpent += log.timeSpent;
+        if (log.success) acc[missionId].success = true;
+        return acc;
+      },
+      {} as Record<string, any>,
+    );
+
+    // AI model usage breakdown
+    const modelUsage = logs.reduce(
+      (acc, log) => {
+        const model = log.aiModel;
+        acc[model] = (acc[model] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    return {
+      anonymizedUserId,
+      totalSubmissions,
+      successfulSubmissions,
+      successRate:
+        totalSubmissions > 0
+          ? (successfulSubmissions / totalSubmissions) * 100
+          : 0,
+      totalTimeSpent,
+      averageTimePerSubmission:
+        totalSubmissions > 0 ? totalTimeSpent / totalSubmissions : 0,
+      missionProgress: Object.entries(missionProgress).map(([id, data]) => ({
+        missionId: id,
+        ...data,
+      })),
+      aiModelUsage: modelUsage,
+      weakConcepts: this.getMostFrequent(
+        logs.flatMap((l) => l.weakConcepts),
+        5,
+      ),
+      strongConcepts: this.getMostFrequent(
+        logs.flatMap((l) => l.strongConcepts),
+        5,
+      ),
+    };
+  }
+
+  private getMostFrequent(
+    items: string[],
+    limit: number,
+  ): { concept: string; count: number }[] {
+    const frequency: Record<string, number> = {};
+    items.forEach((item) => {
+      frequency[item] = (frequency[item] || 0) + 1;
+    });
+    return Object.entries(frequency)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([concept, count]) => ({ concept, count }));
   }
 }

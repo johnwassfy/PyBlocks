@@ -3,6 +3,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Submission, SubmissionDocument } from './schemas/submission.schema';
+import {
+  SubmissionLog,
+  SubmissionLogDocument,
+} from './schemas/submission-log.schema';
 import { CreateSubmissionDto } from './dto/create-submission.dto';
 import { UsersService } from '../users/users.service';
 import { MissionsService } from '../missions/missions.service';
@@ -19,7 +23,9 @@ export class SubmissionsService {
 
   private getAnalysisResult(
     payload: unknown,
-  ): (AiAnalysisResponseDto & { attempts?: number; timeSpent?: number }) | null {
+  ):
+    | (AiAnalysisResponseDto & { attempts?: number; timeSpent?: number })
+    | null {
     if (!payload || typeof payload !== 'object') {
       return null;
     }
@@ -32,6 +38,8 @@ export class SubmissionsService {
   constructor(
     @InjectModel(Submission.name)
     private submissionModel: Model<SubmissionDocument>,
+    @InjectModel(SubmissionLog.name)
+    private submissionLogModel: Model<SubmissionLogDocument>,
     private usersService: UsersService,
     private missionsService: MissionsService,
     private aiService: AiService,
@@ -56,9 +64,40 @@ export class SubmissionsService {
       );
     }
 
-    // 2. Call AI service for analysis (fast, synchronous part)
+    // 🔒 2. Validate code against mission rules
+    const codeValidation = await this.missionsService.validateCode(
+      createSubmissionDto.missionId,
+      createSubmissionDto.code,
+    );
+
+    if (!codeValidation.isValid) {
+      this.logger.warn(
+        `Code validation failed for user ${userId}: ${codeValidation.violations.join(', ')}`,
+      );
+      // Return early with validation errors
+      return {
+        submission: null,
+        aiResult: {
+          success: false,
+          score: 0,
+          feedback: codeValidation.violations.join('\n\n'),
+          weakConcepts: [],
+          strongConcepts: [],
+          hints: [
+            'Make sure your code follows the mission requirements!',
+            ...codeValidation.violations,
+          ],
+          suggestions: [],
+          testResults: [],
+          detectedConcepts: [],
+        },
+        xpGained: 0,
+        validationErrors: codeValidation.violations,
+      };
+    }
+
+    // 3. Call AI service for analysis (fast, synchronous part)
     this.logger.log(`Sending code to AI service for analysis`);
-    
     // Prepare test cases for validation
     const testCases: string[] = [];
     if (mission.testCases && Array.isArray(mission.testCases)) {
@@ -67,7 +106,19 @@ export class SubmissionsService {
         testCases.push(`${tc.input} => ${tc.expectedOutput}`);
       }
     }
-    
+
+    // Count non-empty lines in expected output for creative validation
+    const expectedLineCount = mission.expectedOutput
+      ? mission.expectedOutput.split('\n').filter(l => l.trim() !== '').length
+      : 0;
+
+    // Determine validation mode based on mission difficulty and tags
+    // Creative mode for storytelling/artistic missions, strict for technical ones
+    const isCreativeMission = mission.tags?.includes('storytelling') || 
+                             mission.tags?.includes('creative') || 
+                             mission.tags?.includes('art');
+    const validationMode = isCreativeMission ? 'creative' : 'strict';
+
     const aiResult = this.getAnalysisResult(
       await this.aiService.analyzeSubmission({
         mission_id: createSubmissionDto.missionId,
@@ -80,6 +131,22 @@ export class SubmissionsService {
         difficulty: this.getDifficultyLevel(mission.difficulty),
         attempts: createSubmissionDto.attempts || 1,
         time_spent: createSubmissionDto.timeSpent || 0,
+        
+        // Rich mission context
+        missionTitle: mission.title,
+        missionDescription: mission.description,
+        objectives: mission.objectives || [],
+        validationMode,
+        expectedLineCount,
+        isStoryBased: isCreativeMission,
+        
+        // Validation context based on mission rules
+        checkExactOutput: validationMode === 'strict',
+        checkLineCount: validationMode === 'creative',
+        checkConcepts: true,
+        allowCreativity: validationMode === 'creative',
+        disallowHardcodedOutput: mission.validationRules?.disallowHardcodedOutput !== false,
+        forbiddenPatterns: mission.validationRules?.forbiddenPatterns || [],
       }),
     );
 
@@ -87,7 +154,7 @@ export class SubmissionsService {
       this.logger.warn(this.EMPTY_ANALYSIS_MESSAGE);
     }
 
-    // 3. Validate AI result structure
+    // 4. Validate AI result structure
     const isSuccessful = aiResult?.success === true;
     if (typeof aiResult?.success !== 'boolean') {
       this.logger.warn(
@@ -109,7 +176,10 @@ export class SubmissionsService {
       attempts: createSubmissionDto.attempts || 1,
       timeSpent: createSubmissionDto.timeSpent || 0,
       isSuccessful,
-  detectedConcepts: (aiResult as any)?.detectedConcepts || [],
+      detectedConcepts:
+        (aiResult && 'detectedConcepts' in aiResult
+          ? (aiResult.detectedConcepts as string[])
+          : undefined) || [],
       aiAnalysis: {
         weaknesses: aiResult?.weakConcepts || [],
         strengths: aiResult?.strongConcepts || [],
@@ -143,6 +213,31 @@ export class SubmissionsService {
 
     this.logger.log(`Emitting submission.completed event`);
     this.eventEmitter.emit('submission.completed', event);
+
+    // 📊 Update mission analytics
+    await this.missionsService.updateMissionAnalytics(
+      createSubmissionDto.missionId,
+      {
+        isSuccessful,
+        score: baseScore,
+        timeSpent: createSubmissionDto.timeSpent || 0,
+        stepsCompleted: mission.steps?.length || 0,
+      },
+    );
+
+    // 📊 LOG COMPREHENSIVE ANALYTICS FOR THESIS RESEARCH
+    await this.logSubmissionAnalytics({
+      userId,
+      missionId: createSubmissionDto.missionId,
+      mission,
+      code: createSubmissionDto.code,
+      aiResult,
+      isSuccessful,
+      baseScore,
+      attempts: createSubmissionDto.attempts || 1,
+      timeSpent: createSubmissionDto.timeSpent || 0,
+      aiMetadata: createSubmissionDto.aiMetadata || {},
+    });
 
     // 6. Process adaptive analysis synchronously for immediate recommendations
     const adaptiveResults =
@@ -202,10 +297,10 @@ export class SubmissionsService {
 
   private getDifficultyLevel(difficulty: string): number {
     const difficultyMap: Record<string, number> = {
-      'easy': 3,
-      'medium': 5,
-      'hard': 7,
-      'expert': 9,
+      easy: 3,
+      medium: 5,
+      hard: 7,
+      expert: 9,
     };
     return difficultyMap[difficulty.toLowerCase()] || 5;
   }
@@ -238,4 +333,135 @@ export class SubmissionsService {
           : 0,
     };
   }
+
+  /**
+   * 📊 LOG COMPREHENSIVE ANALYTICS FOR THESIS RESEARCH
+   * Tracks all AI interactions and student performance metrics
+   * Data is anonymized for research publication
+   */
+  private async logSubmissionAnalytics(data: {
+    userId: string;
+    missionId: string;
+    mission: any;
+    code: string;
+    aiResult: any;
+    isSuccessful: boolean;
+    baseScore: number;
+    attempts: number;
+    timeSpent: number;
+    aiMetadata: any;
+  }): Promise<void> {
+    try {
+      // Generate anonymized user ID (e.g., STUDENT_001)
+      const anonymizedUserId = await this.generateAnonymizedUserId(
+        data.userId,
+      );
+
+      // Extract AI model information
+      const aiModel = data.aiMetadata?.model || 'unknown';
+      const aiProvider = data.aiMetadata?.provider || 'unknown';
+
+      // Calculate code metrics
+      const codeLines = data.code.split('\n').length;
+      const codeLength = data.code.length;
+
+      // Create comprehensive analytics log
+      const analyticsLog = new this.submissionLogModel({
+        // Student Identification (Anonymized)
+        userId: data.userId,
+        anonymizedUserId,
+
+        // Mission Tracking
+        missionId: data.missionId,
+        missionTitle: data.mission.title || '',
+        missionDifficulty: data.mission.difficulty || 'unknown',
+        missionConcepts: data.mission.concepts || [],
+
+        // AI Model Tracking
+        aiModel,
+        aiProvider,
+        modelVersion: data.aiMetadata?.version || '',
+
+        // Submission Performance
+        success: data.isSuccessful,
+        score: data.baseScore,
+        attempts: data.attempts,
+        timeSpent: data.timeSpent,
+        codeLength,
+        codeLines,
+
+        // AI Interaction Metrics
+        aiHintsRequested: data.aiMetadata?.hintsRequested || 0,
+        aiHintsProvided: data.aiResult?.hints?.length || 0,
+        aiProactiveHelp: data.aiMetadata?.proactiveHelp || 0,
+        chatbotInteractions: data.aiMetadata?.chatbotInteractions || 0,
+        aiResponseTime: data.aiMetadata?.responseTime || 0,
+
+        // Learning Analytics
+        detectedConcepts: data.aiResult?.detectedConcepts || [],
+        weakConcepts: data.aiResult?.weakConcepts || [],
+        strongConcepts: data.aiResult?.strongConcepts || [],
+        errorsEncountered: data.aiMetadata?.errors || [],
+
+        // AI Feedback Quality
+        feedbackProvided: data.aiResult?.feedback || '',
+        feedbackLength: (data.aiResult?.feedback || '').length,
+        hintsProvided: data.aiResult?.hints || [],
+        suggestionsProvided: data.aiResult?.suggestions || [],
+
+        // Student Behavior Patterns
+        idleTimeBeforeSubmission: data.aiMetadata?.idleTime || 0,
+        usedStarterCode: data.aiMetadata?.usedStarterCode || false,
+        receivedProactiveIntervention:
+          data.aiMetadata?.proactiveIntervention || false,
+        interventionReason: data.aiMetadata?.interventionReason || '',
+
+        // Test Case Results
+        totalTestCases: data.aiResult?.testResults?.length || 0,
+        passedTestCases:
+          data.aiResult?.testResults?.filter((t: any) => t.passed)?.length || 0,
+        failedTestCases:
+          data.aiResult?.testResults?.filter((t: any) => !t.passed)?.length ||
+          0,
+        testCaseDetails: data.aiResult?.testResults || {},
+
+        // Learning State Tracking
+        learningState: data.aiMetadata?.learningState || '',
+        confidenceLevel: data.aiMetadata?.confidenceLevel || 0,
+        frustrationLevel: data.aiMetadata?.frustrationLevel || 0,
+
+        // Session Information
+        sessionId: data.aiMetadata?.sessionId || '',
+        timestamp: new Date(),
+        sessionDuration: data.aiMetadata?.sessionDuration || 0,
+
+        // Research Metadata
+        experimentGroup: data.aiMetadata?.experimentGroup || '',
+        additionalMetrics: data.aiMetadata?.additionalMetrics || {},
+      });
+
+      await analyticsLog.save();
+      this.logger.log(
+        `📊 Analytics logged for ${anonymizedUserId} using model ${aiModel}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to log analytics: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+      // Don't throw - analytics logging should not break submission flow
+    }
+  }
+
+  /**
+   * Generate anonymized user ID for thesis publication
+   * Format: STUDENT_XXX (e.g., STUDENT_001)
+   */
+  private async generateAnonymizedUserId(userId: string): Promise<string> {
+    // Use hash-based anonymization to ensure consistency
+    const crypto = require('crypto');
+    const hash = crypto.createHash('md5').update(userId).digest('hex');
+    const numericId = parseInt(hash.substring(0, 8), 16) % 10000;
+    return `STUDENT_${String(numericId).padStart(4, '0')}`;
+  }
 }
+

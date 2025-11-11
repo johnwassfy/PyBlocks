@@ -1,0 +1,1389 @@
+[
+  {
+    "id": "analyze_syntax_01",
+    "name": "Missing Closing Parenthesis",
+    "evaluation_category": "syntax",
+    "difficulty_level": 1,
+    "expected_behavior": "Detect missing closing parenthesis and provide clear fix guidance",
+    "missionId": "hello_world",
+    "mission_context": {
+      "title": "Hello World",
+      "description": "Print Hello, World!",
+      "objectives": [
+        "Use print statement"
+      ],
+      "concepts": [
+        "print",
+        "strings"
+      ],
+      "difficulty": 1,
+      "validation_mode": "strict"
+    },
+    "submission_context": {
+      "code": "print(\"Hello, World!\"",
+      "expected_output": "Hello, World!",
+      "line_count": 1
+    },
+    "student_context": {
+      "user_id": "benchmark_user",
+      "level": 1,
+      "xp": 0,
+      "weak_skills": [
+        "syntax"
+      ],
+      "strong_skills": [],
+      "attempt_number": 1
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false
+    }
+  },
+  {
+    "id": "analyze_syntax_02",
+    "name": "Missing Colon in For Loop",
+    "evaluation_category": "syntax",
+    "difficulty_level": 2,
+    "expected_behavior": "Identify missing colon after for statement",
+    "missionId": "loops_intro",
+    "mission_context": {
+      "title": "Loop Practice",
+      "description": "Print numbers 1 to 5",
+      "objectives": [
+        "Use for loop"
+      ],
+      "concepts": [
+        "for",
+        "range",
+        "print"
+      ],
+      "difficulty": 2,
+      "validation_mode": "strict"
+    },
+    "submission_context": {
+      "code": "for i in range(1, 6)\n    print(i)",
+      "expected_output": "1\n2\n3\n4\n5",
+      "line_count": 2
+    },
+    "student_context": {
+      "user_id": "benchmark_user",
+      "level": 2,
+      "xp": 100,
+      "weak_skills": [
+        "loops",
+        "syntax"
+      ],
+      "strong_skills": [
+        "print"
+      ],
+      "attempt_number": 2
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false
+    }
+  },
+  {
+    "id": "analyze_syntax_03",
+    "name": "Indentation Error",
+    "evaluation_category": "syntax",
+    "difficulty_level": 2,
+    "expected_behavior": "Detect indentation error and explain Python indentation rules",
+    "missionId": "if_else_intro",
+    "mission_context": {
+      "title": "Conditionals",
+      "description": "Check if number is positive",
+      "objectives": [
+        "Use if statement"
+      ],
+      "concepts": [
+        "if",
+        "print"
+      ],
+      "difficulty": 2,
+      "validation_mode": "strict"
+    },
+    "submission_context": {
+      "code": "x = 5\nif x > 0:\nprint(\"Positive\")",
+      "expected_output": "Positive",
+      "line_count": 3
+    },
+    "student_context": {
+      "user_id": "benchmark_user",
+      "level": 2,
+      "xp": 150,
+      "weak_skills": [
+        "conditionals",
+        "syntax"
+      ],
+      "strong_skills": [
+        "print",
+        "variables"
+      ],
+      "attempt_number": 1
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false
+    }
+  },
+  {
+    "id": "analyze_logic_01",
+    "name": "Factorial Calculator - Correct",
+    "evaluation_category": "logic",
+    "difficulty_level": 3,
+    "expected_behavior": "Verify correct factorial logic and provide encouraging feedback",
+    "missionId": "factorial_mission",
+    "mission_context": {
+      "title": "Factorial Calculator",
+      "description": "Calculate factorial of 5",
+      "objectives": [
+        "Use loop",
+        "Accumulate result"
+      ],
+      "concepts": [
+        "for",
+        "variables",
+        "multiplication"
+      ],
+      "difficulty": 3,
+      "validation_mode": "strict"
+    },
+    "submission_context": {
+      "code": "n = 5\nresult = 1\nfor i in range(1, n+1):\n    result *= i\nprint(result)",
+      "expected_output": "120",
+      "line_count": 5
+    },
+    "student_context": {
+      "user_id": "benchmark_user",
+      "level": 3,
+      "xp": 300,
+      "weak_skills": [],
+      "strong_skills": [
+        "loops",
+        "variables"
+      ],
+      "attempt_number": 1
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false
+    }
+  },
+  {
+    "id": "analyze_logic_02",
+    "name": "Average Calculator - Off by One",
+    "evaluation_category": "logic",
+    "difficulty_level": 3,
+    "expected_behavior": "Detect logic error in division (dividing by wrong count)",
+    "missionId": "average_calc",
+    "mission_context": {
+      "title": "Average Calculator",
+      "description": "Calculate average of 3 numbers",
+      "objectives": [
+        "Sum numbers",
+        "Divide by count"
+      ],
+      "concepts": [
+        "variables",
+        "arithmetic",
+        "print"
+      ],
+      "difficulty": 3,
+      "validation_mode": "strict"
+    },
+    "submission_context": {
+      "code": "a = 10\nb = 20\nc = 30\navg = (a + b + c) / 2\nprint(avg)",
+      "expected_output": "20",
+      "line_count": 5
+    },
+    "student_context": {
+      "user_id": "benchmark_user",
+      "level": 3,
+      "xp": 280,
+      "weak_skills": [
+        "arithmetic"
+      ],
+      "strong_skills": [
+        "variables"
+      ],
+      "attempt_number": 3
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false
+    }
+  },
+  {
+    "id": "analyze_logic_03",
+    "name": "Even/Odd Checker - Correct",
+    "evaluation_category": "logic",
+    "difficulty_level": 2,
+    "expected_behavior": "Confirm correct use of modulo operator for even/odd detection",
+    "missionId": "even_odd",
+    "mission_context": {
+      "title": "Even or Odd",
+      "description": "Check if number is even or odd",
+      "objectives": [
+        "Use modulo",
+        "Use if/else"
+      ],
+      "concepts": [
+        "conditionals",
+        "modulo",
+        "print"
+      ],
+      "difficulty": 2,
+      "validation_mode": "strict"
+    },
+    "submission_context": {
+      "code": "num = 7\nif num % 2 == 0:\n    print(\"Even\")\nelse:\n    print(\"Odd\")",
+      "expected_output": "Odd",
+      "line_count": 5
+    },
+    "student_context": {
+      "user_id": "benchmark_user",
+      "level": 2,
+      "xp": 200,
+      "weak_skills": [],
+      "strong_skills": [
+        "conditionals",
+        "print"
+      ],
+      "attempt_number": 1
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false
+    }
+  },
+  {
+    "id": "analyze_concept_01",
+    "name": "Variable Reuse Detection",
+    "evaluation_category": "concepts",
+    "difficulty_level": 2,
+    "expected_behavior": "Detect that student properly reuses variables",
+    "missionId": "variable_practice",
+    "mission_context": {
+      "title": "Variable Practice",
+      "description": "Store and update a counter",
+      "objectives": [
+        "Declare variable",
+        "Update variable"
+      ],
+      "concepts": [
+        "variables",
+        "assignment",
+        "print"
+      ],
+      "difficulty": 2,
+      "validation_mode": "strict"
+    },
+    "submission_context": {
+      "code": "counter = 0\ncounter = counter + 1\ncounter = counter + 1\nprint(counter)",
+      "expected_output": "2",
+      "line_count": 4
+    },
+    "student_context": {
+      "user_id": "benchmark_user",
+      "level": 2,
+      "xp": 120,
+      "weak_skills": [
+        "variables"
+      ],
+      "strong_skills": [
+        "print"
+      ],
+      "attempt_number": 1
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false
+    }
+  },
+  {
+    "id": "analyze_concept_02",
+    "name": "List Indexing",
+    "evaluation_category": "concepts",
+    "difficulty_level": 3,
+    "expected_behavior": "Verify correct use of list indexing",
+    "missionId": "lists_intro",
+    "mission_context": {
+      "title": "List Basics",
+      "description": "Access list elements by index",
+      "objectives": [
+        "Create list",
+        "Access elements",
+        "Print values"
+      ],
+      "concepts": [
+        "lists",
+        "indexing",
+        "print"
+      ],
+      "difficulty": 3,
+      "validation_mode": "strict"
+    },
+    "submission_context": {
+      "code": "fruits = [\"apple\", \"banana\", \"cherry\"]\nprint(fruits[0])\nprint(fruits[2])",
+      "expected_output": "apple\ncherry",
+      "line_count": 3
+    },
+    "student_context": {
+      "user_id": "benchmark_user",
+      "level": 3,
+      "xp": 250,
+      "weak_skills": [
+        "lists"
+      ],
+      "strong_skills": [
+        "variables",
+        "print"
+      ],
+      "attempt_number": 1
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false
+    }
+  },
+  {
+    "id": "analyze_creative_01",
+    "name": "Three-Line Story",
+    "evaluation_category": "creative",
+    "difficulty_level": 4,
+    "expected_behavior": "Evaluate creativity and structure, not exact wording",
+    "missionId": "story_mission",
+    "mission_context": {
+      "title": "Creative Story",
+      "description": "Write a three-line story about a robot",
+      "objectives": [
+        "Creativity",
+        "Multiple print statements",
+        "Story structure"
+      ],
+      "concepts": [
+        "print",
+        "strings",
+        "creativity"
+      ],
+      "difficulty": 4,
+      "validation_mode": "creative"
+    },
+    "submission_context": {
+      "code": "print(\"Once upon a time\")\nprint(\"there was a robot\")\nprint(\"who loved to code\")",
+      "expected_output": "Once upon a time\nthere was a robot\nwho loved to code",
+      "line_count": 3
+    },
+    "student_context": {
+      "user_id": "benchmark_user",
+      "level": 3,
+      "xp": 400,
+      "weak_skills": [],
+      "strong_skills": [
+        "print",
+        "strings"
+      ],
+      "attempt_number": 1
+    },
+    "validation_context": {
+      "check_exact_output": false,
+      "allow_creativity": true
+    }
+  },
+  {
+    "id": "analyze_creative_02",
+    "name": "Poem Generator",
+    "evaluation_category": "creative",
+    "difficulty_level": 5,
+    "expected_behavior": "Assess poetic structure and use of print statements",
+    "missionId": "poem_mission",
+    "mission_context": {
+      "title": "Poetry Time",
+      "description": "Write a 4-line poem about coding",
+      "objectives": [
+        "Creativity",
+        "Multiple lines",
+        "Rhythm"
+      ],
+      "concepts": [
+        "print",
+        "strings",
+        "creativity"
+      ],
+      "difficulty": 5,
+      "validation_mode": "creative"
+    },
+    "submission_context": {
+      "code": "print(\"Code all day\")\nprint(\"Debug all night\")\nprint(\"Fix the bugs\")\nprint(\"Till morning light\")",
+      "expected_output": "Code all day\nDebug all night\nFix the bugs\nTill morning light",
+      "line_count": 4
+    },
+    "student_context": {
+      "user_id": "benchmark_user",
+      "level": 4,
+      "xp": 600,
+      "weak_skills": [],
+      "strong_skills": [
+        "print",
+        "strings",
+        "creativity"
+      ],
+      "attempt_number": 1
+    },
+    "validation_context": {
+      "check_exact_output": false,
+      "allow_creativity": true
+    }
+  },
+  {
+    "id": "analyze_cheating_01",
+    "name": "Hardcoded Output Detection",
+    "evaluation_category": "cheating",
+    "difficulty_level": 3,
+    "expected_behavior": "Detect that student hardcoded expected output without solving problem",
+    "missionId": "sum_mission",
+    "mission_context": {
+      "title": "Sum Two Numbers",
+      "description": "Calculate sum of two variables",
+      "objectives": [
+        "Add numbers",
+        "Use variables"
+      ],
+      "concepts": [
+        "variables",
+        "arithmetic",
+        "print"
+      ],
+      "difficulty": 2,
+      "validation_mode": "strict"
+    },
+    "submission_context": {
+      "code": "a = 5\nb = 3\nprint(8)",
+      "expected_output": "8",
+      "line_count": 3
+    },
+    "student_context": {
+      "user_id": "benchmark_user",
+      "level": 2,
+      "xp": 150,
+      "weak_skills": [
+        "arithmetic"
+      ],
+      "strong_skills": [
+        "print"
+      ],
+      "attempt_number": 5
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false
+    }
+  },
+  {
+    "id": "analyze_efficiency_01",
+    "name": "Large Loop - Performance",
+    "evaluation_category": "efficiency",
+    "difficulty_level": 4,
+    "expected_behavior": "Handle large loop without timeout, verify correctness",
+    "missionId": "big_loop",
+    "mission_context": {
+      "title": "Big Loop",
+      "description": "Sum numbers from 1 to 1000",
+      "objectives": [
+        "Use loop",
+        "Handle large ranges"
+      ],
+      "concepts": [
+        "for",
+        "variables",
+        "arithmetic"
+      ],
+      "difficulty": 4,
+      "validation_mode": "strict"
+    },
+    "submission_context": {
+      "code": "total = 0\nfor i in range(1, 1001):\n    total += i\nprint(total)",
+      "expected_output": "500500",
+      "line_count": 4
+    },
+    "student_context": {
+      "user_id": "benchmark_user",
+      "level": 4,
+      "xp": 500,
+      "weak_skills": [],
+      "strong_skills": [
+        "loops",
+        "variables"
+      ],
+      "attempt_number": 1
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false
+    }
+  },
+  {
+    "id": "analyze_efficiency_02",
+    "name": "Nested Loops - Complexity",
+    "evaluation_category": "efficiency",
+    "difficulty_level": 5,
+    "expected_behavior": "Handle nested loops and verify pattern output",
+    "missionId": "nested_loops",
+    "mission_context": {
+      "title": "Nested Loops",
+      "description": "Print a 3x3 grid of stars",
+      "objectives": [
+        "Use nested loops",
+        "Print patterns"
+      ],
+      "concepts": [
+        "for",
+        "nested_loops",
+        "print"
+      ],
+      "difficulty": 5,
+      "validation_mode": "strict"
+    },
+    "submission_context": {
+      "code": "for i in range(3):\n    for j in range(3):\n        print(\"*\", end=\" \")\n    print()",
+      "expected_output": "* * * \n* * * \n* * * \n",
+      "line_count": 4
+    },
+    "student_context": {
+      "user_id": "benchmark_user",
+      "level": 5,
+      "xp": 800,
+      "weak_skills": [],
+      "strong_skills": [
+        "loops",
+        "print"
+      ],
+      "attempt_number": 1
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false
+    }
+  },
+  {
+    "id": "analyze_adaptive_01",
+    "name": "Multiple Attempts - Encouraging Tone",
+    "evaluation_category": "adaptive",
+    "difficulty_level": 2,
+    "expected_behavior": "Provide encouraging, supportive feedback for student on 5th attempt",
+    "missionId": "hello_world",
+    "mission_context": {
+      "title": "Hello World",
+      "description": "Print Hello, World!",
+      "objectives": [
+        "Use print statement"
+      ],
+      "concepts": [
+        "print",
+        "strings"
+      ],
+      "difficulty": 1,
+      "validation_mode": "strict"
+    },
+    "submission_context": {
+      "code": "print(\"Hello World\")",
+      "expected_output": "Hello, World!",
+      "line_count": 1
+    },
+    "student_context": {
+      "user_id": "benchmark_user",
+      "level": 1,
+      "xp": 20,
+      "weak_skills": [
+        "syntax"
+      ],
+      "strong_skills": [],
+      "attempt_number": 5
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false
+    }
+  },
+  {
+    "id": "analyze_adaptive_02",
+    "name": "High Performer - Advanced Feedback",
+    "evaluation_category": "adaptive",
+    "difficulty_level": 4,
+    "expected_behavior": "Provide advanced suggestions or challenges for high-XP student",
+    "missionId": "loops_advanced",
+    "mission_context": {
+      "title": "Advanced Loops",
+      "description": "Sum even numbers from 1 to 100",
+      "objectives": [
+        "Use loop",
+        "Use conditionals",
+        "Accumulate"
+      ],
+      "concepts": [
+        "for",
+        "if",
+        "modulo",
+        "variables"
+      ],
+      "difficulty": 4,
+      "validation_mode": "strict"
+    },
+    "submission_context": {
+      "code": "total = 0\nfor i in range(1, 101):\n    if i % 2 == 0:\n        total += i\nprint(total)",
+      "expected_output": "2550",
+      "line_count": 5
+    },
+    "student_context": {
+      "user_id": "benchmark_user",
+      "level": 6,
+      "xp": 1200,
+      "weak_skills": [],
+      "strong_skills": [
+        "loops",
+        "conditionals",
+        "variables"
+      ],
+      "attempt_number": 1
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false
+    }
+  },
+  {
+    "id": "analyze_trap_creative_strict_01",
+    "name": "Creative Mode Rejected - Story Variant",
+    "evaluation_category": "validation_conflict",
+    "difficulty_level": 4,
+    "trap_category": "creative_vs_strict",
+    "expected_behavior": "Model should PASS creative story variant when allow_creativity=true, even if output differs from expected",
+    "missionId": "story_mission",
+    "mission_context": {
+      "title": "Write Your Story",
+      "description": "Create a three-line story",
+      "objectives": [
+        "Creative expression",
+        "Multiple print statements"
+      ],
+      "concepts": [
+        "print",
+        "strings",
+        "creativity"
+      ],
+      "difficulty": 4,
+      "validation_mode": "creative",
+      "expected_output": "Once upon a time\nthere was a dragon\nwho loved to code"
+    },
+    "submission_context": {
+      "code": "print(\"In a magical land\")\nprint(\"lived a curious robot\")\nprint(\"who dreamed of adventures\")",
+      "expected_output": "In a magical land\nlived a curious robot\nwho dreamed of adventures",
+      "line_count": 3
+    },
+    "student_context": {
+      "user_id": "trap_test_user",
+      "level": 4,
+      "xp": 500,
+      "weak_skills": [],
+      "strong_skills": [
+        "print",
+        "creativity"
+      ],
+      "attempt_number": 1
+    },
+    "validation_context": {
+      "check_exact_output": false,
+      "allow_creativity": true
+    }
+  },
+  {
+    "id": "analyze_trap_creative_strict_02",
+    "name": "Strict Mode Requires Exact Match",
+    "evaluation_category": "validation_conflict",
+    "difficulty_level": 2,
+    "trap_category": "creative_vs_strict",
+    "expected_behavior": "Model should FAIL when output doesn't match exactly in strict mode",
+    "missionId": "exact_greeting",
+    "mission_context": {
+      "title": "Exact Greeting",
+      "description": "Print exactly: Hello, Python!",
+      "objectives": [
+        "Follow exact instructions"
+      ],
+      "concepts": [
+        "print",
+        "strings"
+      ],
+      "difficulty": 2,
+      "validation_mode": "strict",
+      "expected_output": "Hello, Python!"
+    },
+    "submission_context": {
+      "code": "print(\"Hello Python!\")",
+      "expected_output": "Hello Python!",
+      "line_count": 1
+    },
+    "student_context": {
+      "user_id": "trap_test_user",
+      "level": 2,
+      "xp": 150,
+      "weak_skills": [
+        "attention_to_detail"
+      ],
+      "strong_skills": [
+        "print"
+      ],
+      "attempt_number": 2
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false
+    }
+  },
+  {
+    "id": "analyze_trap_multiple_valid_01",
+    "name": "Multiple Valid Loop Implementations",
+    "evaluation_category": "multiple_solutions",
+    "difficulty_level": 3,
+    "trap_category": "multiple_valid_outputs",
+    "expected_behavior": "Model should accept both while and for loop solutions producing same output",
+    "missionId": "count_to_five",
+    "mission_context": {
+      "title": "Count to Five",
+      "description": "Print numbers 1 to 5",
+      "objectives": [
+        "Use iteration"
+      ],
+      "concepts": [
+        "loops",
+        "print"
+      ],
+      "difficulty": 3,
+      "validation_mode": "flexible",
+      "expected_output": "1\n2\n3\n4\n5"
+    },
+    "submission_context": {
+      "code": "i = 1\nwhile i <= 5:\n    print(i)\n    i += 1",
+      "expected_output": "1\n2\n3\n4\n5",
+      "line_count": 4
+    },
+    "student_context": {
+      "user_id": "trap_test_user",
+      "level": 3,
+      "xp": 350,
+      "weak_skills": [],
+      "strong_skills": [
+        "while",
+        "print"
+      ],
+      "attempt_number": 1
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false,
+      "accept_alternative_approaches": true
+    }
+  },
+  {
+    "id": "analyze_trap_hidden_constraint_01",
+    "name": "Missing Required Concept - List Usage",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 4,
+    "trap_category": "hidden_constraints",
+    "expected_behavior": "Model should FAIL because student didn't use required 'list' concept despite correct output",
+    "missionId": "list_practice",
+    "mission_context": {
+      "title": "Work with Lists",
+      "description": "Print all fruits",
+      "objectives": [
+        "Use list data structure"
+      ],
+      "concepts": [
+        "list",
+        "for",
+        "print"
+      ],
+      "required_concepts": [
+        "list"
+      ],
+      "difficulty": 4,
+      "validation_mode": "strict",
+      "expected_output": "apple\nbanana\norange"
+    },
+    "submission_context": {
+      "code": "print(\"apple\")\nprint(\"banana\")\nprint(\"orange\")",
+      "expected_output": "apple\nbanana\norange",
+      "line_count": 3
+    },
+    "student_context": {
+      "user_id": "trap_test_user",
+      "level": 4,
+      "xp": 450,
+      "weak_skills": [
+        "lists"
+      ],
+      "strong_skills": [
+        "print"
+      ],
+      "attempt_number": 1
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false,
+      "enforce_concept_usage": true
+    }
+  },
+  {
+    "id": "analyze_trap_hardcoded_01",
+    "name": "Hardcoded Output Detection",
+    "evaluation_category": "hardcoded_detection",
+    "difficulty_level": 3,
+    "trap_category": "hardcoded_output",
+    "expected_behavior": "Model should FAIL and detect hardcoded answer instead of calculation",
+    "missionId": "sum_calculator",
+    "mission_context": {
+      "title": "Sum Two Numbers",
+      "description": "Calculate sum of x and y",
+      "objectives": [
+        "Use addition operator"
+      ],
+      "concepts": [
+        "variables",
+        "arithmetic",
+        "print"
+      ],
+      "difficulty": 3,
+      "validation_mode": "strict",
+      "expected_output": "15"
+    },
+    "submission_context": {
+      "code": "x = 5\ny = 10\nprint(15)",
+      "expected_output": "15",
+      "line_count": 3
+    },
+    "student_context": {
+      "user_id": "trap_test_user",
+      "level": 3,
+      "xp": 300,
+      "weak_skills": [
+        "arithmetic"
+      ],
+      "strong_skills": [
+        "variables"
+      ],
+      "attempt_number": 3
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false,
+      "detect_hardcoded_values": true
+    }
+  },
+  {
+    "id": "analyze_trap_semantic_drift_01",
+    "name": "Correct Output, Wrong Concept",
+    "evaluation_category": "semantic_drift",
+    "difficulty_level": 4,
+    "trap_category": "semantic_drift",
+    "expected_behavior": "Model should detect that student used string multiplication instead of loop",
+    "missionId": "repeat_star",
+    "mission_context": {
+      "title": "Repeat Character",
+      "description": "Print * five times using a loop",
+      "objectives": [
+        "Use for loop to repeat"
+      ],
+      "concepts": [
+        "for",
+        "range",
+        "print"
+      ],
+      "required_concepts": [
+        "for"
+      ],
+      "difficulty": 4,
+      "validation_mode": "strict",
+      "expected_output": "*****"
+    },
+    "submission_context": {
+      "code": "print('*' * 5)",
+      "expected_output": "*****",
+      "line_count": 1
+    },
+    "student_context": {
+      "user_id": "trap_test_user",
+      "level": 4,
+      "xp": 400,
+      "weak_skills": [
+        "loops"
+      ],
+      "strong_skills": [
+        "strings"
+      ],
+      "attempt_number": 1
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false,
+      "enforce_concept_usage": true
+    }
+  },
+  {
+    "id": "analyze_trap_edge_case_01",
+    "name": "Empty List Edge Case",
+    "evaluation_category": "edge_cases",
+    "difficulty_level": 5,
+    "trap_category": "edge_cases",
+    "expected_behavior": "Model should recognize empty list produces no output (valid behavior)",
+    "missionId": "list_printer",
+    "mission_context": {
+      "title": "Print List Items",
+      "description": "Print each item in a list",
+      "objectives": [
+        "Iterate through list"
+      ],
+      "concepts": [
+        "list",
+        "for",
+        "print"
+      ],
+      "difficulty": 5,
+      "validation_mode": "flexible",
+      "expected_output": ""
+    },
+    "submission_context": {
+      "code": "items = []\nfor item in items:\n    print(item)",
+      "expected_output": "",
+      "line_count": 3
+    },
+    "student_context": {
+      "user_id": "trap_test_user",
+      "level": 5,
+      "xp": 600,
+      "weak_skills": [],
+      "strong_skills": [
+        "lists",
+        "for"
+      ],
+      "attempt_number": 1
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false
+    }
+  },
+  {
+    "id": "analyze_trap_edge_case_02",
+    "name": "Division by Zero Handling",
+    "evaluation_category": "edge_cases",
+    "difficulty_level": 5,
+    "trap_category": "edge_cases",
+    "expected_behavior": "Model should detect missing error handling for division by zero",
+    "missionId": "safe_division",
+    "mission_context": {
+      "title": "Safe Division",
+      "description": "Divide x by y safely",
+      "objectives": [
+        "Handle division errors"
+      ],
+      "concepts": [
+        "conditionals",
+        "division",
+        "error_handling"
+      ],
+      "difficulty": 5,
+      "validation_mode": "strict",
+      "expected_output": "Cannot divide by zero"
+    },
+    "submission_context": {
+      "code": "x = 10\ny = 0\nresult = x / y\nprint(result)",
+      "expected_output": "",
+      "line_count": 4
+    },
+    "student_context": {
+      "user_id": "trap_test_user",
+      "level": 5,
+      "xp": 550,
+      "weak_skills": [
+        "error_handling"
+      ],
+      "strong_skills": [
+        "arithmetic"
+      ],
+      "attempt_number": 2
+    },
+    "validation_context": {
+      "check_exact_output": false,
+      "allow_creativity": false,
+      "expect_error_handling": true
+    }
+  },
+  {
+    "id": "analyze_trap_off_by_one_01",
+    "name": "Classic Off-By-One in Range",
+    "evaluation_category": "logic",
+    "difficulty_level": 3,
+    "trap_category": "off_by_one",
+    "expected_behavior": "Model should detect range(1, 5) produces 1-4, not 1-5",
+    "missionId": "count_one_to_five",
+    "mission_context": {
+      "title": "Count 1 to 5",
+      "description": "Print numbers from 1 to 5 inclusive",
+      "objectives": [
+        "Understand range boundaries"
+      ],
+      "concepts": [
+        "for",
+        "range",
+        "print"
+      ],
+      "difficulty": 3,
+      "validation_mode": "strict",
+      "expected_output": "1\n2\n3\n4\n5"
+    },
+    "submission_context": {
+      "code": "for i in range(1, 5):\n    print(i)",
+      "expected_output": "1\n2\n3\n4",
+      "line_count": 2
+    },
+    "student_context": {
+      "user_id": "trap_test_user",
+      "level": 3,
+      "xp": 280,
+      "weak_skills": [
+        "range"
+      ],
+      "strong_skills": [
+        "for",
+        "print"
+      ],
+      "attempt_number": 2
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false
+    }
+  },
+  {
+    "id": "analyze_trap_off_by_one_02",
+    "name": "List Index Off-By-One",
+    "evaluation_category": "logic",
+    "difficulty_level": 4,
+    "trap_category": "off_by_one",
+    "expected_behavior": "Model should detect list[3] accesses 4th element, causing IndexError for 3-item list",
+    "missionId": "list_access",
+    "mission_context": {
+      "title": "Access List Elements",
+      "description": "Print the third element",
+      "objectives": [
+        "Understand zero-based indexing"
+      ],
+      "concepts": [
+        "list",
+        "indexing",
+        "print"
+      ],
+      "difficulty": 4,
+      "validation_mode": "strict",
+      "expected_output": "orange"
+    },
+    "submission_context": {
+      "code": "fruits = ['apple', 'banana', 'orange']\nprint(fruits[3])",
+      "expected_output": "",
+      "line_count": 2
+    },
+    "student_context": {
+      "user_id": "trap_test_user",
+      "level": 4,
+      "xp": 420,
+      "weak_skills": [
+        "indexing"
+      ],
+      "strong_skills": [
+        "lists"
+      ],
+      "attempt_number": 1
+    },
+    "validation_context": {
+      "check_exact_output": false,
+      "allow_creativity": false,
+      "expect_runtime_error": true
+    }
+  },
+  {
+    "id": "analyze_trap_incomplete_logic_01",
+    "name": "Loop Without Accumulation",
+    "evaluation_category": "incomplete_logic",
+    "difficulty_level": 4,
+    "trap_category": "incomplete_understanding",
+    "expected_behavior": "Model should detect missing accumulation logic in sum calculation",
+    "missionId": "sum_list",
+    "mission_context": {
+      "title": "Sum List Numbers",
+      "description": "Calculate sum of all numbers in list",
+      "objectives": [
+        "Use loop and accumulator"
+      ],
+      "concepts": [
+        "for",
+        "list",
+        "accumulator",
+        "arithmetic"
+      ],
+      "required_concepts": [
+        "accumulator"
+      ],
+      "difficulty": 4,
+      "validation_mode": "strict",
+      "expected_output": "15"
+    },
+    "submission_context": {
+      "code": "numbers = [1, 2, 3, 4, 5]\nfor num in numbers:\n    total = num\nprint(total)",
+      "expected_output": "5",
+      "line_count": 4
+    },
+    "student_context": {
+      "user_id": "trap_test_user",
+      "level": 4,
+      "xp": 450,
+      "weak_skills": [
+        "accumulator_pattern"
+      ],
+      "strong_skills": [
+        "for",
+        "list"
+      ],
+      "attempt_number": 3
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false,
+      "enforce_concept_usage": true
+    }
+  },
+  {
+    "id": "analyze_trap_whitespace_01",
+    "name": "Extra Whitespace in Output",
+    "evaluation_category": "whitespace_sensitivity",
+    "difficulty_level": 2,
+    "trap_category": "edge_cases",
+    "expected_behavior": "Model should detect extra trailing space in strict mode",
+    "missionId": "exact_message",
+    "mission_context": {
+      "title": "Print Exact Message",
+      "description": "Print: Hello",
+      "objectives": [
+        "Exact output match"
+      ],
+      "concepts": [
+        "print",
+        "strings"
+      ],
+      "difficulty": 2,
+      "validation_mode": "strict",
+      "expected_output": "Hello"
+    },
+    "submission_context": {
+      "code": "print(\"Hello \")",
+      "expected_output": "Hello ",
+      "line_count": 1
+    },
+    "student_context": {
+      "user_id": "trap_test_user",
+      "level": 2,
+      "xp": 120,
+      "weak_skills": [
+        "attention_to_detail"
+      ],
+      "strong_skills": [
+        "print"
+      ],
+      "attempt_number": 1
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false,
+      "strict_whitespace": true
+    }
+  },
+  {
+    "id": "analyze_trap_variable_scope_01",
+    "name": "Variable Not Initialized",
+    "evaluation_category": "variable_scope",
+    "difficulty_level": 3,
+    "trap_category": "runtime_errors",
+    "expected_behavior": "Model should detect NameError from uninitialized variable",
+    "missionId": "variable_basics",
+    "mission_context": {
+      "title": "Work with Variables",
+      "description": "Store and print a value",
+      "objectives": [
+        "Variable initialization"
+      ],
+      "concepts": [
+        "variables",
+        "print"
+      ],
+      "difficulty": 3,
+      "validation_mode": "strict",
+      "expected_output": "10"
+    },
+    "submission_context": {
+      "code": "print(x)",
+      "expected_output": "",
+      "line_count": 1
+    },
+    "student_context": {
+      "user_id": "trap_test_user",
+      "level": 3,
+      "xp": 200,
+      "weak_skills": [
+        "variables"
+      ],
+      "strong_skills": [
+        "print"
+      ],
+      "attempt_number": 1
+    },
+    "validation_context": {
+      "check_exact_output": false,
+      "allow_creativity": false,
+      "expect_runtime_error": true
+    }
+  },
+  {
+    "id": "analyze_trap_infinite_loop_01",
+    "name": "Infinite Loop Detection",
+    "evaluation_category": "logic_errors",
+    "difficulty_level": 5,
+    "trap_category": "infinite_patterns",
+    "expected_behavior": "Model should warn about potential infinite loop (missing increment)",
+    "missionId": "while_practice",
+    "mission_context": {
+      "title": "While Loop",
+      "description": "Count from 1 to 5",
+      "objectives": [
+        "Use while loop correctly"
+      ],
+      "concepts": [
+        "while",
+        "variables",
+        "conditionals"
+      ],
+      "difficulty": 5,
+      "validation_mode": "strict",
+      "expected_output": "1\n2\n3\n4\n5"
+    },
+    "submission_context": {
+      "code": "i = 1\nwhile i <= 5:\n    print(i)",
+      "expected_output": "",
+      "line_count": 3
+    },
+    "student_context": {
+      "user_id": "trap_test_user",
+      "level": 5,
+      "xp": 580,
+      "weak_skills": [
+        "while"
+      ],
+      "strong_skills": [
+        "print"
+      ],
+      "attempt_number": 2
+    },
+    "validation_context": {
+      "check_exact_output": false,
+      "allow_creativity": false,
+      "detect_infinite_loop": true
+    }
+  },
+  {
+    "id": "analyze_trap_case_sensitivity_01",
+    "name": "Wrong Case in Function Name",
+    "evaluation_category": "syntax",
+    "difficulty_level": 2,
+    "trap_category": "case_sensitivity",
+    "expected_behavior": "Model should detect Print vs print case error",
+    "missionId": "hello_world",
+    "mission_context": {
+      "title": "Hello World",
+      "description": "Print a greeting",
+      "objectives": [
+        "Use print function"
+      ],
+      "concepts": [
+        "print",
+        "strings"
+      ],
+      "difficulty": 2,
+      "validation_mode": "strict",
+      "expected_output": "Hello"
+    },
+    "submission_context": {
+      "code": "Print(\"Hello\")",
+      "expected_output": "",
+      "line_count": 1
+    },
+    "student_context": {
+      "user_id": "trap_test_user",
+      "level": 2,
+      "xp": 50,
+      "weak_skills": [
+        "syntax"
+      ],
+      "strong_skills": [],
+      "attempt_number": 1
+    },
+    "validation_context": {
+      "check_exact_output": false,
+      "allow_creativity": false,
+      "expect_runtime_error": true
+    }
+  },
+  {
+    "id": "analyze_trap_string_vs_number_01",
+    "name": "String Concatenation Instead of Math",
+    "evaluation_category": "type_errors",
+    "difficulty_level": 3,
+    "trap_category": "type_confusion",
+    "expected_behavior": "Model should detect string concatenation instead of addition",
+    "missionId": "calculator",
+    "mission_context": {
+      "title": "Simple Calculator",
+      "description": "Add two numbers",
+      "objectives": [
+        "Use arithmetic operators"
+      ],
+      "concepts": [
+        "variables",
+        "arithmetic",
+        "print"
+      ],
+      "difficulty": 3,
+      "validation_mode": "strict",
+      "expected_output": "15"
+    },
+    "submission_context": {
+      "code": "a = \"5\"\nb = \"10\"\nresult = a + b\nprint(result)",
+      "expected_output": "510",
+      "line_count": 4
+    },
+    "student_context": {
+      "user_id": "trap_test_user",
+      "level": 3,
+      "xp": 250,
+      "weak_skills": [
+        "types"
+      ],
+      "strong_skills": [
+        "variables"
+      ],
+      "attempt_number": 2
+    },
+    "validation_context": {
+      "check_exact_output": true,
+      "allow_creativity": false
+    }
+  }
+]

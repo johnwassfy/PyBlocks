@@ -25,6 +25,7 @@ from app.models.responses import CodeAnalysisResponse, ErrorResponse
 from app.services.code_executor import executor
 from app.services.feedback_engine import feedback_engine
 from app.services.backend_client import backend_client
+from app.services.solution_validator import SolutionValidator
 from app.core.logger import logger, log_request, log_response, log_ai_analysis
 from app.core.utils import timing_decorator
 from app.core.security import verify_api_key
@@ -35,120 +36,15 @@ import re
 
 router = APIRouter(prefix="/analyze", tags=["Analysis"])
 
-
-def _validate_step_based_learning(code: str, expected_output: str, required_concepts: list, previous_steps_completed: list) -> dict:
-    """
-    Validate if the student is learning progressively through steps.
-    This checks if they're using concepts from previous steps and building on them.
-    
-    Returns:
-        dict with:
-            - is_valid: bool
-            - score_multiplier: float (1.0 = full credit, 0.3 = cheating detected)
-            - feedback: str
-            - issues: list
-    """
-    issues = []
-    score_multiplier = 1.0
-    
-    # Check if code contains the expected output as a hardcoded string
-    # But only flag if it's NOT within proper control structures
-    expected_lines = expected_output.strip().split('\n')
-    code_lines = code.strip().split('\n')
-    
-    # Parse the code to check structure
-    try:
-        tree = ast.parse(code)
-        
-        # Find all string literals in the code
-        string_literals = []
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Constant) and isinstance(node.value, str):
-                string_literals.append(node.value)
-        
-        # Check if expected output appears as a simple string literal
-        # without any logic/control structures
-        suspicious_hardcoding = False
-        for expected_line in expected_lines:
-            if expected_line in string_literals:
-                # Found the expected output as a string literal
-                # Now check if it's inside proper control structures
-                has_control_flow = any(isinstance(node, (ast.If, ast.For, ast.While, ast.FunctionDef)) 
-                                      for node in ast.walk(tree))
-                
-                # If there's no control flow and the string is printed directly, it's suspicious
-                if not has_control_flow and len(string_literals) == 1:
-                    suspicious_hardcoding = True
-                    break
-        
-        if suspicious_hardcoding:
-            issues.append("Code appears to hardcode the output without proper logic")
-            score_multiplier *= 0.4
-    
-    except SyntaxError:
-        # If we can't parse, assume it's okay (syntax errors caught elsewhere)
-        pass
-    
-    # Check if required concepts from this step are used
-    if required_concepts:
-        concept_patterns = {
-            'for-loop': r'\bfor\s+\w+\s+in\s+',
-            'while-loop': r'\bwhile\s+.+:',
-            'conditionals': r'\bif\s+.+:|elif\s+.+:|else\s*:',
-            'if-statement': r'\bif\s+.+:',
-            'functions': r'\bdef\s+\w+\s*\(',
-            'def': r'\bdef\s+\w+\s*\(',
-            'return': r'\breturn\b',
-            'lists': r'\[.*\]|\.append\(|\.extend\(',
-            'variables': r'\w+\s*=\s*',
-            'print': r'\bprint\s*\(',
-            'strings': r'["\'].*["\']|f["\']',
-            'math': r'[\+\-\*/%]',
-            'operators': r'[\+\-\*/%]|==|!=|<=|>=|<|>',
-            'comparison': r'==|!=|<=|>=|<|>',
-            'modulo': r'%',
-            'range': r'\brange\s*\(',
-        }
-        
-        missing_concepts = []
-        for concept in required_concepts:
-            pattern = concept_patterns.get(concept)
-            if pattern and not re.search(pattern, code):
-                missing_concepts.append(concept)
-        
-        if missing_concepts:
-            issues.append(f"Missing required concepts from this step: {', '.join(missing_concepts)}")
-            score_multiplier *= 0.6
-    
-    # Check if student is building on previous steps
-    if previous_steps_completed:
-        # If this is a later step, check if they're using concepts from earlier steps
-        # This is a simple check - in practice, you'd track which concepts were in each step
-        pass
-    
-    is_valid = len(issues) == 0
-    
-    if not is_valid:
-        feedback = "⚠️ **Learning Progress Issue Detected**\n\n"
-        for issue in issues:
-            feedback += f"• {issue}\n"
-        feedback += f"\n💡 **Tip:** This mission is designed to help you learn step-by-step. Make sure you're using the programming concepts taught in this step, not just copying the expected output!"
-    else:
-        feedback = ""
-    
-    return {
-        'is_valid': is_valid,
-        'score_multiplier': score_multiplier,
-        'feedback': feedback,
-        'issues': issues
-    }
+# Initialize solution validator
+solution_validator = SolutionValidator()
 
 
 @router.post(
     "",
     response_model=CodeAnalysisResponse,
-    summary="Analyze student code",
-    description="Execute code, run tests, and generate AI-powered feedback",
+    summary="Analyze student code with rich context",
+    description="Execute code, run tests, and generate AI-powered feedback using comprehensive context",
     responses={
         200: {"description": "Analysis completed successfully"},
         400: {"model": ErrorResponse, "description": "Invalid request"},
@@ -163,42 +59,72 @@ async def analyze_code(
     authenticated: bool = Depends(verify_api_key)
 ) -> CodeAnalysisResponse:
     """
-    Main endpoint for code analysis
+    Main endpoint for code analysis with rich context
     
-    This endpoint:
-    1. Receives code from backend
-    2. Executes it safely with timeout protection
-    3. Runs test cases
-    4. Generates AI feedback
-    5. Returns structured analysis
+    This endpoint supports both:
+    1. NEW FORMAT: Rich context package with mission/student/submission/behavior/validation contexts
+    2. LEGACY FORMAT: Simple code + mission_id + test_cases
     
-    Example:
+    The AI uses the rich context to provide:
+    - Personalized feedback tone based on student preferences
+    - Adaptive difficulty based on student level and weak skills
+    - Creative validation for storytelling/artistic missions
+    - Proactive help triggers based on behavior metrics
+    - Weighted scoring (output 40% + concepts 30% + structure 20% + creativity 10%)
+    
+    Example (new format):
     ```json
     {
-        "code": "def greet(name):\\n    return f'Hello, {name}!'",
-        "missionId": "mission123",
-        "userId": "user456",
-        "testCases": ["greet('Alice') == 'Hello, Alice!'"],
-        "concepts": ["function-definition", "string-formatting"],
-        "difficulty": 3
+        "missionId": "M_STORY_001",
+        "missionContext": {
+            "title": "The Storyteller",
+            "validationMode": "creative",
+            "expectedLineCount": 3
+        },
+        "studentContext": {
+            "userId": "user_123",
+            "aiTone": "friendly",
+            "attemptNumber": 2
+        },
+        "submissionContext": {
+            "code": "print('Once...')\\nprint('upon...')\\nprint('a time...')"
+        },
+        "validationContext": {
+            "checkExactOutput": false,
+            "checkLineCount": true,
+            "allowCreativity": true
+        }
     }
     ```
     """
     start_time = time.time()
     
     try:
+        # Extract data from either new or legacy format
+        code = request.get_code()
+        user_id = request.get_user_id()
+        validation_mode = request.get_validation_mode()
+        
         # Log request
-        log_request("analyze", request.user_id, request.mission_id)
+        log_request("analyze", user_id, request.mission_id)
         
         # Validate syntax first (fast check)
-        is_valid, syntax_error = executor.validate_syntax(request.code)
+        is_valid, syntax_error = executor.validate_syntax(code)
         if not is_valid:
             logger.warning(f"Syntax error detected: {syntax_error}")
+            
+            # Get expected concepts for weak_concepts field
+            expected_concepts = []
+            if request.mission_context:
+                expected_concepts = request.mission_context.concepts or []
+            elif request.concepts:
+                expected_concepts = request.concepts
+            
             return CodeAnalysisResponse(
                 success=False,
                 score=0,
                 feedback=f"❌ {syntax_error}",
-                weak_concepts=request.concepts or [],
+                weak_concepts=expected_concepts,
                 strong_concepts=[],
                 hints=["Check your code syntax carefully"],
                 suggestions=["Make sure all parentheses, brackets, and quotes are properly closed"],
@@ -210,163 +136,504 @@ async def analyze_code(
                 error_message=syntax_error
             )
         
+        # Get test cases from either format
+        test_cases = []
+        if request.submission_context and request.submission_context.test_cases:
+            test_cases = request.submission_context.test_cases
+        elif request.test_cases:
+            test_cases = request.test_cases
+        
         # Execute code
-        execution_result = executor.execute(
-            request.code,
-            request.test_cases
-        )
+        execution_result = executor.execute(code, test_cases)
         
-        # Validate output against expected output if provided
-        output_matches = True
+        # === WEIGHTED SCORING SYSTEM ===
+        # Components: output_match (40%) + concept_match (30%) + structure_match (20%) + creativity_bonus (10%)
+        
+        output_score = 0.0  # 0-100
+        concept_score = 0.0  # 0-100
+        structure_score = 0.0  # 0-100
+        creativity_score = 0.0  # 0-100
+        
         validation_result = None
+        output_matches = True
         
-        if request.expected_output is not None and request.expected_output.strip():
+        # Get validation context
+        val_ctx = request.validation_context
+        if not val_ctx:
+            # Legacy mode: create default validation context
+            val_ctx = type('obj', (object,), {
+                'check_exact_output': True,
+                'check_line_count': False,
+                'check_concepts': True,
+                'disallow_hardcoded_output': True,
+                'allow_creativity': validation_mode == 'creative',
+                'forbidden_patterns': []
+            })()
+        
+        # Get expected output and concepts
+        expected_output = None
+        expected_line_count = None
+        required_concepts = []
+        
+        if request.mission_context:
+            expected_output = request.mission_context.expected_output
+            expected_line_count = request.mission_context.expected_line_count
+            required_concepts = request.mission_context.concepts or []
+        elif request.expected_output:
+            expected_output = request.expected_output
+            required_concepts = request.concepts or []
+        
+        # === OUTPUT VALIDATION (40% of score) ===
+        if expected_output is not None and expected_output.strip():
             actual_output = (execution_result.get('stdout') or "").strip()
-            expected = request.expected_output.strip()
-            output_matches = actual_output == expected
+            expected = expected_output.strip()
             
-            # If output matches, validate using STEP-BASED learning approach
-            # This checks if the student is actually learning vs cheating
-            if output_matches:
-                # Extract validation settings from mission's validationRules
-                validation_rules = request.validation_rules or {}
-                required_concepts = validation_rules.get('requiredConcepts', request.concepts or [])
-                forbidden_patterns = validation_rules.get('forbiddenPatterns', [])
+            if val_ctx.check_exact_output:
+                # STRICT MODE: Exact string match
+                if actual_output == expected:
+                    output_score = 100
+                    output_matches = True
+                else:
+                    output_matches = False
+                    # Partial credit for similar output
+                    from difflib import SequenceMatcher
+                    similarity = SequenceMatcher(None, actual_output, expected).ratio()
+                    output_score = similarity * 100
+            
+            elif val_ctx.check_line_count:
+                # CREATIVE MODE: Line count matching
+                actual_lines = [line for line in actual_output.split('\n') if line.strip()]
+                expected_lines = [line for line in expected.split('\n') if line.strip()]
                 
-                # Check if AI checkpoints are enabled for this step/mission
-                if request.ai_checkpoints is not False:  # Default to True
-                    # Use step-based validation
-                    validation_result = _validate_step_based_learning(
-                        code=request.code,
-                        expected_output=expected,
-                        required_concepts=required_concepts,
-                        previous_steps_completed=[]  # TODO: Track completed steps from request
-                    )
-                    
-                    # Check forbidden patterns if any
-                    if forbidden_patterns:
-                        code_lower = request.code.lower()
-                        found_forbidden = [pattern for pattern in forbidden_patterns if pattern.lower() in code_lower]
-                        if found_forbidden:
-                            validation_result['is_valid'] = False
-                            validation_result['issues'].append(f"Forbidden patterns found: {', '.join(found_forbidden)}")
-                            validation_result['score_multiplier'] *= 0.5
-                            validation_result['feedback'] += f"\n\n🚫 Your code uses forbidden patterns: {', '.join(found_forbidden)}"
-                    
-                    # If validation fails, treat as incorrect solution
-                    if not validation_result['is_valid']:
-                        output_matches = False
-                        execution_result['success'] = False
-                        logger.warning(
-                            f"Step-based validation failed - Issues: {validation_result['issues']}"
-                        )
+                if expected_line_count:
+                    # Use explicit line count from mission
+                    if len(actual_lines) == expected_line_count:
+                        output_score = 100
+                        output_matches = True
+                    else:
+                        # Partial credit based on line count difference
+                        diff = abs(len(actual_lines) - expected_line_count)
+                        output_score = max(0, 100 - (diff * 20))
+                        output_matches = len(actual_lines) == expected_line_count
+                elif len(actual_lines) == len(expected_lines):
+                    output_score = 100
+                    output_matches = True
+                else:
+                    # Partial credit
+                    diff = abs(len(actual_lines) - len(expected_lines))
+                    output_score = max(0, 100 - (diff * 20))
+                    output_matches = len(actual_lines) == len(expected_lines)
             else:
-                # If output doesn't match, override success flag
-                execution_result['success'] = False
-                logger.info(f"Output mismatch - Expected: '{expected}', Got: '{actual_output}'")
+                # CONCEPT-ONLY MODE: Output doesn't matter
+                output_score = 100
+                output_matches = True
+            
+            # Run anti-cheating validation if output matches
+            if output_matches and val_ctx.disallow_hardcoded_output:
+                # Get difficulty from mission context or legacy field
+                difficulty = 'easy'
+                if request.mission_context:
+                    difficulty = str(request.mission_context.difficulty or 1)
+                elif request.difficulty:
+                    difficulty = str(request.difficulty)
+                
+                # Build validation rules dict
+                validation_rules = {}
+                if request.validation_rules:
+                    validation_rules = request.validation_rules
+                elif val_ctx.forbidden_patterns:
+                    validation_rules['forbiddenPatterns'] = val_ctx.forbidden_patterns
+                
+                validation_result_obj = solution_validator.validate_solution(
+                    code=code,
+                    expected_output=expected,
+                    required_concepts=required_concepts,
+                    difficulty=difficulty,
+                    actual_output=actual_output,
+                    validation_rules=validation_rules
+                )
+                
+                validation_result = {
+                    'is_valid': validation_result_obj.is_valid,
+                    'score_multiplier': validation_result_obj.score_multiplier,
+                    'issues': validation_result_obj.issues,
+                    'detected_patterns': validation_result_obj.detected_patterns,
+                    'complexity_score': validation_result_obj.complexity_score,
+                    'feedback': ''
+                }
+                
+                if not validation_result_obj.is_valid:
+                    # Cheating detected - penalize output score
+                    output_score *= validation_result_obj.score_multiplier
+                    output_matches = False
+                    execution_result['success'] = False
+                    
+                    # Build feedback
+                    feedback_parts = ["⚠️ Learning Progress Issue Detected\n"]
+                    for issue in validation_result_obj.issues:
+                        feedback_parts.append(f"• {issue}")
+                    
+                    if 'hardcoded_output' in validation_result_obj.detected_patterns:
+                        feedback_parts.append("\n💡 Tip: Don't just print the expected answer - use the programming concepts to solve it!")
+                    if 'missing_concepts' in validation_result_obj.detected_patterns:
+                        feedback_parts.append("\n📚 Tip: Make sure to use the concepts taught in this step!")
+                    if 'forbidden_pattern' in validation_result_obj.detected_patterns:
+                        feedback_parts.append("\n🚫 Tip: Some code patterns are not allowed in this mission!")
+                    
+                    validation_result['feedback'] = '\n'.join(feedback_parts)
+                    logger.warning(f"Validation failed - Issues: {validation_result_obj.issues}")
+        else:
+            # No expected output - full credit for output component
+            output_score = 100
         
-        # Generate AI feedback
-        analysis = feedback_engine.generate_analysis(
-            code=request.code,
-            execution_result=execution_result,
-            expected_concepts=request.concepts,
-            difficulty=request.difficulty,
-            attempts=request.attempts,
-            time_spent=request.time_spent,
+        # === CONCEPT DETECTION (30% of score) ===
+        # Detect which concepts are actually used in the code
+        detected_concepts = []
+        code_lower = code.lower()
+        
+        # Common Python concepts to detect
+        concept_patterns = {
+            'print': ['print(', 'print '],
+            'input': ['input(', 'input '],
+            'variables': ['='],
+            'strings': ['"', "'"],
+            'if': ['if '],
+            'else': ['else:'],
+            'elif': ['elif '],
+            'for': ['for ', 'for('],
+            'while': ['while ', 'while('],
+            'function': ['def '],
+            'return': ['return '],
+            'list': ['[', 'list('],
+            'dict': ['{', 'dict('],
+            'tuple': ['(', 'tuple('],
+            'class': ['class '],
+            'import': ['import ', 'from '],
+            'try': ['try:'],
+            'except': ['except'],
+            'with': ['with '],
+            'lambda': ['lambda '],
+            'comprehension': ['for ', 'if ']
+        }
+        
+        for concept, patterns in concept_patterns.items():
+            if any(pattern in code_lower for pattern in patterns):
+                detected_concepts.append(concept)
+        
+        # Calculate concept score
+        if required_concepts:
+            matched_concepts = [c for c in required_concepts if c in detected_concepts]
+            concept_score = (len(matched_concepts) / len(required_concepts)) * 100
+        else:
+            # No required concepts - full credit
+            concept_score = 100
+        
+        # === STRUCTURE SCORE (20% of score) ===
+        # Based on code complexity and structure
+        structure_score = 50  # Base score
+        
+        try:
+            # Parse AST to analyze structure
+            tree = ast.parse(code)
+            
+            # Reward proper structure
+            if len(tree.body) > 0:
+                structure_score += 10  # Has code structure
+            
+            # Count functions
+            funcs = [node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)]
+            if funcs:
+                structure_score += 15  # Uses functions
+            
+            # Count control flow
+            control_flow = [node for node in ast.walk(tree) 
+                          if isinstance(node, (ast.If, ast.For, ast.While))]
+            if control_flow:
+                structure_score += 15  # Uses control flow
+            
+            # Check for comments
+            if '#' in code:
+                structure_score += 10  # Has comments
+            
+            structure_score = min(100, structure_score)
+        except:
+            # If parsing fails, use default
+            structure_score = 50
+        
+        # === CREATIVITY SCORE (10% of score) ===
+        creativity_score = 0
+        
+        if val_ctx.allow_creativity:
+            # Reward creative solutions
+            creativity_score = 50  # Base creativity credit
+            
+            # Check for unique output (if storytelling)
+            if expected_output and (execution_result.get('stdout') or "").strip():
+                actual = (execution_result.get('stdout') or "").strip()
+                if actual != expected_output.strip() and output_matches:
+                    # Different text but correct structure
+                    creativity_score += 30
+            
+            # Check for advanced concepts
+            advanced_concepts = ['function', 'class', 'lambda', 'comprehension']
+            if any(c in detected_concepts for c in advanced_concepts):
+                creativity_score += 20
+            
+            creativity_score = min(100, creativity_score)
+        
+        # === CALCULATE WEIGHTED FINAL SCORE ===
+        final_score = int(
+            output_score * 0.4 +
+            concept_score * 0.3 +
+            structure_score * 0.2 +
+            creativity_score * 0.1
         )
         
-        # Override analysis if output doesn't match expected or validation fails
-        if not output_matches:
-            analysis.success = False
+        # === DETERMINE SUCCESS BASED ON MISSION OBJECTIVES (NOT JUST OUTPUT) ===
+        # Success criteria priority: Objectives > Concepts > Structure > Output
+        
+        # 1. Check if code executes without errors
+        code_runs = execution_result.get('success', False)
+        
+        # 2. Check if required concepts are used (PRIMARY CRITERION)
+        concepts_achieved = concept_score >= 70  # Must use at least 70% of required concepts
+        
+        # 3. Check if output structure is valid (for creative/storytelling missions)
+        structure_valid = True
+        if validation_mode == 'creative':
+            structure_valid = output_matches  # Line count matches
+        elif validation_mode == 'concept-only':
+            structure_valid = True  # Output doesn't matter
+        elif validation_mode == 'strict':
+            structure_valid = output_matches  # Exact output match
+        
+        # 4. Check if code has proper structure
+        code_structure_ok = structure_score >= 50
+        
+        # === SUCCESS DETERMINATION LOGIC ===
+        # Different modes prioritize different aspects
+        if validation_mode == 'creative':
+            # Creative mode: Concepts (60%) + Structure (30%) + Execution (10%)
+            success = (
+                concepts_achieved and  # MUST use required concepts
+                structure_valid and    # MUST have correct line count
+                code_runs              # MUST execute without errors
+            )
+            # Even if output text is different, if concepts + structure are good = SUCCESS
             
-            if validation_result and not validation_result['is_valid']:
-                # Step-based validation failed (cheating/not learning properly detected)
-                
-                # Apply score penalty based on validation
-                analysis.score = int(analysis.score * validation_result['score_multiplier'])
-                analysis.score = max(10, min(analysis.score, 50))  # Cap between 10-50%
-                
-                # Add validation feedback to AI feedback
-                analysis.feedback = f"{validation_result['feedback']}\n\n**Original AI Feedback:**\n{analysis.feedback}"
-                
-                # Add specific hints based on detected issues
-                if any('hardcode' in issue.lower() for issue in validation_result['issues']):
-                    analysis.hints.insert(0, "💡 Don't just print the expected answer - use the programming concepts to solve it!")
-                if any('missing' in issue.lower() for issue in validation_result['issues']):
-                    analysis.hints.insert(0, f"📚 Make sure to use the concepts taught in this step!")
+        elif validation_mode == 'concept-only':
+            # Concept-only mode: Only concepts matter (90%) + Execution (10%)
+            success = (
+                concepts_achieved and  # MUST use required concepts
+                code_runs              # MUST execute without errors
+            )
+            # Output is completely ignored
+            
+        elif validation_mode == 'strict':
+            # Strict mode: Everything must be perfect
+            success = (
+                concepts_achieved and  # MUST use required concepts
+                structure_valid and    # MUST match expected output exactly
+                code_runs and          # MUST execute without errors
+                code_structure_ok      # SHOULD have decent structure
+            )
+            
+        else:
+            # Default/Legacy: Balanced approach
+            # Prioritize objectives (concepts) over exact output matching
+            success = (
+                concepts_achieved and  # PRIMARY: Must use required concepts
+                code_runs and          # SECONDARY: Must execute
+                (structure_valid or code_structure_ok)  # TERTIARY: Either output OR structure is good
+            )
+        
+        # === OVERRIDE FOR HIGH SCORES ===
+        # If final score is very high (>= 80), consider it a success even if strict criteria not met
+        # This handles edge cases where student achieves objectives in creative ways
+        if final_score >= 80 and code_runs and concepts_achieved:
+            success = True
+        
+        # Get student context for personalized feedback
+        student_ctx = request.student_context
+        ai_tone = 'friendly'
+        attempt_number = 1
+        previous_feedback = None
+        
+        if student_ctx:
+            ai_tone = student_ctx.ai_tone or 'friendly'
+            attempt_number = student_ctx.attempt_number or 1
+            previous_feedback = student_ctx.previous_feedback
+        
+        # Get behavior metrics for proactive help
+        behavior_ctx = request.behavior_metrics
+        should_offer_proactive_help = False
+        
+        if behavior_ctx:
+            # Trigger proactive help if student is struggling
+            if behavior_ctx.idle_time and behavior_ctx.idle_time > 300:  # 5 minutes idle
+                should_offer_proactive_help = True
+            if behavior_ctx.errors_last_attempt and behavior_ctx.errors_last_attempt > 3:
+                should_offer_proactive_help = True
+            if attempt_number > 5:
+                should_offer_proactive_help = True
+        
+        # Generate AI feedback with rich context
+        analysis = feedback_engine.generate_analysis(
+            code=code,
+            execution_result=execution_result,
+            expected_concepts=required_concepts,
+            difficulty=request.mission_context.difficulty if request.mission_context else request.difficulty,
+            attempts=attempt_number,
+            time_spent=student_ctx.time_spent if student_ctx else request.time_spent,
+            current_step=request.current_step,
+            total_steps=None,
+            validation_result=validation_result if validation_result else None,
+            ai_model=request.ai_model,  # Pass dynamic model selection
+        )
+        
+        # Override analysis with weighted scoring results
+        analysis.score = final_score
+        analysis.success = success
+        analysis.detected_concepts = detected_concepts
+        
+        # Calculate weak and strong concepts
+        weak_concepts = []
+        strong_concepts = []
+        
+        for concept in required_concepts:
+            if concept not in detected_concepts:
+                weak_concepts.append(concept)
             else:
-                # Output mismatch (wrong answer)
-                analysis.score = min(analysis.score, 30)  # Cap score at 30% for wrong output
+                strong_concepts.append(concept)
+        
+        # Add detected concepts not in requirements
+        for concept in detected_concepts:
+            if concept not in required_concepts:
+                strong_concepts.append(concept)
+        
+        analysis.weak_concepts = weak_concepts
+        analysis.strong_concepts = strong_concepts
+        
+        # Customize feedback based on student tone preference
+        if ai_tone == 'encouraging' and not success:
+            analysis.feedback = f"🌟 Great effort! {analysis.feedback}"
+        elif ai_tone == 'challenging' and success:
+            analysis.feedback = f"✨ Nice work! Ready for a tougher challenge? {analysis.feedback}"
+        
+        # Add proactive help if needed
+        if should_offer_proactive_help:
+            if attempt_number > 5:
+                analysis.hints.insert(0, "💡 You've been working hard on this! Would you like a hint or a quick video tutorial?")
+            elif behavior_ctx and behavior_ctx.idle_time and behavior_ctx.idle_time > 300:
+                analysis.hints.insert(0, "🤔 Feeling stuck? Try breaking down the problem into smaller steps!")
+        
+        # Add validation feedback if cheating detected
+        if validation_result and not validation_result['is_valid']:
+            analysis.feedback = f"{validation_result['feedback']}\n\n**AI Feedback:**\n{analysis.feedback}"
+            
+            for issue in validation_result['issues']:
+                if 'hardcode' in issue.lower():
+                    analysis.hints.insert(0, "💡 Don't just print the expected answer - use the programming concepts to solve it!")
+                if 'missing' in issue.lower():
+                    analysis.hints.insert(0, "📚 Make sure to use the concepts taught in this mission!")
+        
+        # === OBJECTIVES-FOCUSED FEEDBACK ===
+        # Provide meaningful feedback based on what was achieved, not just output matching
+        
+        if success:
+            # SUCCESS: Objectives achieved!
+            if validation_mode == 'creative':
+                analysis.feedback = f"🌟 Excellent! You achieved the mission objectives!\n\n✅ Concepts mastered: {', '.join(strong_concepts) if strong_concepts else 'None'}\n✅ Code structure: Good\n✅ Creativity: Well done!\n\n{analysis.feedback}"
+            elif validation_mode == 'concept-only':
+                analysis.feedback = f"🎯 Perfect! You used the required concepts correctly!\n\n✅ Concepts used: {', '.join(strong_concepts) if strong_concepts else 'None'}\n\n{analysis.feedback}"
+            else:
+                analysis.feedback = f"✨ Great work! Mission objectives achieved!\n\n✅ All required concepts used\n✅ Code executes correctly\n\n{analysis.feedback}"
+        else:
+            # NOT SUCCESS: Provide constructive feedback based on what's missing
+            missing_parts = []
+            
+            if not code_runs:
+                missing_parts.append("⚠️ Code has execution errors")
+            if not concepts_achieved:
+                missing_parts.append(f"📚 Missing concepts: {', '.join(weak_concepts) if weak_concepts else 'None'}")
+            if not structure_valid and validation_mode != 'concept-only':
+                if validation_mode == 'creative':
+                    missing_parts.append(f"📏 Output structure: Expected {expected_line_count} lines, got {len([l for l in (execution_result.get('stdout') or '').split('\\n') if l.strip()])}")
+                else:
+                    missing_parts.append("📊 Output doesn't match expected result")
+            
+            feedback_header = "🔍 Mission objectives not fully achieved yet. Here's what to work on:\n\n"
+            analysis.feedback = feedback_header + '\n'.join(missing_parts) + f"\n\n{analysis.feedback}"
+        
+        # Add informational output comparison (not judgemental)
+        if expected_output and validation_mode != 'concept-only':
+            actual_output = (execution_result.get('stdout') or '(no output)').strip()
+            expected_formatted = expected_output.strip()
+            
+            if actual_output and actual_output != expected_formatted:
+                output_info = f"\n\n💡 FYI - Output Preview:\n"
+                output_info += f"   Your output: {actual_output[:100]}{'...' if len(actual_output) > 100 else ''}\n"
                 
-                # Format expected vs actual output nicely
-                expected_output = request.expected_output.strip()
-                actual_output = (execution_result.get('stdout') or '(no output)').strip()
+                # Only show expected output in strict mode
+                if validation_mode == 'strict':
+                    output_info += f"   Expected: {expected_formatted[:100]}{'...' if len(expected_formatted) > 100 else ''}\n"
                 
-                # Build a clean comparison without markdown
-                output_comparison = f"\n\n📊 Output Comparison:\n"
-                output_comparison += f"   Expected: {expected_output}\n"
-                output_comparison += f"   You got:  {actual_output if actual_output != '(no output)' else 'nothing printed'}\n"
-                
-                analysis.feedback = f"❌ Your code runs but produces incorrect output.{output_comparison}\n{analysis.feedback}"
+                analysis.feedback += output_info
         
         # Log analysis results
         log_ai_analysis(
-            request.user_id or "anonymous",
+            user_id or "anonymous",
             analysis.score,
             analysis.weak_concepts
         )
         
         # Update learning state in backend database (non-blocking)
-        if request.user_id and request.submission_id:
+        if user_id and request.submission_id:
             try:
-                # Calculate concept scores for detected concepts
+                # Calculate concept scores
                 concept_scores = {}
-                for concept in analysis.detected_concepts:
-                    # Score concepts based on success and presence
-                    if analysis.success:
-                        # High score if concept is used successfully
-                        base_score = 80 + (analysis.score / 5)  # 80-100 range
+                for concept in detected_concepts:
+                    if success:
+                        base_score = 80 + (final_score / 5)
                         concept_scores[concept] = min(100, int(base_score))
                     else:
-                        # Lower score if execution failed
-                        concept_scores[concept] = max(40, int(analysis.score * 0.6))
+                        concept_scores[concept] = max(40, int(final_score * 0.6))
                 
-                # For expected concepts not detected, assign low scores
-                for concept in (request.concepts or []):
+                for concept in required_concepts:
                     if concept not in concept_scores:
-                        concept_scores[concept] = 30  # Missing expected concept
+                        concept_scores[concept] = 30
                 
-                # Build analysis payload for backend
+                # Build analysis payload
                 analysis_payload = {
-                    "detectedConcepts": analysis.detected_concepts,
-                    "weaknesses": analysis.weak_concepts,
-                    "strengths": analysis.strong_concepts,
+                    "detectedConcepts": detected_concepts,
+                    "weaknesses": weak_concepts,
+                    "strengths": strong_concepts,
                     "suggestions": analysis.suggestions,
                     "conceptScores": concept_scores,
-                    "isSuccessful": analysis.success,
-                    "score": analysis.score,
+                    "isSuccessful": success,
+                    "score": final_score,
                 }
 
-                if request.attempts is not None:
-                    analysis_payload["attempts"] = request.attempts
-                if request.time_spent is not None:
+                if attempt_number:
+                    analysis_payload["attempts"] = attempt_number
+                if student_ctx and student_ctx.time_spent:
+                    analysis_payload["timeSpent"] = student_ctx.time_spent
+                elif request.time_spent:
                     analysis_payload["timeSpent"] = request.time_spent
-                elif analysis.time_spent is not None:
-                    analysis_payload["timeSpent"] = analysis.time_spent
                 
                 # Call backend to update learning state
                 updated = await backend_client.update_learning_state(
-                    user_id=request.user_id,
+                    user_id=user_id,
                     submission_id=request.submission_id,
                     analysis=analysis_payload
                 )
                 if updated:
-                    logger.info(f"[ANALYZE] Learning state updated for user {request.user_id}")
+                    logger.info(f"[ANALYZE] Learning state updated for user {user_id}")
                 else:
                     logger.warning(
                         "[ANALYZE] Backend rejected learning state update",
                         extra={
-                            "user_id": request.user_id,
+                            "user_id": user_id,
                             "submission_id": request.submission_id,
                         }
                     )

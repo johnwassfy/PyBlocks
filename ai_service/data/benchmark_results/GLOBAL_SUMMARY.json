@@ -1,0 +1,90 @@
+{
+  "last_updated": "2025-11-11T22:34:39.766371",
+  "models": {
+    "openrouter/polaris-alpha": {
+      "last_run": "2025-11-11T22:34:39.764940",
+      "metadata": {
+        "timestamp": "2025-11-11T22:11:15.230399",
+        "python_version": "3.12.3 (tags/v3.12.3:f6650f9, Apr  9 2024, 14:05:25) [MSC v.1938 64 bit (AMD64)]",
+        "os": "Windows-11-10.0.26200-SP0",
+        "service_url": "http://localhost:8000",
+        "model_name": "openrouter/polaris-alpha",
+        "benchmark_version": "3.0.0"
+      },
+      "total_tests": 152,
+      "http_success_count": 139,
+      "http_success_rate": 91.44736842105263,
+      "semantic_success_count": 123,
+      "semantic_success_rate": 80.92105263157895,
+      "response_time_mean_ms": 3763.428125,
+      "response_time_median_ms": 2278.2965,
+      "response_time_stdev_ms": 10664.465488494783,
+      "response_time_min_ms": 0.0,
+      "response_time_max_ms": 90005.78600000001,
+      "error_categories": {
+        "UnknownError": 8,
+        "ValidationError": 5
+      },
+      "semantic_quality_mean": 0.7830935251798561,
+      "semantic_quality_median": 0.79,
+      "semantic_quality_stdev": 0.06589241253920423,
+      "reasoning_complexity_mean": 0.0017985611510791368,
+      "reasoning_complexity_median": 0.0,
+      "reasoning_complexity_stdev": 0.021204723241999273,
+      "services": {
+        "analyze": {
+          "total_tests": 35,
+          "semantic_success_count": 31,
+          "semantic_success_rate": 88.57142857142857,
+          "avg_response_time_ms": 5779.929628571429,
+          "median_response_time_ms": 3433.48,
+          "semantic_quality_mean": 0.8040625,
+          "semantic_quality_median": 0.82,
+          "semantic_quality_stdev": 0.06695493790361856,
+          "reasoning_complexity_mean": 0.0,
+          "reasoning_complexity_median": 0.0,
+          "reasoning_complexity_stdev": 0.0
+        },
+        "chat": {
+          "total_tests": 48,
+          "semantic_success_count": 26,
+          "semantic_success_rate": 54.166666666666664,
+          "avg_response_time_ms": 6738.365875,
+          "median_response_time_ms": 3328.0919999999996,
+          "semantic_quality_mean": 0.833170731707317,
+          "semantic_quality_median": 0.84,
+          "semantic_quality_stdev": 0.04309518676083466,
+          "reasoning_complexity_mean": 0.006097560975609756,
+          "reasoning_complexity_median": 0.0,
+          "reasoning_complexity_stdev": 0.03904344047215152
+        },
+        "hint": {
+          "total_tests": 36,
+          "semantic_success_count": 34,
+          "semantic_success_rate": 94.44444444444444,
+          "avg_response_time_ms": 15.719222222222221,
+          "median_response_time_ms": 7.5009999999999994,
+          "semantic_quality_mean": 0.7108823529411765,
+          "semantic_quality_median": 0.72,
+          "semantic_quality_stdev": 0.03621213985784019,
+          "reasoning_complexity_mean": 0.0,
+          "reasoning_complexity_median": 0.0,
+          "reasoning_complexity_stdev": 0.0
+        },
+        "recommend": {
+          "total_tests": 33,
+          "semantic_success_count": 32,
+          "semantic_success_rate": 96.96969696969697,
+          "avg_response_time_ms": 1385.9419393939395,
+          "median_response_time_ms": 7.131,
+          "semantic_quality_mean": 0.7746875,
+          "semantic_quality_median": 0.77,
+          "semantic_quality_stdev": 0.038603390708505755,
+          "reasoning_complexity_mean": 0.0,
+          "reasoning_complexity_median": 0.0,
+          "reasoning_complexity_stdev": 0.0
+        }
+      }
+    }
+  }
+}

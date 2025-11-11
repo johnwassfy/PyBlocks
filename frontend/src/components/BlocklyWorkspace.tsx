@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { submitCode, type SubmissionResponse } from '../services/submissionsApi';
 import { useChatbot } from './KidSidebar';
 import { useBehaviorTracker } from '../hooks/useBehaviorTracker';
+import FunConsoleModal from './FunConsoleModal';
 import '../styles/kid-sidebar.css';
 
 // Type definitions (move to top)
@@ -104,10 +105,13 @@ export default function BlocklyWorkspace({
   const initializedRef = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [executionResult, setExecutionResult] = useState<SubmissionResponse | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [attempts, setAttempts] = useState(1);
   const startTimeRef = useRef<number>(Date.now());
+  
+  // Console Modal State
+  const [showConsoleModal, setShowConsoleModal] = useState(false);
+  const [consoleCode, setConsoleCode] = useState('');
   
   // 🧠 NEW: Live AI Observation System
   const [blockActivity, setBlockActivity] = useState<any[]>([]);
@@ -140,7 +144,6 @@ export default function BlocklyWorkspace({
       // Reset tracking variables when mission changes
       setAttempts(1);
       startTimeRef.current = Date.now();
-      setExecutionResult(null);
       setShowFeedback(false);
       // Reset behavioral tracking
       setBlockActivity([]);
@@ -153,10 +156,10 @@ export default function BlocklyWorkspace({
   
   /**
    * Handle code execution when Run button is clicked
-   * This intercepts BlockPy's run action and submits to backend
+   * Now executes code directly and shows real console output
    */
   const handleRunCode = async () => {
-    if (!editorRef.current || !user) {
+    if (!editorRef.current) {
       return;
     }
 
@@ -355,62 +358,22 @@ export default function BlocklyWorkspace({
     }
 
     setIsSubmitting(true);
-    setShowFeedback(false);
+
+    // Store the code and open the console modal
+    setConsoleCode(code);
+    setShowConsoleModal(true);
 
     try {
-      // Calculate time spent (in seconds)
-      const timeSpent = Math.floor((Date.now() - startTimeRef.current) / 1000);
-
-      // Submit code to backend for analysis
-      const result = await submitCode({
-        missionId: mission._id,
-        code: code,
-        attempts: attempts,
-        timeSpent: timeSpent,
-      });
-
-      // Store the result
-      setExecutionResult(result);
-      setShowFeedback(true);
-
       // Track run in behavior tracker
-      behaviorTracker.trackRun(
-        result.aiResult.success,
-        result.aiResult.error_type,
-        result.aiResult.error_message
-      );
-
-      // Increment attempts if failed
-      if (!result.aiResult.success) {
-        setAttempts(prev => prev + 1);
-        
-        // Auto-open chatbot with error context if code failed
-        if (result.aiResult.error_message) {
-          setTimeout(() => {
-            const errorQuestion = `I got this error: ${result.aiResult.error_message}. Can you help me fix it?`;
-            sendChatMessage({
-              userId: user.username,
-              missionId: mission._id,
-              question: errorQuestion,
-              code: code,
-              error_message: result.aiResult.error_message,
-              weak_concepts: result.aiResult.weak_concepts,
-              strong_concepts: result.aiResult.strong_concepts,
-              attempt_number: attempts,
-            }).catch(err => {
-              // Silent error - chatbot is optional
-            });
-          }, 1000);
-        }
+      if (user && mission) {
+        behaviorTracker.trackEdit(code);
       }
 
+      // Increment attempts
+      setAttempts(prev => prev + 1);
+
     } catch (error) {
-      alert('Failed to run code. Please try again.');
-      
-      // Track error for behavioral analysis
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      setLastError(errorMessage);
-      setErrorCount(prev => prev + 1);
+      console.error('Error opening console:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -954,196 +917,19 @@ export default function BlocklyWorkspace({
   // }, [mission, user]);
 
   return (
-    <div className="h-full w-full" style={{ margin: 0, padding: 0, display: 'flex', flexDirection: 'column' }}>
-      {/* Blockly Editor only, mission info panel removed */}
-      <div id="blockpy-editor" className="h-full w-full" style={{ margin: 0, padding: 0, flex: 1 }} />
-      
-      {/* Loading state */}
-      {isLoading && (
-        <div className="absolute inset-0 bg-white flex items-center justify-center">
-          <p>Loading BlockPy...</p>
-        </div>
-      )}
-      
-      {/* Submitting state */}
-      {isSubmitting && (
-        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 shadow-xl">
-            <div className="flex flex-col items-center gap-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              <p className="text-lg font-semibold">Running your code...</p>
-              <p className="text-sm text-gray-600">Analyzing with AI 🤖</p>
-            </div>
+    <div className="h-full w-full flex" style={{ margin: 0, padding: 0 }}>
+      {/* Left side: Blockly Editor */}
+      <div className="flex-1 flex flex-col" style={{ margin: 0, padding: 0 }}>
+        <div id="blockpy-editor" className="flex-1" style={{ margin: 0, padding: 0 }} />
+        
+        {/* Loading state */}
+        {isLoading && (
+          <div className="absolute inset-0 bg-white flex items-center justify-center">
+            <p>Loading BlockPy...</p>
           </div>
-        </div>
-      )}
-      
-      {/* Feedback Panel */}
-      {showFeedback && executionResult && (
-        <div className="absolute top-4 right-4 bg-white rounded-lg shadow-2xl p-6 max-w-md z-40 border-2" 
-             style={{ 
-               borderColor: executionResult.aiResult.success ? '#10b981' : '#ef4444',
-               maxHeight: '80vh',
-               overflowY: 'auto'
-             }}>
-          {/* Close button */}
-          <button 
-            onClick={() => setShowFeedback(false)}
-            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-          >
-            ✕
-          </button>
-          
-          {/* Success/Fail header */}
-          <div className="mb-4">
-            {executionResult.aiResult.success ? (
-              <div className="flex items-center gap-2 text-green-600">
-                <span className="text-3xl">✅</span>
-                <div>
-                  <h3 className="text-xl font-bold">Great Job!</h3>
-                  <p className="text-sm text-gray-600">Score: {executionResult.aiResult.score}/100</p>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-red-600">
-                <span className="text-3xl">❌</span>
-                <div>
-                  <h3 className="text-xl font-bold">Not Quite Right</h3>
-                  <p className="text-sm text-gray-600">Keep trying! Attempt #{attempts}</p>
-                </div>
-              </div>
-            )}
-          </div>
-          
-          {/* XP Gained (if successful) */}
-          {executionResult.aiResult.success && executionResult.xpGained > 0 && (
-            <div className="mb-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-              <p className="text-sm font-semibold text-yellow-800">
-                ⭐ +{executionResult.xpGained} XP Earned!
-              </p>
-            </div>
-          )}
-          
-          {/* AI Feedback */}
-          <div className="mb-4">
-            <h4 className="font-semibold text-gray-800 mb-2">AI Feedback:</h4>
-            <p className="text-sm text-gray-700 leading-relaxed">
-              {executionResult.aiResult.feedback}
-            </p>
-          </div>
-          
-          {/* Error message */}
-          {executionResult.aiResult.error_message && (
-            <div className="mb-4 p-3 bg-red-50 rounded-lg border border-red-200">
-              <h4 className="font-semibold text-red-800 mb-1 text-sm">Error:</h4>
-              <p className="text-xs text-red-700 font-mono">
-                {executionResult.aiResult.error_message}
-              </p>
-            </div>
-          )}
-          
-          {/* Hints */}
-          {executionResult.aiResult.hints && executionResult.aiResult.hints.length > 0 && (
-            <div className="mb-4">
-              <h4 className="font-semibold text-blue-800 mb-2 text-sm">💡 Hints:</h4>
-              <ul className="list-disc list-inside space-y-1">
-                {executionResult.aiResult.hints.map((hint, idx) => (
-                  <li key={idx} className="text-sm text-gray-700">{hint}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-          
-          {/* Suggestions */}
-          {executionResult.aiResult.suggestions && executionResult.aiResult.suggestions.length > 0 && (
-            <div className="mb-4">
-              <h4 className="font-semibold text-purple-800 mb-2 text-sm">🎯 Suggestions:</h4>
-              <ul className="list-disc list-inside space-y-1">
-                {executionResult.aiResult.suggestions.map((suggestion, idx) => (
-                  <li key={idx} className="text-sm text-gray-700">{suggestion}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-          
-          {/* Concepts detected */}
-          {executionResult.aiResult.detected_concepts && executionResult.aiResult.detected_concepts.length > 0 && (
-            <div className="mb-4">
-              <h4 className="font-semibold text-indigo-800 mb-2 text-sm">📚 Concepts Detected:</h4>
-              <div className="flex flex-wrap gap-2">
-                {executionResult.aiResult.detected_concepts.map((concept, idx) => (
-                  <span key={idx} className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs">
-                    {concept}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {/* Weak concepts (areas to improve) */}
-          {executionResult.aiResult.weak_concepts && executionResult.aiResult.weak_concepts.length > 0 && (
-            <div className="mb-4">
-              <h4 className="font-semibold text-orange-800 mb-2 text-sm">📈 Areas to Improve:</h4>
-              <div className="flex flex-wrap gap-2">
-                {executionResult.aiResult.weak_concepts.map((concept, idx) => (
-                  <span key={idx} className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs">
-                    {concept}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {/* Strong concepts */}
-          {executionResult.aiResult.strong_concepts && executionResult.aiResult.strong_concepts.length > 0 && (
-            <div className="mb-4">
-              <h4 className="font-semibold text-green-800 mb-2 text-sm">✨ You're Good At:</h4>
-              <div className="flex flex-wrap gap-2">
-                {executionResult.aiResult.strong_concepts.map((concept, idx) => (
-                  <span key={idx} className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                    {concept}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {/* Next steps */}
-          {!executionResult.aiResult.success && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-600 mb-3">
-                💬 Need help? Click the chat button to ask the AI companion!
-              </p>
-              <button 
-                onClick={() => setShowFeedback(false)}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Try Again
-              </button>
-            </div>
-          )}
-          
-          {executionResult.aiResult.success && executionResult.nextMission && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <p className="text-sm text-green-700 mb-3">
-                🎉 Mission Complete! Ready to continue your journey?
-              </p>
-              <button 
-                onClick={() => {
-                  // Navigate back to dashboard
-                  console.log('[BlocklyWorkspace] Navigating to dashboard');
-                  setShowFeedback(false);
-                  router.push('/dashboard');
-                }}
-                className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Return to Dashboard 🏠
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-      
+        )}
+      </div>
+
       {/* 🧠 Live AI Hint - Floating companion */}
       {liveHint && (
         <div className="fixed bottom-24 right-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl shadow-2xl p-5 max-w-sm z-50 animate-bounce-in">
@@ -1332,6 +1118,22 @@ export default function BlocklyWorkspace({
           animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
       `}} />
+
+      {/* Fun Console Modal */}
+      <FunConsoleModal
+        visible={showConsoleModal}
+        pythonCode={consoleCode}
+        expectedOutput={mission?.expectedOutput}
+        missionId={mission?._id}
+        userId={user?.username}
+        onClose={() => setShowConsoleModal(false)}
+        onMissionComplete={() => {
+          // Mission completed! Return to dashboard
+          setTimeout(() => {
+            router.push('/dashboard');
+          }, 500);
+        }}
+      />
     </div>
   );
 }

@@ -5,6 +5,7 @@ Uses simple, encouraging language
 """
 from typing import List, Dict, Optional, Tuple
 import re
+import time
 from app.models.chatbot_models import (
     ChatbotRequest,
     ChatbotResponse,
@@ -15,6 +16,7 @@ from app.models.chatbot_models import (
     ConversationSummary
 )
 from app.core.logger import logger
+from app.core.event_logger import event_logger
 from app.services.code_executor import executor
 from openai import OpenAI
 import os
@@ -323,6 +325,8 @@ Remember: Your job is to help them LEARN, not to do it for them! Make coding fun
         """
         Generate a kid-friendly response that helps without giving solutions
         """
+        start_time = time.time()
+        
         try:
             logger.info(f"[CHATBOT] Generating response for user {request.user_id}")
             
@@ -389,14 +393,27 @@ Remember: Your job is to help them LEARN, not to do it for them! Make coding fun
             })
             
             # Call OpenAI/OpenRouter
+            ai_start = time.time()
             response = self.openai_client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 temperature=0.8,  # A bit creative for personality
                 max_tokens=300  # Keep responses concise for kids
             )
+            ai_response_time = (time.time() - ai_start) * 1000  # milliseconds
             
             response_text = response.choices[0].message.content.strip()
+            
+            # 📊 LOG CHATBOT INTERACTION EVENT
+            event_logger.log_chatbot_interaction(
+                model_name=self.model or "rule-based",
+                user_id=request.user_id,
+                mission_id=request.mission_id or "unknown",
+                user_message=request.question,
+                ai_response=response_text,
+                response_time_ms=ai_response_time,
+                context_used=bool(context)
+            )
             
             # Extract emoji from response (if any)
             emoji_match = re.search(r'[😀-🙏🌀-🗿🚀-🛿☀-⛿✀-➿]', response_text)
@@ -437,6 +454,15 @@ Remember: Your job is to help them LEARN, not to do it for them! Make coding fun
             
         except Exception as e:
             logger.error(f"[CHATBOT] Error generating response: {e}")
+            
+            # 📊 LOG MODEL ERROR
+            event_logger.log_model_error(
+                model_name=self.model or "rule-based",
+                user_id=request.user_id,
+                mission_id=request.mission_id or "unknown",
+                error_type="chatbot_generation_failed",
+                error_message=str(e)
+            )
             
             # Return friendly fallback response
             return ChatbotResponse(

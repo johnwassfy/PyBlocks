@@ -5,6 +5,7 @@ export type MissionDocument = Mission & Document;
 
 @Schema({ timestamps: true })
 export class Mission {
+  /** 🎯 General mission info */
   @Prop({ required: true })
   title: string;
 
@@ -17,17 +18,17 @@ export class Mission {
   @Prop()
   expectedOutput?: string;
 
-  @Prop({ default: 'easy' })
+  @Prop({ default: 'easy', enum: ['easy', 'medium', 'hard'] })
   difficulty: string;
+
+  @Prop({ default: 1 })
+  difficultyLevel: number; // for numeric scaling (1–10)
 
   @Prop({ type: [String], default: [] })
   tags: string[];
 
   @Prop({ type: [String], default: [] })
   objectives: string[];
-
-  @Prop({ type: [String], default: [] })
-  hints: string[];
 
   @Prop({ default: 10 })
   xpReward: number;
@@ -39,9 +40,9 @@ export class Mission {
   isActive: boolean;
 
   @Prop()
-  estimatedTime?: number;
+  estimatedTime?: number; // in minutes
 
-  // 🧠 Step-based learning (NEW)
+  /** 🧠 Step-based learning (NEW STRUCTURE) */
   @Prop({
     type: [
       {
@@ -55,9 +56,9 @@ export class Mission {
             expectedOutput: { type: String },
           },
         ],
-        concepts: [String], // what concepts this step reinforces
+        concepts: [String], // e.g. ['loops', 'variables']
         hints: [String],
-        aiCheckpoints: { type: Boolean, default: true }, // whether AI should analyze after this step
+        aiCheckpoint: { type: Boolean, default: true }, // trigger AI after this step
         xpReward: { type: Number, default: 5 },
       },
     ],
@@ -71,22 +72,23 @@ export class Mission {
     testCases?: { input: string; expectedOutput: string }[];
     concepts?: string[];
     hints?: string[];
-    aiCheckpoints?: boolean;
+    aiCheckpoint?: boolean;
     xpReward?: number;
   }[];
 
+  /** 🧪 Final validation (end-of-mission tests) */
   @Prop({ type: Object })
   testCases?: {
     input: string;
     expectedOutput: string;
   }[];
 
-  // ⚙️ Config for adaptive / AI behavior
+  /** ⚙️ Adaptive AI behavior config */
   @Prop({ type: Object })
   config?: {
     maxAttempts?: number;
-    timeLimit?: number;
-    aiWeighting?: number;
+    timeLimit?: number; // minutes
+    aiWeighting?: number; // how much AI feedback affects score
     adaptiveHints?: boolean;
     prerequisiteMissions?: string[];
     conceptWeights?: Record<string, number>;
@@ -95,30 +97,31 @@ export class Mission {
       minScore?: number;
       maxScore?: number;
     };
-    allowSkipSteps?: boolean; // whether kid can jump ahead
+    allowSkipSteps?: boolean; // let kids jump to next steps manually
+    allowRetryHints?: boolean; // whether hint use reduces XP
   };
 
-  // 🧠 Concept tracking
+  /** 📚 Concepts (for learning tracking) */
   @Prop({ type: [String], default: [] })
   concepts: string[];
 
-  // 📈 Analytics
+  /** 📈 Analytics and learning insights */
   @Prop({ type: Object })
   analytics?: {
     totalAttempts?: number;
     successRate?: number;
     averageScore?: number;
     averageTimeSpent?: number;
+    averageStepsCompleted?: number;
     lastUpdated?: Date;
-    averageStepsCompleted?: number; // how many steps kids typically finish
   };
 
-  // 🧾 Integrity / anti-cheat
+  /** 🔒 Validation and integrity rules */
   @Prop({ type: Object })
   validationRules?: {
-    disallowHardcodedOutput?: boolean; // prevents print("expectedOutput")
-    requiredConcepts?: string[]; // must use these code elements
-    forbiddenPatterns?: string[]; // banned solutions
+    disallowHardcodedOutput?: boolean;
+    requiredConcepts?: string[];
+    forbiddenPatterns?: string[];
   };
 }
 

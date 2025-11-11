@@ -3,7 +3,7 @@ API Router
 Combines all endpoint routers
 """
 from fastapi import APIRouter
-from app.api.endpoints import analyze, hint, recommend, health, chat, behavior, observer
+from app.api.endpoints import analyze, hint, recommend, health, chat, behavior, observer, execute
 
 
 # Create main API router
@@ -17,3 +17,4 @@ api_router.include_router(recommend.router)
 api_router.include_router(chat.router)
 api_router.include_router(behavior.router)
 api_router.include_router(observer.router)
+api_router.include_router(execute.router)

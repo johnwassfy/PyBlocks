@@ -6,6 +6,10 @@ import {
   Submission,
   SubmissionSchema,
 } from '../submissions/schemas/submission.schema';
+import {
+  SubmissionLog,
+  SubmissionLogSchema,
+} from '../submissions/schemas/submission-log.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { Mission, MissionSchema } from '../missions/schemas/mission.schema';
 import {
@@ -17,6 +21,7 @@ import {
   imports: [
     MongooseModule.forFeature([
       { name: Submission.name, schema: SubmissionSchema },
+      { name: SubmissionLog.name, schema: SubmissionLogSchema },
       { name: User.name, schema: UserSchema },
       { name: Mission.name, schema: MissionSchema },
       { name: LearningProfile.name, schema: LearningProfileSchema },
@@ -27,3 +32,4 @@ import {
   exports: [AnalyticsService],
 })
 export class AnalyticsModule {}
+

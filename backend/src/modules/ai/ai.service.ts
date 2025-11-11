@@ -58,25 +58,115 @@ export class AiService {
 
   async analyzeSubmission(submissionData: any): Promise<any> {
     // Contract note: matches ai_service/app/api/endpoints/analyze.py response structure.
-    // Expected keys include success, score, feedback, weakConcepts, strongConcepts,
-    // detectedConcepts, suggestions, hints, attempts, and timeSpent.
+    // Enhanced with rich context for adaptive, intelligent AI feedback.
     try {
+      // Gather student context from user profile and progress
+      await this.userModel.findById(submissionData.userId || submissionData.user_id);
+      const progress = await this.progressModel.findOne({ userId: submissionData.userId || submissionData.user_id });
+      
+      // Get learning profile for extended student data
+      let learningProfile: any = null;
+      try {
+        learningProfile = await this.learningProfileService.findByUserId(
+          submissionData.userId || submissionData.user_id
+        );
+      } catch {
+        this.logger.warn(`Learning profile not found for user ${submissionData.userId || submissionData.user_id}`);
+      }
+      
+      // Get previous submissions for this mission to track attempts
+      const previousSubmissions = await this.submissionModel
+        .find({
+          userId: submissionData.userId || submissionData.user_id,
+          missionId: submissionData.missionId || submissionData.mission_id,
+        })
+        .sort({ createdAt: -1 })
+        .limit(5);
+
+      const attemptNumber = previousSubmissions.length + 1;
+      const lastSubmission = previousSubmissions[0];
+
+      // Build rich AI context package
+      const aiContextRequest = {
+        mission_id: submissionData.missionId || submissionData.mission_id,
+        ai_model: submissionData.aiModel || 'z-ai/glm-4.5-air',
+        
+        // 1️⃣ Mission Context
+        mission_context: {
+          title: submissionData.missionTitle || 'Mission',
+          description: submissionData.missionDescription || '',
+          objectives: submissionData.objectives || [],
+          concepts: submissionData.concepts || [],
+          validation_mode: submissionData.validationMode || 'strict',
+          expected_output: submissionData.expected_output || '',
+          expected_line_count: submissionData.expectedLineCount,
+          is_story_based: submissionData.isStoryBased || false,
+          difficulty: submissionData.difficulty || 1,
+        },
+
+        // 2️⃣ Student Context
+        student_context: {
+          user_id: submissionData.userId || submissionData.user_id,
+          level: learningProfile?.level || 1,
+          xp: learningProfile?.xp || 0,
+          weak_skills: learningProfile?.weakSkills || progress?.weakConcepts || [],
+          strong_skills: learningProfile?.strongSkills || progress?.strongConcepts || [],
+          learning_style: 'hands-on', // Default for now
+          feedback_preference: 'short', // Default for now
+          ai_tone: 'friendly', // Default for now
+          attempt_number: attemptNumber,
+          time_spent: submissionData.timeSpent || submissionData.time_spent || 0,
+          previous_feedback: lastSubmission?.feedback || null,
+        },
+
+        // 3️⃣ Submission Context
+        submission_context: {
+          code: submissionData.code,
+          output: submissionData.output || '',
+          execution_result: submissionData.executionResult,
+          test_cases: submissionData.test_cases || [],
+          complexity_score: submissionData.complexityScore,
+          syntax_score: submissionData.syntaxScore || 100,
+          code_length: submissionData.code?.length || 0,
+          concepts_detected: submissionData.conceptsDetected || [],
+          line_count: submissionData.code?.split('\n').length || 0,
+        },
+
+        // 4️⃣ Behavior Metrics
+        behavior_metrics: {
+          idle_time: submissionData.idleTime || 0,
+          corrections_made: previousSubmissions.length,
+          errors_last_attempt: lastSubmission?.aiAnalysis?.weaknesses?.length || 0,
+          ai_hints_used: submissionData.hintsUsed || 0,
+          proactive_help_triggered: submissionData.proactiveHelpTriggered || false,
+        },
+
+        // 5️⃣ Validation Context
+        validation_context: {
+          check_exact_output: submissionData.checkExactOutput !== false,
+          check_line_count: submissionData.checkLineCount || false,
+          check_concepts: submissionData.checkConcepts !== false,
+          disallow_hardcoded_output: submissionData.disallowHardcodedOutput !== false,
+          allow_creativity: submissionData.allowCreativity || false,
+          forbidden_patterns: submissionData.forbiddenPatterns || [],
+        },
+
+        // Legacy fields for backward compatibility (deprecated)
+        code: submissionData.code,
+        concepts: submissionData.concepts || [],
+        test_cases: submissionData.test_cases || [],
+        expected_output: submissionData.expected_output,
+        difficulty: submissionData.difficulty,
+        user_id: submissionData.userId || submissionData.user_id,
+        submission_id: submissionData.submissionId || submissionData.submission_id,
+        attempts: attemptNumber,
+        time_spent: submissionData.timeSpent || submissionData.time_spent || 0,
+      };
+
       const response = await firstValueFrom(
         this.httpService.post(
           `${this.aiServiceUrl}/api/v1/analyze`,
-          {
-            code: submissionData.code,
-            concepts: submissionData.concepts || [],
-            test_cases: submissionData.test_cases || [],
-            expected_output: submissionData.expected_output,
-            difficulty: submissionData.difficulty,
-            user_id: submissionData.userId || submissionData.user_id,
-            mission_id: submissionData.missionId || submissionData.mission_id,
-            submission_id:
-              submissionData.submissionId || submissionData.submission_id,
-            attempts: submissionData.attempts || 1,
-            time_spent: submissionData.timeSpent || submissionData.time_spent || 0,
-          },
+          aiContextRequest,
           { headers: this.getHeaders() },
         ),
       );

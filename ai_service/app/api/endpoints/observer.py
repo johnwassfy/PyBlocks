@@ -11,8 +11,9 @@ import difflib
 
 from app.core.security import verify_api_key
 from app.services.chatbot_service import KidFriendlyChatbot
+from app.models.chatbot_models import ChatbotRequest
 
-router = APIRouter()
+router = APIRouter(prefix="", tags=["Observer"])
 
 class BehaviorMetrics(BaseModel):
     """User behavior metrics for observation"""
@@ -222,11 +223,14 @@ Generate the message now (just the message, no explanation):
 """
     
     try:
-        response = await chatbot.generate_response(
-            question=context,
-            user_code=metrics.currentCode,
-            weak_concepts=metrics.weakConcepts or [],
-            strong_concepts=metrics.strongConcepts or [],
+        # Create ChatbotRequest object
+        chatbot_request = ChatbotRequest(
+            message=context,
+            userId=metrics.userId,
+            missionId=metrics.missionId,
+            userCode=metrics.currentCode,
+            weakConcepts=metrics.weakConcepts or [],
+            strongConcepts=metrics.strongConcepts or [],
             context={
                 "is_proactive_hint": True,
                 "analysis": analysis.dict(),
@@ -234,7 +238,9 @@ Generate the message now (just the message, no explanation):
                 "concept_struggles": concept_struggles,
             }
         )
-        message = response.get("response", "")
+        
+        response = await chatbot.generate_response(chatbot_request)
+        message = response.response  # Get the response text
         
         # Ensure it's short (max 200 chars for the popup)
         if len(message) > 200:

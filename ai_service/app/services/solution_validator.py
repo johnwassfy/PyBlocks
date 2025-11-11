@@ -39,7 +39,8 @@ class SolutionValidator:
         expected_output: str,
         required_concepts: List[str],
         difficulty: str,
-        actual_output: str
+        actual_output: str,
+        validation_rules: Dict[str, Any] = None
     ) -> ValidationResult:
         """
         Comprehensive validation of student solution.
@@ -50,6 +51,7 @@ class SolutionValidator:
             required_concepts: Concepts that should be demonstrated
             difficulty: Mission difficulty level
             actual_output: Actual output from code execution
+            validation_rules: Mission-specific validation rules from schema
             
         Returns:
             ValidationResult with validation details
@@ -57,6 +59,7 @@ class SolutionValidator:
         issues = []
         detected_patterns = []
         score_multiplier = 1.0
+        validation_rules = validation_rules or {}
         
         # 1. Check if output matches (prerequisite)
         if actual_output.strip() != expected_output.strip():
@@ -68,41 +71,58 @@ class SolutionValidator:
                 complexity_score=0
             )
         
-        # 2. Detect hardcoded output (cheating)
-        is_hardcoded, hardcode_issues = self._check_hardcoded_output(
-            code, expected_output
-        )
-        if is_hardcoded:
-            issues.extend(hardcode_issues)
-            detected_patterns.append("hardcoded_output")
-            score_multiplier *= 0.3  # Severe penalty
+        # 2. Check for forbidden patterns (NEW from schema)
+        if validation_rules.get('forbiddenPatterns'):
+            forbidden_issues = self._check_forbidden_patterns(
+                code, validation_rules['forbiddenPatterns']
+            )
+            if forbidden_issues:
+                issues.extend(forbidden_issues)
+                detected_patterns.append("forbidden_pattern")
+                score_multiplier *= 0.3  # Severe penalty for using forbidden code
         
-        # 3. Check for required concepts
-        missing_concepts = self._check_required_concepts(code, required_concepts)
+        # 3. Detect hardcoded output (cheating)
+        # Only check if explicitly enabled in validation rules
+        if validation_rules.get('disallowHardcodedOutput', True):
+            is_hardcoded, hardcode_issues = self._check_hardcoded_output(
+                code, expected_output
+            )
+            if is_hardcoded:
+                issues.extend(hardcode_issues)
+                detected_patterns.append("hardcoded_output")
+                score_multiplier *= 0.3  # Severe penalty
+        
+        # 4. Check for required concepts (merge mission concepts + validation rules)
+        all_required_concepts = list(required_concepts)
+        if validation_rules.get('requiredConcepts'):
+            all_required_concepts.extend(validation_rules['requiredConcepts'])
+        
+        missing_concepts = self._check_required_concepts(code, all_required_concepts)
         if missing_concepts:
             issues.append(f"Missing required concepts: {', '.join(missing_concepts)}")
             detected_patterns.append("missing_concepts")
             score_multiplier *= 0.6
         
-        # 4. Analyze code complexity
+        # 5. Analyze code complexity
         complexity_score = self._analyze_complexity(code, difficulty)
         if complexity_score < 20:
             issues.append("Code is too simple for this mission")
             detected_patterns.append("insufficient_complexity")
             score_multiplier *= 0.7
         
-        # 5. Check for proper structure
-        structure_issues = self._check_code_structure(code, required_concepts)
+        # 6. Check for proper structure
+        structure_issues = self._check_code_structure(code, all_required_concepts)
         if structure_issues:
             issues.extend(structure_issues)
             detected_patterns.append("poor_structure")
             score_multiplier *= 0.8
         
-        # 6. Detect copy-paste patterns
-        if self._detect_copy_paste(code, expected_output):
-            issues.append("Code appears to be directly copying expected output")
-            detected_patterns.append("copy_paste")
-            score_multiplier *= 0.2
+        # 7. Detect copy-paste patterns (only if hardcoded output check is enabled)
+        if validation_rules.get('disallowHardcodedOutput', True):
+            if self._detect_copy_paste(code, expected_output):
+                issues.append("Code appears to be directly copying expected output")
+                detected_patterns.append("copy_paste")
+                score_multiplier *= 0.2
         
         is_valid = len(issues) == 0
         
@@ -113,6 +133,35 @@ class SolutionValidator:
             detected_patterns=detected_patterns,
             complexity_score=complexity_score
         )
+    
+    def _check_forbidden_patterns(self, code: str, forbidden_patterns: List[str]) -> List[str]:
+        """
+        Check if code contains any forbidden patterns from mission schema.
+        
+        Args:
+            code: Student's code
+            forbidden_patterns: List of forbidden code patterns/keywords
+            
+        Returns:
+            List of issues if forbidden patterns found
+        """
+        issues = []
+        code_lower = code.lower()
+        
+        for pattern in forbidden_patterns:
+            pattern_lower = pattern.lower()
+            
+            # Check for direct pattern match
+            if pattern_lower in code_lower:
+                issues.append(f"Forbidden pattern detected: '{pattern}'")
+                continue
+                
+            # Check for pattern as a complete word (avoid false positives)
+            import re
+            if re.search(r'\b' + re.escape(pattern_lower) + r'\b', code_lower):
+                issues.append(f"Forbidden keyword used: '{pattern}'")
+        
+        return issues
     
     def _check_hardcoded_output(
         self, 
@@ -185,6 +234,7 @@ class SolutionValidator:
             'operators': [r'[\+\-\*\/\%]', r'==', r'!=', r'>', r'<', r'>=', r'<='],
             'lists': [r'\[.*\]', r'\.append', r'\.extend'],
             'strings': [r'["\'].*["\']'],
+            'print': [r'\bprint\b'],
             'input': [r'\binput\b'],
             'range': [r'\brange\b'],
             'modulo': [r'\%'],
