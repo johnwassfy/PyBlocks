@@ -6,7 +6,7 @@ import { useWorkspace } from '../../context/WorkspaceContext';
 import { sendChatMessage, getPredefinedPrompts, checkAIServiceHealth } from '../../services/chatbotApi';
 
 export default function WorkspacePage() {
-  const { mission, user, profile } = useWorkspace();
+  const { mission, user, profile, gamification } = useWorkspace();
 
   if (!mission || !user || !profile) {
     return <div className="p-8 text-center text-red-500">Missing mission, user, or profile info.</div>;
@@ -16,6 +16,7 @@ export default function WorkspacePage() {
     mission,
     user,
     profile,
+    gamification,
     sendChatMessage,
     getPredefinedPrompts,
     checkAIServiceHealth,

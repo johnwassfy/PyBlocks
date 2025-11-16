@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Patch,
-  Body,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Patch, Body, UseGuards } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { LearningProfileService } from './learning-profile.service';
 import { UpdateLearningProfileDto } from './dto/update-learning-profile.dto';

@@ -7,7 +7,6 @@ import {
   GamificationSchema,
 } from './schemas/gamification.schema';
 import { UsersModule } from '../users/users.module';
-import { LearningProfileModule } from '../learning-profile/learning-profile.module';
 
 @Module({
   imports: [
@@ -15,7 +14,6 @@ import { LearningProfileModule } from '../learning-profile/learning-profile.modu
       { name: Gamification.name, schema: GamificationSchema },
     ]),
     forwardRef(() => UsersModule),
-    LearningProfileModule,
   ],
   controllers: [GamificationController],
   providers: [GamificationService],

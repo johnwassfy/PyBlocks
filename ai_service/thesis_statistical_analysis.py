@@ -216,6 +216,43 @@ class ThesisStatisticalAnalysis:
             output_file = self.output_dir / "chat_quality_metrics.csv"
             quality_stats.to_csv(output_file)
             print(f"\n✅ Saved to: {output_file}")
+        
+        # Analyze BEHAVIOR service
+        behavior_df = df[df['service'] == 'behavior'].copy()
+        
+        if not behavior_df.empty:
+            print("\n🧠 BEHAVIOR Service Quality:")
+            
+            # Extract behavior-specific metrics
+            behavior_df['pattern'] = behavior_df['response_data'].apply(
+                lambda x: x.get('pattern', '') if isinstance(x, dict) else ''
+            )
+            behavior_df['hint_text'] = behavior_df['response_data'].apply(
+                lambda x: x.get('hint', '') if isinstance(x, dict) else ''
+            )
+            behavior_df['hint_provided'] = behavior_df['hint_text'].apply(lambda x: 1 if x else 0)
+            behavior_df['hint_length'] = behavior_df['hint_text'].apply(len)
+            
+            quality_stats = behavior_df.groupby('model_name').agg({
+                'hint_provided': ['sum', 'mean'],  # Total hints and intervention rate
+                'hint_length': ['mean', 'median', 'std']  # Hint quality
+            }).round(2)
+            
+            print(quality_stats)
+            
+            # Pattern detection analysis
+            print("\n   Pattern Detection Distribution:")
+            pattern_dist = behavior_df.groupby(['model_name', 'pattern']).size().unstack(fill_value=0)
+            print(pattern_dist)
+            
+            output_file = self.output_dir / "behavior_quality_metrics.csv"
+            quality_stats.to_csv(output_file)
+            
+            pattern_file = self.output_dir / "behavior_pattern_distribution.csv"
+            pattern_dist.to_csv(pattern_file)
+            
+            print(f"\n✅ Saved to: {output_file}")
+            print(f"✅ Saved pattern distribution to: {pattern_file}")
     
     def generate_comparison_tables(self, df):
         """Generate publication-ready comparison tables"""

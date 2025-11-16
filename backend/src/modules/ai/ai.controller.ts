@@ -89,7 +89,8 @@ export class AiController {
 
   @Post('update-learning-state')
   @ApiOperation({
-    summary: 'Update student learning state based on AI analysis (called by AI service)',
+    summary:
+      'Update student learning state based on AI analysis (called by AI service)',
   })
   @ApiBody({ type: LearningStateUpdateDto })
   @ApiResponse({

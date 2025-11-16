@@ -26,9 +26,7 @@ export class LearningProfile {
   strongSkills: string[];
 
   // --- 🎯 Progress Tracking ---
-  @Prop({ type: [String], default: [] })
-  completedMissions: string[];
-
+  // Note: completedMissions now tracked in Gamification collection
   @Prop({ default: 0 })
   totalSubmissions: number;
 
@@ -38,14 +36,8 @@ export class LearningProfile {
   @Prop({ default: 0 })
   avgAccuracy: number; // overall score performance (0–100)
 
-  @Prop({ default: 0 })
-  xp: number;
-
-  @Prop({ default: 1 })
-  level: number;
-
-  @Prop({ type: [String], default: [] })
-  badges: string[];
+  // Note: xp, level, and badges are now tracked in Gamification collection
+  // Use populate('gamification') to access these fields
 
   // --- 🧠 AI Adaptivity Data ---
   @Prop({
@@ -60,4 +52,5 @@ export class LearningProfile {
   lastActive?: Date;
 }
 
-export const LearningProfileSchema = SchemaFactory.createForClass(LearningProfile);
+export const LearningProfileSchema =
+  SchemaFactory.createForClass(LearningProfile);

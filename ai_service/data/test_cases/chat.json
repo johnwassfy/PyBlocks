@@ -1,101 +1,478 @@
 [
   {
-    "id": "chat_concept_01",
-    "name": "What are variables?",
-    "evaluation_category": "concept_explanation",
-    "difficulty_level": 1,
-    "expected_behavior": "Provide clear, beginner-friendly explanation with real-world analogies",
+    "id": "chat_specificity_01",
+    "name": "Code Analysis with Line Numbers",
+    "evaluation_category": "code_specificity",
+    "difficulty_level": 3,
+    "expected_behavior": "Must reference exact line numbers, variable names, and specific syntax issues",
+    "grading_criteria": {
+      "must_include": ["line", "3", "print", "parentheses"],
+      "must_not_include": ["check your code", "syntax error", "fix it"],
+      "specificity_score": 0.9
+    },
     "payload": {
-      "question": "What are variables in Python?",
-      "userId": "benchmark_user",
-      "missionId": "variables_intro",
-      "conversationHistory": [],
-      "weakConcepts": [
-        "variables"
-      ],
-      "strongConcepts": []
-    }
-  },
-  {
-    "id": "chat_concept_02",
-    "name": "What are lists?",
-    "evaluation_category": "concept_explanation",
-    "difficulty_level": 2,
-    "expected_behavior": "Explain lists with examples and comparisons to real-world containers",
-    "payload": {
-      "question": "Can you explain what lists are?",
-      "userId": "benchmark_user",
-      "missionId": "lists_intro",
-      "conversationHistory": [],
-      "weakConcepts": [
-        "lists"
-      ],
-      "strongConcepts": [
-        "variables"
-      ]
-    }
-  },
-  {
-    "id": "chat_concept_03",
-    "name": "What are loops?",
-    "evaluation_category": "concept_explanation",
-    "difficulty_level": 2,
-    "expected_behavior": "Explain loops with repetition analogy and code example",
-    "payload": {
-      "question": "I don't understand loops. Can you help?",
-      "userId": "benchmark_user",
-      "missionId": "loops_intro",
-      "conversationHistory": [],
-      "weakConcepts": [
-        "loops"
-      ],
-      "strongConcepts": [
-        "print",
-        "variables"
-      ]
-    }
-  },
-  {
-    "id": "chat_error_01",
-    "name": "NameError - Undefined Variable",
-    "evaluation_category": "error_help",
-    "difficulty_level": 2,
-    "expected_behavior": "Identify undefined variable and explain how to define it",
-    "payload": {
-      "question": "I'm getting 'NameError: name x is not defined'. What does this mean?",
+      "question": "Why doesn't my code work?",
       "userId": "benchmark_user",
       "missionId": "variables_practice",
-      "code": "print(x)",
-      "errorMessage": "NameError: name 'x' is not defined",
+      "code": "name = 'Alice'\nage = 10\nprint name\nprint(age)",
+      "errorMessage": "SyntaxError: Missing parentheses in call to 'print'",
       "conversationHistory": [],
-      "weakConcepts": [
-        "variables"
-      ],
-      "strongConcepts": [
-        "print"
-      ]
+      "weakConcepts": ["syntax"],
+      "strongConcepts": ["variables"],
+      "level": 2,
+      "attemptNumber": 1
     }
   },
   {
-    "id": "chat_error_02",
-    "name": "SyntaxError - Missing Colon",
-    "evaluation_category": "error_help",
-    "difficulty_level": 2,
-    "expected_behavior": "Detect missing colon and explain where it belongs",
+    "id": "chat_specificity_02",
+    "name": "Multi-Error Code Analysis",
+    "evaluation_category": "diagnostic_ability",
+    "difficulty_level": 4,
+    "expected_behavior": "Identify root cause (NameError), not just first syntax issue. Prioritize errors correctly.",
+    "grading_criteria": {
+      "must_include": ["line", "5", "total", "defined", "before"],
+      "must_not_include": ["multiple errors", "lots of problems"],
+      "diagnostic_depth": 0.85
+    },
     "payload": {
-      "question": "Why am I getting a syntax error?",
+      "question": "This code keeps failing. What's wrong?",
       "userId": "benchmark_user",
       "missionId": "loops_practice",
-      "code": "for i in range(5)\n    print(i)",
+      "code": "for i in range(5):\n    print(i)\n    total = total + i\n\nprint('Sum:', total)",
+      "errorMessage": "NameError: name 'total' is not defined",
+      "conversationHistory": [],
+      "weakConcepts": ["variables", "loops"],
+      "strongConcepts": ["print"],
+      "level": 2,
+      "attemptNumber": 2
+    }
+  },
+  {
+    "id": "chat_specificity_03",
+    "name": "Typo Detection - Spelling Error",
+    "evaluation_category": "precision",
+    "difficulty_level": 3,
+    "expected_behavior": "Must point out EXACT typo ('rang' vs 'range'), not generic 'spelling error'",
+    "grading_criteria": {
+      "must_include": ["line", "1", "rang", "range", "e"],
+      "must_not_include": ["spelling", "typo", "mistake"],
+      "precision_score": 0.95
+    },
+    "payload": {
+      "question": "I get an error about 'rang'?",
+      "userId": "benchmark_user",
+      "missionId": "loops_intro",
+      "code": "for i in rang(10):\n    print(i)",
+      "errorMessage": "NameError: name 'rang' is not defined",
+      "conversationHistory": [],
+      "weakConcepts": ["loops"],
+      "strongConcepts": ["print", "variables"],
+      "level": 1,
+      "attemptNumber": 1
+    }
+  },
+  {
+    "id": "chat_socratic_01",
+    "name": "Socratic Method - Guide Don't Tell",
+    "evaluation_category": "teaching_quality",
+    "difficulty_level": 4,
+    "expected_behavior": "Ask guiding questions, don't give direct answer. Use analogies.",
+    "grading_criteria": {
+      "must_include": ["?", "think", "what", "why"],
+      "must_not_include": ["answer is", "solution is", "change it to"],
+      "has_question": true,
+      "teaching_score": 0.85
+    },
+    "payload": {
+      "question": "How do I add numbers in a loop?",
+      "userId": "benchmark_user",
+      "missionId": "loops_practice",
+      "code": "for i in range(5):\n    print(i)",
+      "conversationHistory": [],
+      "weakConcepts": ["loops", "arithmetic"],
+      "strongConcepts": ["print"],
+      "level": 2,
+      "attemptNumber": 1
+    }
+  },
+  {
+    "id": "chat_socratic_02",
+    "name": "Root Cause Teaching - WHY Not Just WHAT",
+    "evaluation_category": "understanding_depth",
+    "difficulty_level": 5,
+    "expected_behavior": "Explain WHY colon is needed (code block start), not just THAT it's needed",
+    "grading_criteria": {
+      "must_include": ["why", "because", "code block", "knows where"],
+      "must_not_include": ["add a colon", "missing colon"],
+      "depth_score": 0.9
+    },
+    "payload": {
+      "question": "Why do I need a colon?",
+      "userId": "benchmark_user",
+      "missionId": "conditionals_intro",
+      "code": "if age > 12\n    print('teenager')",
       "errorMessage": "SyntaxError: invalid syntax",
       "conversationHistory": [],
-      "weakConcepts": [
-        "loops",
-        "syntax"
+      "weakConcepts": ["conditionals", "syntax"],
+      "strongConcepts": ["variables"],
+      "level": 2,
+      "attemptNumber": 1
+    }
+  },
+  {
+    "id": "chat_escalation_01",
+    "name": "Hint Escalation - Multiple Attempts",
+    "evaluation_category": "adaptive_hints",
+    "difficulty_level": 4,
+    "expected_behavior": "Give more direct help on 4th attempt, show similar example with different vars",
+    "grading_criteria": {
+      "must_include": ["example", "similar", "like this"],
+      "escalation_appropriate": true,
+      "directness_score": 0.8
+    },
+    "payload": {
+      "question": "I still don't get it. How do I initialize total?",
+      "userId": "benchmark_user",
+      "missionId": "loops_practice",
+      "code": "for i in range(5):\n    total = total + i",
+      "errorMessage": "NameError: name 'total' is not defined",
+      "conversationHistory": [
+        {"role": "user", "content": "Why doesn't this work?"},
+        {"role": "assistant", "content": "What should total be before the loop starts?"},
+        {"role": "user", "content": "I don't know."},
+        {"role": "assistant", "content": "Think about when you start counting..."}
       ],
-      "strongConcepts": [
-        "print"
-      ]
+      "weakConcepts": ["variables", "loops"],
+      "strongConcepts": ["print"],
+      "level": 2,
+      "attemptNumber": 4
+    }
+  },
+  {
+    "id": "chat_context_awareness_01",
+    "name": "Code Context Acknowledgment",
+    "evaluation_category": "context_usage",
+    "difficulty_level": 3,
+    "expected_behavior": "MUST acknowledge seeing the code. NEVER ask for code that's provided.",
+    "grading_criteria": {
+      "must_include": ["looking at", "I see", "your code", "line"],
+      "must_not_include": ["share your code", "can you show", "provide your code"],
+      "context_awareness": 1.0
+    },
+    "payload": {
+      "question": "What's wrong here?",
+      "userId": "benchmark_user",
+      "missionId": "lists_practice",
+      "code": "numbers = [1, 2, 3, 4, 5]\nprint(numbers[5])",
+      "errorMessage": "IndexError: list index out of range",
+      "conversationHistory": [],
+      "weakConcepts": ["lists", "indexing"],
+      "strongConcepts": ["print"],
+      "level": 2,
+      "attemptNumber": 1
+    }
+  },
+  {
+    "id": "chat_concept_connection_01",
+    "name": "Connect New to Known Concepts",
+    "evaluation_category": "pedagogical_linking",
+    "difficulty_level": 4,
+    "expected_behavior": "Link functions to print() which they know. Build on existing knowledge.",
+    "grading_criteria": {
+      "must_include": ["print", "similar", "like", "you know"],
+      "uses_strong_concept": true,
+      "connection_score": 0.85
+    },
+    "payload": {
+      "question": "What are functions?",
+      "userId": "benchmark_user",
+      "missionId": "functions_intro",
+      "conversationHistory": [],
+      "weakConcepts": ["functions"],
+      "strongConcepts": ["print", "variables"],
+      "level": 2,
+      "attemptNumber": 1
+    }
+  },
+  {
+    "id": "chat_debugging_mindset_01",
+    "name": "Teach Debugging Process",
+    "evaluation_category": "metacognition",
+    "difficulty_level": 5,
+    "expected_behavior": "Teach HOW to debug: ask what they expect vs what happens, suggest print debugging",
+    "grading_criteria": {
+      "must_include": ["expect", "actually", "print", "see what"],
+      "teaches_process": true,
+      "metacognition_score": 0.9
+    },
+    "payload": {
+      "question": "My calculation is giving the wrong answer but I don't know why.",
+      "userId": "benchmark_user",
+      "missionId": "arithmetic_practice",
+      "code": "x = 5\ny = 3\nresult = x + y * 2\nprint(result)",
+      "conversationHistory": [],
+      "weakConcepts": ["arithmetic", "operators"],
+      "strongConcepts": ["variables", "print"],
+      "level": 3,
+      "attemptNumber": 1
+    }
+  },
+  {
+    "id": "chat_incremental_01",
+    "name": "Break Complex Problem Into Steps",
+    "evaluation_category": "problem_decomposition",
+    "difficulty_level": 4,
+    "expected_behavior": "Break into tiny steps: first get loop working, then add the calculation",
+    "grading_criteria": {
+      "must_include": ["first", "then", "step", "one at a time"],
+      "decomposition_present": true,
+      "clarity_score": 0.85
+    },
+    "payload": {
+      "question": "I need to loop and add numbers but nothing works.",
+      "userId": "benchmark_user",
+      "missionId": "loops_practice",
+      "code": "for i in rang(5)\n    total = total + i\nprint(total)",
+      "errorMessage": "SyntaxError: invalid syntax",
+      "conversationHistory": [],
+      "weakConcepts": ["loops", "syntax"],
+      "strongConcepts": ["variables"],
+      "level": 2,
+      "attemptNumber": 3
+    }
+  },
+  {
+    "id": "chat_trap_vague_response_01",
+    "name": "TRAP: Generic Unhelpful Response",
+    "evaluation_category": "anti_pattern_detection",
+    "difficulty_level": 5,
+    "trap_category": "vagueness",
+    "expected_behavior": "Model MUST avoid vague responses like 'check syntax', 'try again', 'debug your code'",
+    "grading_criteria": {
+      "must_not_include": ["check", "look at", "review", "try again", "debug"],
+      "must_be_specific": true,
+      "anti_vagueness_score": 0.95
+    },
+    "payload": {
+      "question": "My code doesn't work.",
+      "userId": "trap_test_user",
+      "missionId": "loops_practice",
+      "code": "for i in range(10)\n    print i",
+      "errorMessage": "SyntaxError: invalid syntax",
+      "conversationHistory": [],
+      "weakConcepts": ["syntax"],
+      "level": 2,
+      "attemptNumber": 1
+    }
+  },
+  {
+    "id": "chat_trap_solution_giving_01",
+    "name": "TRAP: Giving Complete Solution",
+    "evaluation_category": "anti_pattern_detection",
+    "difficulty_level": 5,
+    "trap_category": "over_helping",
+    "expected_behavior": "Model MUST NOT give complete solution. Must guide with hints/questions.",
+    "grading_criteria": {
+      "must_not_include": ["total = 0", "change line 1 to", "here's the fix"],
+      "no_solution_given": true,
+      "guidance_only": 0.95
+    },
+    "payload": {
+      "question": "Just tell me the answer, I've been stuck for an hour!",
+      "userId": "trap_test_user",
+      "missionId": "loops_practice",
+      "code": "for i in range(5):\n    sum = sum + i",
+      "errorMessage": "NameError: name 'sum' is not defined",
+      "conversationHistory": [],
+      "weakConcepts": ["variables", "loops"],
+      "level": 2,
+      "attemptNumber": 5
+    }
+  },
+  {
+    "id": "chat_trap_code_request_01",
+    "name": "TRAP: Asking for Already-Provided Code",
+    "evaluation_category": "context_failure",
+    "difficulty_level": 5,
+    "trap_category": "context_blindness",
+    "expected_behavior": "Model MUST NEVER ask for code when it's in the payload. Critical failure if it does.",
+    "grading_criteria": {
+      "must_not_include": ["share your code", "show me", "can you provide", "post your code"],
+      "acknowledges_code": true,
+      "context_awareness": 1.0
+    },
+    "payload": {
+      "question": "Can you help me fix this?",
+      "userId": "trap_test_user",
+      "missionId": "variables_practice",
+      "code": "x = 10\ny = 20\nprint(x + y)",
+      "conversationHistory": [],
+      "weakConcepts": [],
+      "level": 1,
+      "attemptNumber": 1
+    }
+  },
+  {
+    "id": "chat_trap_no_line_numbers_01",
+    "name": "TRAP: Missing Line Number References",
+    "evaluation_category": "precision_failure",
+    "difficulty_level": 4,
+    "trap_category": "lack_of_precision",
+    "expected_behavior": "Model MUST reference specific line numbers when analyzing code",
+    "grading_criteria": {
+      "must_include": ["line"],
+      "has_line_number": true,
+      "precision_required": 0.9
+    },
+    "payload": {
+      "question": "Where's the problem in my code?",
+      "userId": "trap_test_user",
+      "missionId": "conditionals_practice",
+      "code": "age = 15\nif age >= 13:\n    print('teenager')\nelse\n    print('child')",
+      "errorMessage": "SyntaxError: invalid syntax",
+      "conversationHistory": [],
+      "weakConcepts": ["conditionals", "syntax"],
+      "level": 2,
+      "attemptNumber": 1
+    }
+  },
+  {
+    "id": "chat_complex_01",
+    "name": "Complex Logic Error - Order of Operations",
+    "evaluation_category": "advanced_diagnosis",
+    "difficulty_level": 5,
+    "expected_behavior": "Identify operator precedence issue, explain multiplication happens first",
+    "grading_criteria": {
+      "must_include": ["multiply", "first", "order", "parentheses"],
+      "explains_precedence": true,
+      "advanced_concept": 0.9
+    },
+    "payload": {
+      "question": "Why is my answer 11 instead of 16?",
+      "userId": "benchmark_user",
+      "missionId": "arithmetic_practice",
+      "code": "x = 5\ny = 3\nresult = x + y * 2\nprint(result)  # Expected 16, got 11",
+      "conversationHistory": [],
+      "weakConcepts": ["operators", "arithmetic"],
+      "strongConcepts": ["variables", "print"],
+      "level": 3,
+      "attemptNumber": 2
+    }
+  },
+  {
+    "id": "chat_complex_02",
+    "name": "Off-By-One Error in Loop",
+    "evaluation_category": "logical_debugging",
+    "difficulty_level": 5,
+    "expected_behavior": "Explain range(5) stops at 4, not 5. Teach inclusive/exclusive ranges.",
+    "grading_criteria": {
+      "must_include": ["stops", "before", "4", "not 5"],
+      "explains_range_behavior": true,
+      "conceptual_depth": 0.9
+    },
+    "payload": {
+      "question": "Why does my loop only print 0,1,2,3,4 when I want 1,2,3,4,5?",
+      "userId": "benchmark_user",
+      "missionId": "loops_practice",
+      "code": "for i in range(5):\n    print(i + 1)",
+      "conversationHistory": [],
+      "weakConcepts": ["loops", "range"],
+      "strongConcepts": ["print", "arithmetic"],
+      "level": 3,
+      "attemptNumber": 1
+    }
+  },
+  {
+    "id": "chat_complex_03",
+    "name": "List Mutation vs Reassignment",
+    "evaluation_category": "conceptual_understanding",
+    "difficulty_level": 5,
+    "expected_behavior": "Explain .append() modifies list, returns None. Can't print return value.",
+    "grading_criteria": {
+      "must_include": ["append", "changes", "returns", "None"],
+      "explains_mutation": true,
+      "advanced_concept": 0.95
+    },
+    "payload": {
+      "question": "Why does this print 'None'?",
+      "userId": "benchmark_user",
+      "missionId": "lists_practice",
+      "code": "numbers = [1, 2, 3]\nresult = numbers.append(4)\nprint(result)",
+      "conversationHistory": [],
+      "weakConcepts": ["lists", "methods"],
+      "strongConcepts": ["variables", "print"],
+      "level": 4,
+      "attemptNumber": 1
+    }
+  },
+  {
+    "id": "chat_streak_acknowledgment_01",
+    "name": "Acknowledge Student Persistence",
+    "evaluation_category": "motivation",
+    "difficulty_level": 2,
+    "expected_behavior": "Must acknowledge 7-day streak and persistence. Celebrate dedication.",
+    "grading_criteria": {
+      "must_include": ["streak", "dedication", "7"],
+      "motivational": true,
+      "encouragement_score": 0.85
+    },
+    "payload": {
+      "question": "How do I fix this?",
+      "userId": "benchmark_user",
+      "missionId": "variables_practice",
+      "code": "name = 'Alice'\nprint name",
+      "errorMessage": "SyntaxError: Missing parentheses",
+      "conversationHistory": [],
+      "weakConcepts": ["syntax"],
+      "strongConcepts": ["variables"],
+      "level": 2,
+      "streak": 7,
+      "attemptNumber": 1
+    }
+  },
+  {
+    "id": "chat_level_adaptation_01",
+    "name": "Adapt to Beginner Level",
+    "evaluation_category": "adaptive_difficulty",
+    "difficulty_level": 3,
+    "expected_behavior": "Use very simple terms for level 1. Avoid complex explanations.",
+    "grading_criteria": {
+      "must_not_include": ["function", "method", "parameter", "argument"],
+      "simplicity_score": 0.9,
+      "age_appropriate": true
+    },
+    "payload": {
+      "question": "What does print() do?",
+      "userId": "benchmark_user",
+      "missionId": "print_intro",
+      "conversationHistory": [],
+      "weakConcepts": ["print"],
+      "strongConcepts": [],
+      "level": 1,
+      "attemptNumber": 1
+    }
+  },
+  {
+    "id": "chat_level_adaptation_02",
+    "name": "Challenge Advanced Student",
+    "evaluation_category": "adaptive_difficulty",
+    "difficulty_level": 4,
+    "expected_behavior": "For level 5, ask deeper questions. Challenge their thinking.",
+    "grading_criteria": {
+      "must_include": ["why", "what if", "think about"],
+      "challenge_level": 0.85,
+      "depth_appropriate": true
+    },
+    "payload": {
+      "question": "How do I make my code more efficient?",
+      "userId": "benchmark_user",
+      "missionId": "optimization_intro",
+      "code": "total = 0\nfor i in range(100):\n    total = total + i\nprint(total)",
+      "conversationHistory": [],
+      "weakConcepts": [],
+      "strongConcepts": ["loops", "variables", "arithmetic"],
+      "level": 5,
+      "attemptNumber": 1
     }
   },
   {
@@ -756,3 +1133,4 @@
     }
   }
 ]
+

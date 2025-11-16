@@ -16,6 +16,10 @@ import {
   LearningProfile,
   LearningProfileSchema,
 } from '../learning-profile/schemas/learning-profile.schema';
+import {
+  Gamification,
+  GamificationSchema,
+} from '../gamification/schemas/gamification.schema';
 
 @Module({
   imports: [
@@ -25,6 +29,7 @@ import {
       { name: User.name, schema: UserSchema },
       { name: Mission.name, schema: MissionSchema },
       { name: LearningProfile.name, schema: LearningProfileSchema },
+      { name: Gamification.name, schema: GamificationSchema },
     ]),
   ],
   controllers: [AnalyticsController],
@@ -32,4 +37,3 @@ import {
   exports: [AnalyticsService],
 })
 export class AnalyticsModule {}
-

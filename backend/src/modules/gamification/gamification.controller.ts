@@ -37,4 +37,28 @@ export class GamificationController {
   ) {
     return this.gamificationService.getOrCreateGamification(user.userId);
   }
+
+  @Get('my-profile')
+  @ApiOperation({ summary: 'Get gamification profile for current user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Gamification profile retrieved',
+    schema: {
+      example: {
+        userId: '507f191e810c19729de860ea',
+        xp: 350,
+        level: 4,
+        badges: ['first-mission', 'quick-learner', 'streak-3'],
+        streak: 5,
+        completedMissions: ['mission1', 'mission2', 'mission3'],
+        achievements: [],
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getMyProfile(
+    @CurrentUser() user: { userId: string; username: string },
+  ) {
+    return this.gamificationService.getOrCreateGamification(user.userId);
+  }
 }

@@ -21,7 +21,9 @@ export class MissionContextDto {
   @IsString()
   description: string;
 
-  @ApiPropertyOptional({ example: ['Use print statements', 'Structure output in multiple lines'] })
+  @ApiPropertyOptional({
+    example: ['Use print statements', 'Structure output in multiple lines'],
+  })
   @IsOptional()
   @IsArray()
   objectives?: string[];
@@ -36,7 +38,9 @@ export class MissionContextDto {
   @IsString()
   validationMode?: 'strict' | 'creative' | 'line-count' | 'concept-only';
 
-  @ApiPropertyOptional({ example: 'Once upon a time...\nThere was a tiny dragon.\nIt loved to code.' })
+  @ApiPropertyOptional({
+    example: 'Once upon a time...\nThere was a tiny dragon.\nIt loved to code.',
+  })
   @IsOptional()
   @IsString()
   expectedOutput?: string;

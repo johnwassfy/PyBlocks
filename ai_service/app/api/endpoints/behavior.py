@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from app.core.security import verify_api_key
+from app.core.code_differentiator import RequestCodeExtractor
 from app.core.logger import logger
 import os
 
@@ -32,6 +33,7 @@ class BehaviorSummary(BaseModel):
     missionId: str = Field(..., description="Mission identifier")
     step: int = Field(default=0, description="Current step number")
     activity: BehaviorActivity
+    mission_context: Optional[Dict] = Field(None, description="Mission context for code differentiation")  # NEW
 
 
 class BehaviorHintResponse(BaseModel):
@@ -69,21 +71,50 @@ def _detect_behavior_pattern(activity: BehaviorActivity) -> str:
     return "normal"
 
 
-def _generate_hint_prompt(pattern: str, activity: BehaviorActivity, mission_concepts: List[str]) -> str:
+def _generate_hint_prompt(
+    pattern: str, 
+    activity: BehaviorActivity, 
+    mission_concepts: List[str],
+    mission_context: Optional[Dict] = None,  # NEW: For code differentiation
+) -> str:
     """
     Generate prompt for AI to create context-aware hint
     """
+    # 🔑 DIFFERENTIATE USER CODE FROM STARTER CODE
+    user_code = activity.codeSnapshot
+    user_line_numbers = None
+    has_starter_code = False
+    starter_note = ""
+    
+    if mission_context:
+        try:
+            code_analysis = RequestCodeExtractor.process_request(
+                {
+                    'mission_context': mission_context,
+                    'activity': {'codeSnapshot': activity.codeSnapshot}
+                },
+                service_type='behavior'
+            )
+            user_code = code_analysis.get('user_code', activity.codeSnapshot)
+            user_line_numbers = code_analysis.get('user_line_numbers', [])
+            has_starter_code = code_analysis.get('has_starter_code', False)
+            if has_starter_code and user_line_numbers:
+                starter_note = f"\n⚠️ IMPORTANT: Only analyze and provide feedback on user-written lines {user_line_numbers}. The rest is starter code."
+        except Exception as e:
+            logger.warning(f"Code differentiation failed: {e}")
+    
     base_context = f"""
-You are a friendly AI coding companion for kids learning Python. 
-The student is working on a mission about: {', '.join(mission_concepts) if mission_concepts else 'basic coding'}.
-Difficulty level: {activity.difficulty}
+You are an intelligent Python tutor analyzing student coding behavior in real-time.
 
-Current code snapshot:
+**STUDENT'S MISSION:** Learning {', '.join(mission_concepts) if mission_concepts else 'basic Python'}
+**DIFFICULTY LEVEL:** {activity.difficulty}
+
+**CURRENT CODE SNAPSHOT:**
 ```python
-{activity.codeSnapshot[:500]}  # Limited to first 500 chars
-```
+{user_code[:500] if user_code else '(no code yet)'}
+```{starter_note}
 
-Behavioral pattern detected: {pattern}
+**DETECTED BEHAVIORAL PATTERN:** {pattern}
 """
 
     pattern_prompts = {
@@ -159,7 +190,7 @@ async def _call_openai_for_hint(prompt: str) -> Optional[str]:
         response = client.chat.completions.create(
             model="openai/gpt-3.5-turbo",  # Fast model for real-time hints
             messages=[
-                {"role": "system", "content": "You are a friendly AI coding tutor for kids. Keep responses SHORT (1-2 sentences), encouraging, and use emojis."},
+                {"role": "system", "content": "You are an expert Python tutor. Provide ONE specific, actionable hint (1-2 sentences) based on the code and behavior. Be direct and reference specific code elements when possible. Use 1 emoji."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=100,  # Keep hints concise
@@ -239,7 +270,12 @@ async def analyze_behavior(
         
         # Generate AI hint
         logger.info(f"🤖 [AI GENERATION] Generating hint for pattern: {pattern}")
-        prompt = _generate_hint_prompt(pattern, summary.activity, summary.activity.concepts)
+        prompt = _generate_hint_prompt(
+            pattern, 
+            summary.activity, 
+            summary.activity.concepts,
+            mission_context=summary.mission_context  # NEW: Pass mission context
+        )
         logger.info(f"📝 [PROMPT] Sending prompt to OpenAI (length: {len(prompt)} chars)")
         
         hint = await _call_openai_for_hint(prompt)

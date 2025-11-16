@@ -33,37 +33,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
-import BlocklyWorkspace from './BlocklyWorkspace';
+import BlocklyWorkspace, { type UserData, type ProfileData, type GamificationData, type Achievement } from './BlocklyWorkspace';
 import { sendChatMessage, getPredefinedPrompts, checkAIServiceHealth } from '../services/chatbotApi';
 import { useRouter } from 'next/navigation';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type { AdaptiveInsights } from '../types/adaptivity';
-
-// User data type
-type UserData = {
-  username: string;
-  avatar: string;
-  ageRange: string;
-  role: string;
-  guardianEmail?: string;
-};
-
-type ProfileData = {
-  codingExperience: string;
-  pythonFamiliarity: string;
-  knownConcepts: string[];
-  weakSkills: string[];
-  strongSkills: string[];
-  completedMissions: string[];
-  totalSubmissions: number;
-  successfulSubmissions: number;
-  avgAccuracy: number;
-  xp: number;
-  level: number;
-  badges: string[];
-  skillScores: Record<string, number>;
-  lastActive?: string;
-};
 
 // Mission data
 type Mission = {
@@ -109,13 +83,14 @@ export default function Dashboard() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [user, setUser] = useState<UserData | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [gamification, setGamification] = useState<GamificationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
   const [insights, setInsights] = useState<AdaptiveInsights | null>(null);
 
   // XP percentage (safe fallback)
-  const xpPercentage = profile ? (profile.xp / (profile.level * 100 || 1)) * 100 : 0;
+  const xpPercentage = gamification ? (gamification.xp / (gamification.level * 100 || 1)) * 100 : 0;
 
   const recommendedMissionIds = useMemo(
     () => new Set(insights?.recommendations.map((mission) => mission.id) ?? []),
@@ -163,6 +138,13 @@ export default function Dashboard() {
         if (!profileRes.ok) throw new Error('Failed to fetch learning profile');
         const profileData = await profileRes.json();
         setProfile(profileData);
+        // Fetch gamification data
+        const gamificationRes = await fetch('http://localhost:5000/gamification/my-profile', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!gamificationRes.ok) throw new Error('Failed to fetch gamification data');
+        const gamificationData = await gamificationRes.json();
+        setGamification(gamificationData);
         // Fetch missions
         const missionsRes = await fetch('http://localhost:5000/missions', {
           headers: { Authorization: `Bearer ${token}` },
@@ -195,7 +177,7 @@ export default function Dashboard() {
   // Clicking a mission sets workspace data and navigates
   const handleMissionClick = (mission: Mission) => {
     if (!user || !profile) return;
-    setWorkspace({ mission, user, profile, insights });
+    setWorkspace({ mission, user, profile, insights, gamification });
     router.push('/blockly-workspace');
   };
 
@@ -233,6 +215,7 @@ export default function Dashboard() {
             mission={selectedMission}
             user={user}
             profile={profile}
+            gamification={gamification}
             sendChatMessage={sendChatMessage}
             getPredefinedPrompts={getPredefinedPrompts}
             checkAIServiceHealth={checkAIServiceHealth}
@@ -242,6 +225,23 @@ export default function Dashboard() {
     );
   }
 
+  // Debug: Log completed missions and all mission IDs before rendering
+  if (gamification && missions && gamification.completedMissions) {
+    // eslint-disable-next-line no-console
+    console.log('Completed missions:', gamification.completedMissions);
+    // eslint-disable-next-line no-console
+    console.log('All missions:', missions.map(m => m._id));
+    // eslint-disable-next-line no-console
+    console.log('Mission titles:', missions.map(m => ({ id: m._id, title: m.title })));
+    // Check for any matches
+    const matches = gamification.completedMissions.filter(id => missions.some(m => m._id === id));
+    // eslint-disable-next-line no-console
+    console.log('Matching missions found:', matches.length);
+    if (matches.length === 0) {
+      // eslint-disable-next-line no-console
+      console.warn('⚠️ ID MISMATCH: The completed mission IDs do not match any current mission IDs. This likely means missions were recreated in the database.');
+    }
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
       {/* Header with Profile */}
@@ -279,7 +279,7 @@ export default function Dashboard() {
                     <Crown className={`mr-1 transition-all duration-300 ${
                       isScrolled ? 'w-2.5 h-2.5' : 'w-3 h-3'
                     }`} />
-                    Level {profile.level}
+                    Level {gamification?.level || 1}
                   </Badge>
                 </div>
                   <div className="flex items-center gap-3 text-sm">
@@ -290,7 +290,7 @@ export default function Dashboard() {
                     </div>
                     <div className="hidden sm:flex items-center gap-1 text-yellow-600">
                       <Zap className="w-4 h-4" />
-                      <span>{profile.xp} XP</span>
+                      <span>{gamification?.xp || 0} XP</span>
                     </div>
                   </div>
               </div>
@@ -304,35 +304,131 @@ export default function Dashboard() {
                     className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg rounded-2xl px-4 py-2"
                   >
                     <Trophy className="w-5 h-5 mr-2" />
-                    <span className="hidden sm:inline">View Badges</span>
-                    <span className="sm:hidden">Badges</span>
+                    <span className="hidden sm:inline">View Achievements</span>
+                    <span className="sm:hidden">Achievements</span>
                   </Button>
                 </SheetTrigger>
-              <SheetContent className="w-full sm:max-w-md">
+                <SheetContent className="w-full sm:max-w-md overflow-y-auto">
                 <SheetHeader>
                   <SheetTitle className="text-2xl">Your Achievements 🏆</SheetTitle>
                   <SheetDescription>
-                    Keep coding to unlock more badges!
+                    Keep coding to unlock more achievements!
+                    {insights?.gamification?.achievements && 
+                      ` ${insights.gamification.achievements.length} unlocked so far!`}
                   </SheetDescription>
                 </SheetHeader>
                 
-                <div className="mt-6 grid grid-cols-2 gap-4">
-                  {(profile.badges && profile.badges.length > 0) ? (
-                    profile.badges.map((badge, i) => (
-                      <motion.div
-                        key={i}
-                        whileHover={{ scale: 1.05 }}
-                        className={`p-4 rounded-2xl border-2 text-center bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-300`}
-                      >
-                        <div className="text-4xl mb-2">🏅</div>
-                        <p className="text-sm text-gray-700">{badge}</p>
-                        <Badge className="mt-2 bg-green-500 text-white border-0 text-xs">
-                          Earned!
-                        </Badge>
-                      </motion.div>
-                    ))
-                  ) : (
-                    <div className="text-center text-gray-400 py-8">No badges earned yet.</div>
+                <div className="mt-6 space-y-4">
+                  {insights?.gamification?.achievements ? (() => {
+                    // Define all possible achievements
+                    const allAchievements = [
+                      { id: 'first_mission', name: 'First Steps 🐣', description: 'Complete your very first mission!', icon: '🐣', rarity: 'common', category: 'mission' },
+                      { id: 'five_missions', name: 'Getting Started 🌱', description: 'Complete 5 missions!', icon: '🌱', rarity: 'common', category: 'mission' },
+                      { id: 'ten_missions', name: 'Problem Solver 🧩', description: 'Complete 10 missions!', icon: '🧩', rarity: 'rare', category: 'mission' },
+                      { id: 'twenty_missions', name: 'Code Explorer 🗺️', description: 'Complete 20 missions!', icon: '🗺️', rarity: 'rare', category: 'mission' },
+                      { id: 'fifty_missions', name: 'Master Coder 🎓', description: 'Complete 50 missions!', icon: '🎓', rarity: 'epic', category: 'mission' },
+                      { id: 'hundred_missions', name: 'Coding Legend 👑', description: 'Complete 100 missions! You are amazing!', icon: '👑', rarity: 'legendary', category: 'mission' },
+                      { id: 'xp_100', name: 'Rookie Coder 🌟', description: 'Earn 100 XP!', icon: '🌟', rarity: 'common', category: 'xp' },
+                      { id: 'xp_500', name: 'Rising Star ⭐', description: 'Earn 500 XP!', icon: '⭐', rarity: 'common', category: 'xp' },
+                      { id: 'xp_1000', name: 'Code Warrior ⚔️', description: 'Earn 1,000 XP!', icon: '⚔️', rarity: 'rare', category: 'xp' },
+                      { id: 'xp_2500', name: 'Python Wizard 🧙', description: 'Earn 2,500 XP!', icon: '🧙', rarity: 'epic', category: 'xp' },
+                      { id: 'xp_5000', name: 'Coding Champion 🏆', description: 'Earn 5,000 XP!', icon: '🏆', rarity: 'legendary', category: 'xp' },
+                      { id: 'streak_3', name: 'On Fire 🔥', description: 'Learn for 3 days in a row!', icon: '🔥', rarity: 'common', category: 'streak' },
+                      { id: 'streak_7', name: 'Week Warrior 📅', description: 'Learn for 7 days in a row!', icon: '📅', rarity: 'rare', category: 'streak' },
+                      { id: 'streak_14', name: 'Dedicated Learner 💪', description: 'Learn for 14 days in a row!', icon: '💪', rarity: 'rare', category: 'streak' },
+                      { id: 'streak_30', name: 'Monthly Master 🌙', description: 'Learn for 30 days in a row!', icon: '🌙', rarity: 'epic', category: 'streak' },
+                      { id: 'streak_100', name: 'Unstoppable 🚀', description: 'Learn for 100 days in a row! Incredible!', icon: '🚀', rarity: 'legendary', category: 'streak' },
+                      { id: 'speed_demon', name: 'Speed Demon ⚡', description: 'Complete a mission in under 2 minutes!', icon: '⚡', rarity: 'rare', category: 'speed' },
+                      { id: 'lightning_fast', name: 'Lightning Fast 🌩️', description: 'Complete a hard mission in under 5 minutes!', icon: '🌩️', rarity: 'epic', category: 'speed' },
+                      { id: 'perfect_ten', name: 'Perfect Ten 💯', description: 'Get a perfect score on 10 missions!', icon: '💯', rarity: 'epic', category: 'mastery' },
+                      { id: 'no_hints', name: 'Brain Power 🧠', description: 'Complete a hard mission without using hints!', icon: '🧠', rarity: 'rare', category: 'mastery' },
+                      { id: 'first_try', name: 'One Shot Wonder 🎯', description: 'Complete a mission on your first try!', icon: '🎯', rarity: 'rare', category: 'mastery' },
+                      { id: 'night_owl', name: 'Night Owl 🦉', description: 'Complete a mission after 9 PM!', icon: '🦉', rarity: 'common', category: 'special' },
+                      { id: 'early_bird', name: 'Early Bird 🐦', description: 'Complete a mission before 7 AM!', icon: '🐦', rarity: 'common', category: 'special' },
+                      { id: 'weekend_warrior', name: 'Weekend Warrior 🎮', description: 'Complete 5 missions on a weekend!', icon: '🎮', rarity: 'rare', category: 'special' },
+                      { id: 'bug_hunter', name: 'Bug Hunter 🐛', description: 'Fix 10 syntax errors!', icon: '🐛', rarity: 'common', category: 'special' },
+                      { id: 'creative_genius', name: 'Creative Genius 🎨', description: 'Be creative with code!', icon: '🎨', rarity: 'rare', category: 'special' },
+                    ];
+                    
+                    const unlockedIds = new Set(insights.gamification.achievements.map((a: any) => a.id));
+                    
+                    const rarityStyles = {
+                      common: 'from-gray-50 to-gray-100 border-gray-300',
+                      rare: 'from-blue-50 to-blue-100 border-blue-400',
+                      epic: 'from-purple-50 to-purple-100 border-purple-400',
+                      legendary: 'from-yellow-50 to-amber-100 border-amber-400'
+                    };
+                    
+                    const rarityBadges = {
+                      common: 'bg-gray-500',
+                      rare: 'bg-blue-500',
+                      epic: 'bg-purple-500',
+                      legendary: 'bg-gradient-to-r from-yellow-500 to-amber-500'
+                    };
+                    
+                    return allAchievements.map((achievement, i) => {
+                      const isUnlocked = unlockedIds.has(achievement.id);
+                      const unlockedAchievement = insights.gamification.achievements.find((a: any) => a.id === achievement.id);
+                      
+                      return (
+                        <motion.div
+                          key={achievement.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.05 }}
+                          whileHover={isUnlocked ? { scale: 1.02 } : {}}
+                          className={`p-4 rounded-2xl border-2 bg-gradient-to-br transition-all ${
+                            isUnlocked
+                              ? `${rarityStyles[achievement.rarity as 'common' | 'rare' | 'epic' | 'legendary'] || rarityStyles.common} shadow-md opacity-100`
+                              : 'from-gray-100 to-gray-150 border-gray-200 shadow-sm opacity-60 grayscale'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`text-5xl transition-all ${!isUnlocked ? 'opacity-50 grayscale' : ''}`}>
+                              {achievement.icon}
+                            </div>
+                            <div className="flex-1">
+                              <h4 className={`font-bold mb-1 ${isUnlocked ? 'text-gray-800' : 'text-gray-500'}`}>
+                                {achievement.name}
+                              </h4>
+                              <p className={`text-xs mb-2 ${isUnlocked ? 'text-gray-600' : 'text-gray-400'}`}>
+                                {achievement.description}
+                              </p>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Badge className={`${
+                                  isUnlocked
+                                    ? `${rarityBadges[achievement.rarity as 'common' | 'rare' | 'epic' | 'legendary'] || rarityBadges.common} text-white border-0`
+                                    : 'bg-gray-300 text-gray-600 border-0'
+                                } text-xs capitalize`}>
+                                  {achievement.rarity}
+                                </Badge>
+                                <Badge className={`text-xs capitalize ${
+                                  isUnlocked
+                                    ? 'bg-indigo-100 text-indigo-700 border-indigo-200'
+                                    : 'bg-gray-200 text-gray-500 border-gray-300'
+                                }`}>
+                                  {achievement.category}
+                                </Badge>
+                                {isUnlocked && unlockedAchievement?.unlockedAt && (
+                                  <span className="text-xs text-gray-500">
+                                    {new Date(unlockedAchievement.unlockedAt).toLocaleDateString()}
+                                  </span>
+                                )}
+                                {!isUnlocked && (
+                                  <span className="text-xs text-gray-400 font-medium">🔒 Locked</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    });
+                  })() : (
+                    <div className="text-center text-gray-400 py-8">
+                      <Trophy className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                      <p>No achievements data available.</p>
+                      <p className="text-sm mt-2">Complete missions to earn your first achievement!</p>
+                    </div>
                   )}
                 </div>
               </SheetContent>
@@ -377,7 +473,7 @@ export default function Dashboard() {
               <span className={`text-gray-600 transition-all duration-300 ${
                 isScrolled ? 'text-xs' : 'text-sm'
               }`}>
-                {profile.xp} / {profile.level * 100} XP
+                {gamification?.xp || 0} / {(gamification?.level || 1) * 100} XP
               </span>
             </div>
             <Progress value={xpPercentage} className={`bg-gray-200 transition-all duration-300 ${
@@ -612,9 +708,12 @@ export default function Dashboard() {
               const leftPosition = index * 220 + [20, 60, 35, 80, 45, 25, 70, 40, 55, 30, 65, 50][index % 12];
               const topPosition = `${[20, 55, 28, 60, 35, 48, 25, 58, 32, 52, 38, 56, 30, 50, 36, 45][index % 16]}%`;
               const isRecommended = recommendedMissionIds.has(mission._id);
-              const ringClasses = isRecommended
-                ? 'border-amber-300 shadow-amber-200 animate-pulse'
-                : 'border-indigo-300 shadow-indigo-200';
+              const isSolved = gamification?.completedMissions ? gamification.completedMissions.includes(mission._id) : false;
+              const ringClasses = isSolved
+                ? 'border-emerald-400 shadow-emerald-200'
+                : isRecommended
+                  ? 'border-amber-300 shadow-amber-200 animate-pulse'
+                  : 'border-indigo-300 shadow-indigo-200';
               return (
                 <motion.div
                   key={mission._id}
@@ -634,7 +733,7 @@ export default function Dashboard() {
                   <div className="relative">
                     {/* Main Circle */}
                     <div 
-                      className={`w-36 h-36 rounded-full border-4 shadow-2xl transition-all ${ringClasses}`}
+                      className={`w-36 h-36 rounded-full border-4 shadow-2xl transition-all ${ringClasses} ${isSolved ? 'opacity-80' : ''}`}
                     >
                       {/* Gradient Background */}
                       <div className={`w-full h-full rounded-full bg-gradient-to-br ${colorClass} flex flex-col items-center justify-center p-4 relative overflow-hidden`}>
@@ -657,9 +756,14 @@ export default function Dashboard() {
                     </div>
                     {/* Mission Title Below Circle */}
                     <div className="absolute top-full mt-4 left-1/2 transform -translate-x-1/2 w-36 text-center">
-                      <p className="text-sm text-gray-800 mb-1">
+                      <p className={`text-sm mb-1 ${isSolved ? 'text-emerald-700 font-bold' : 'text-gray-800'}`}> 
                         {mission.title}
                       </p>
+                      {isSolved && (
+                        <span className="inline-block text-[10px] px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 font-semibold mr-1">
+                          Solved ✓
+                        </span>
+                      )}
                       {isRecommended && (
                         <span className="inline-block text-[10px] px-2 py-1 rounded-full bg-amber-100 text-amber-700 font-semibold">
                           Recommended ⭐

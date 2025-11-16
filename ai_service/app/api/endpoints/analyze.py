@@ -26,6 +26,7 @@ from app.services.code_executor import executor
 from app.services.feedback_engine import feedback_engine
 from app.services.backend_client import backend_client
 from app.services.solution_validator import SolutionValidator
+from app.core.code_differentiator import RequestCodeExtractor
 from app.core.logger import logger, log_request, log_response, log_ai_analysis
 from app.core.utils import timing_decorator
 from app.core.security import verify_api_key
@@ -489,6 +490,7 @@ async def analyze_code(
             total_steps=None,
             validation_result=validation_result if validation_result else None,
             ai_model=request.ai_model,  # Pass dynamic model selection
+            mission_context=request.mission_context.dict() if request.mission_context else None,  # NEW: For code differentiation
         )
         
         # Override analysis with weighted scoring results

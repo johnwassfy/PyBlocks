@@ -7,11 +7,13 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { UsersModule } from '../users/users.module';
 import { LearningProfileModule } from '../learning-profile/learning-profile.module';
+import { GamificationModule } from '../gamification/gamification.module';
 
 @Module({
   imports: [
     UsersModule,
     LearningProfileModule,
+    GamificationModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

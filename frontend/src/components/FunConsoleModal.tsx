@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Card } from './ui/card';
 import Confetti from 'react-confetti';
 import { submitCode } from '../services/submissionsApi';
+import { showMultipleAchievements } from './AchievementNotification';
 
 interface Props {
   visible: boolean;
@@ -193,6 +194,34 @@ export default class FunConsoleModal extends Component<Props, State> {
             const actualLines = actualOutput.split('\n').filter((l: string) => l.trim() !== '').length;
             const expectedLines = expectedOutput.split('\n').filter((l: string) => l.trim() !== '').length;
             if (actualLines === expectedLines) {
+              // SUCCESS! 🎉 - First submit to backend to save progress
+              console.log('✅ Creative mission completed! Submitting to backend...');
+              try {
+                const result = await submitCode({
+                  missionId: this.props.missionId || '',
+                  code: this.props.pythonCode,
+                  output: checkResult.output || '',
+                  attempts: 1,
+                  timeSpent: executionTime / 1000,
+                });
+
+                // 🏆 Show achievement notifications
+                if (result.newAchievements && result.newAchievements.length > 0) {
+                  console.log('🎉 Achievements unlocked:', result.newAchievements);
+                  showMultipleAchievements(result.newAchievements);
+                }
+
+                // 📈 Log XP and level up
+                if (result.xpGained > 0) {
+                  console.log(`✨ Gained ${result.xpGained} XP!`);
+                }
+                if (result.leveledUp) {
+                  console.log('🎊 Level up!');
+                }
+              } catch (err) {
+                console.error('Error submitting successful solution:', err);
+              }
+              
               this.celebrateMissionComplete();
               return;
             }
@@ -200,7 +229,35 @@ export default class FunConsoleModal extends Component<Props, State> {
 
           // Otherwise, strict equality
           if (actualOutput === expectedOutput) {
-            // SUCCESS! 🎉
+            // SUCCESS! 🎉 - First submit to backend to save progress
+            console.log('✅ Mission completed! Submitting to backend...');
+            try {
+              const result = await submitCode({
+                missionId: this.props.missionId || '',
+                code: this.props.pythonCode,
+                output: checkResult.output || '',
+                attempts: 1,
+                timeSpent: executionTime / 1000, // Convert to seconds
+              });
+
+              // 🏆 Show achievement notifications if any were unlocked
+              if (result.newAchievements && result.newAchievements.length > 0) {
+                console.log('🎉 Achievements unlocked:', result.newAchievements);
+                showMultipleAchievements(result.newAchievements);
+              }
+
+              // 📈 Log XP and level up
+              if (result.xpGained > 0) {
+                console.log(`✨ Gained ${result.xpGained} XP!`);
+              }
+              if (result.leveledUp) {
+                console.log('🎊 Level up!');
+              }
+            } catch (err) {
+              console.error('Error submitting successful solution:', err);
+              // Continue to celebrate even if submission fails
+            }
+            
             this.celebrateMissionComplete();
           } else {
             // Wrong output - get AI help
@@ -239,6 +296,20 @@ export default class FunConsoleModal extends Component<Props, State> {
         attempts: 1,
         timeSpent: this.state.executionTime,
       });
+
+      // 🏆 Show achievement notifications if any were unlocked
+      if (result.newAchievements && result.newAchievements.length > 0) {
+        console.log('🎉 Achievements unlocked:', result.newAchievements);
+        showMultipleAchievements(result.newAchievements);
+      }
+
+      // 📈 Log XP and level up
+      if (result.xpGained > 0) {
+        console.log(`✨ Gained ${result.xpGained} XP!`);
+      }
+      if (result.leveledUp) {
+        console.log('🎊 Level up!');
+      }
 
       let aiResponse = '';
 
@@ -378,12 +449,52 @@ export default class FunConsoleModal extends Component<Props, State> {
             const actualLines = actualOutput.split('\n').filter((l: string) => l.trim() !== '').length;
             const expectedLines = expectedOutput.split('\n').filter((l: string) => l.trim() !== '').length;
             if (actualLines === expectedLines) {
+              // SUCCESS! Submit to backend
+              console.log('✅ Creative mission with input completed! Submitting to backend...');
+              try {
+                const result = await submitCode({
+                  missionId: this.props.missionId || '',
+                  code: this.props.pythonCode,
+                  output: actualOutput,
+                  attempts: 1,
+                  timeSpent: executionTime / 1000,
+                });
+
+                if (result.newAchievements && result.newAchievements.length > 0) {
+                  showMultipleAchievements(result.newAchievements);
+                }
+                if (result.xpGained > 0) {
+                  console.log(`✨ Gained ${result.xpGained} XP!`);
+                }
+              } catch (err) {
+                console.error('Error submitting:', err);
+              }
               this.celebrateMissionComplete();
               return;
             }
           }
 
           if (actualOutput === expectedOutput) {
+            // SUCCESS! Submit to backend
+            console.log('✅ Mission with input completed! Submitting to backend...');
+            try {
+              const result = await submitCode({
+                missionId: this.props.missionId || '',
+                code: this.props.pythonCode,
+                output: actualOutput,
+                attempts: 1,
+                timeSpent: executionTime / 1000,
+              });
+
+              if (result.newAchievements && result.newAchievements.length > 0) {
+                showMultipleAchievements(result.newAchievements);
+              }
+              if (result.xpGained > 0) {
+                console.log(`✨ Gained ${result.xpGained} XP!`);
+              }
+            } catch (err) {
+              console.error('Error submitting:', err);
+            }
             this.celebrateMissionComplete();
           } else {
             await this.getSmartAIHelp(result.output, result.error, 'wrong_output');

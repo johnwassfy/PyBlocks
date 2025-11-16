@@ -12,6 +12,7 @@ from app.core.config import settings
 from app.core.logger import logger
 from app.core.event_logger import event_logger
 from app.core.utils import extract_concepts, calculate_code_complexity, format_error_message
+from app.core.code_differentiator import RequestCodeExtractor
 from app.models.responses import CodeAnalysisResponse, HintResponse
 
 
@@ -95,6 +96,7 @@ class FeedbackEngine:
         user_id: str = "unknown",
         mission_id: str = "unknown",
         ai_model: Optional[str] = None,  # NEW: Dynamic model selection
+        mission_context: Optional[Dict[str, Any]] = None,  # NEW: For code differentiation
     ) -> CodeAnalysisResponse:
         """
         Generate comprehensive code analysis with feedback
@@ -114,6 +116,7 @@ class FeedbackEngine:
             user_id: User identifier for analytics
             mission_id: Mission identifier for analytics
             ai_model: AI model to use (overrides default from .env)
+            mission_context: Mission context for code differentiation (with starter_code)
             
         Returns:
             CodeAnalysisResponse with feedback
@@ -122,6 +125,28 @@ class FeedbackEngine:
         
         # Use provided model or fall back to default
         model_to_use = ai_model or self.model_name
+        
+        # 🔑 DIFFERENTIATE USER CODE FROM STARTER CODE
+        user_code = code
+        user_line_numbers = None
+        has_starter_code = False
+        
+        if mission_context:
+            try:
+                code_analysis = RequestCodeExtractor.process_request(
+                    {
+                        'mission_context': mission_context,
+                        'submission_context': {'code': code}
+                    },
+                    service_type='feedback'
+                )
+                user_code = code_analysis.get('user_code', code)
+                user_line_numbers = code_analysis.get('user_line_numbers', [])
+                has_starter_code = code_analysis.get('has_starter_code', False)
+                logger.info(f"[FEEDBACK] Identified {len(user_line_numbers or [])} user code lines out of {len(code.split(chr(10)))} total")
+            except Exception as e:
+                logger.warning(f"[FEEDBACK] Code differentiation failed: {e}")
+        
         # Extract information
         detected_concepts = extract_concepts(code)
         complexity = calculate_code_complexity(code)
@@ -136,7 +161,7 @@ class FeedbackEngine:
             try:
                 # Build prompt for AI
                 prompt = self._build_analysis_prompt(
-                    code, 
+                    code,  # Original full code 
                     execution_result, 
                     expected_concepts,
                     detected_concepts,
@@ -144,7 +169,10 @@ class FeedbackEngine:
                     score,
                     current_step,
                     total_steps,
-                    validation_result
+                    validation_result,
+                    user_code=user_code,  # User-written code only
+                    user_line_numbers=user_line_numbers,
+                    has_starter_code=has_starter_code
                 )
                 
                 ai_start = time.time()
@@ -154,7 +182,20 @@ class FeedbackEngine:
                     messages=[
                         {
                             "role": "system",
-                            "content": "You are an encouraging Python coding tutor for beginners. Provide helpful, positive feedback that motivates students to learn."
+                            "content": """You are an expert Python tutor providing feedback on student code submissions.
+
+FEEDBACK STRUCTURE (keep it concise, 3-4 sentences max):
+1. 🎯 **What worked**: Specifically mention correct parts of their code
+2. 🔍 **What needs improvement**: Identify the exact issue with line numbers/code references
+3. 💡 **How to fix it**: Give a guiding hint, not the solution
+4. 🚀 **Encouragement**: Motivate them to try again
+
+EXAMPLES OF GOOD FEEDBACK:
+✅ "Great job initializing your variables! I noticed on line 5 you wrote 'rang(10)' - you're missing an 'e' in 'range'. Python functions need to be spelled exactly right. Fix that typo and you'll be good to go! 🎯"
+
+✅ "Your loop structure looks perfect! However, on line 8, you're trying to print 'total' but you haven't created that variable yet. What value should 'total' start at before your loop begins? Try adding that line before your loop! 💪"
+
+TONE: Encouraging but specific. Avoid generic praise. Reference actual code elements."""
                         },
                         {
                             "role": "user",
@@ -332,6 +373,9 @@ class FeedbackEngine:
         current_step: Optional[int] = None,
         total_steps: Optional[int] = None,
         validation_result: Optional[Dict[str, Any]] = None,
+        user_code: Optional[str] = None,  # NEW: User-written code only
+        user_line_numbers: Optional[List[int]] = None,  # NEW: Line numbers of user code
+        has_starter_code: bool = False,  # NEW: Whether submission has starter code
     ) -> str:
         """
         Build a comprehensive prompt for AI to analyze code
@@ -346,12 +390,18 @@ class FeedbackEngine:
             current_step: Current step number (for step-based missions)
             total_steps: Total number of steps (for step-based missions)
             validation_result: Validation result from solution_validator
+            user_code: User-written code only (if differentiated from starter)
+            user_line_numbers: Line numbers of user-written code
+            has_starter_code: Whether submission has starter code
             
         Returns:
             Formatted prompt for AI
         """
         test_results = execution_result.get('test_results', [])
         error_message = execution_result.get('error_message', '')
+        
+        # Use user code for analysis if available
+        code_to_show = user_code if user_code else code
         
         # Build step context if available
         step_context = ""
@@ -373,12 +423,17 @@ class FeedbackEngine:
 
 This means the student may be trying to cheat or not learning properly. Please address this in your feedback!"""
         
+        # Build starter code note if applicable
+        starter_note = ""
+        if has_starter_code and user_line_numbers:
+            starter_note = f"\n⚠️ **IMPORTANT**: This submission includes starter/template code. ONLY provide feedback on the user-written lines {user_line_numbers}. Do NOT comment on the starter code."
+        
         prompt = f"""Analyze this beginner Python code submission and provide encouraging, educational feedback.
 
 **Student's Code:**
 ```python
-{code}
-```
+{code_to_show}
+```{starter_note}
 
 **Execution Results:**
 - Success: {success}

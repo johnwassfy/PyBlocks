@@ -1,3 +1,16 @@
+/**
+ * Achievement structure matching backend Achievement schema
+ */
+export interface Achievement {
+  id: string; // e.g., "first_mission", "week_streak"
+  name: string; // e.g., "First Steps 🐣"
+  description: string;
+  icon: string; // emoji
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  category: 'mission' | 'xp' | 'streak' | 'speed' | 'mastery' | 'special';
+  unlockedAt?: Date;
+}
+
 export interface AdaptiveInsights {
   mastery: Record<string, number>;
   weakConcepts: string[];
@@ -12,17 +25,15 @@ export interface AdaptiveInsights {
   profile: {
     weakSkills: string[];
     strongSkills: string[];
-    completedMissions: string[];
-    level: number;
-    xp: number;
-    badges: string[];
     avgAccuracy: number;
   } | null;
   gamification: {
     xp: number;
     level: number;
     streak: number;
-    badges: string[];
+    completedMissions: string[];
+    totalMissionsCompleted: number;
+    achievements: Achievement[];
   };
   recommendations: Array<{
     id: string;

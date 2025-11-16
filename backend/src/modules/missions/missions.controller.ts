@@ -23,6 +23,7 @@ import { UpdateMissionDto } from './dto/update-mission.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { LearningProfileService } from '../learning-profile/learning-profile.service';
+import { GamificationService } from '../gamification/gamification.service';
 import { Types } from 'mongoose';
 
 @ApiTags('missions')
@@ -33,6 +34,7 @@ export class MissionsController {
   constructor(
     private readonly missionsService: MissionsService,
     private readonly learningProfileService: LearningProfileService,
+    private readonly gamificationService: GamificationService,
   ) {}
 
   @Post()
@@ -71,9 +73,15 @@ export class MissionsController {
     const learningProfile = await this.learningProfileService.getByUserId(
       new Types.ObjectId(user.userId),
     );
+    const gamification = await this.gamificationService.getGamification(
+      user.userId,
+    );
+    const completedMissions = gamification
+      ? gamification.completedMissions.map((id) => id.toString())
+      : [];
     return this.missionsService.getAdaptiveMissions(
       learningProfile.weakSkills,
-      learningProfile.completedMissions,
+      completedMissions,
     );
   }
 
@@ -84,10 +92,13 @@ export class MissionsController {
   async getNextMission(
     @CurrentUser() user: { userId: string; username: string },
   ) {
-    const learningProfile = await this.learningProfileService.getByUserId(
-      new Types.ObjectId(user.userId),
+    const gamification = await this.gamificationService.getGamification(
+      user.userId,
     );
-    return this.missionsService.getNextMission(learningProfile.completedMissions);
+    const completedMissions = gamification
+      ? gamification.completedMissions.map((id) => id.toString())
+      : [];
+    return this.missionsService.getNextMission(completedMissions);
   }
 
   @Get(':id')

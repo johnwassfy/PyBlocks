@@ -6,7 +6,8 @@ This evaluates:
 1. ANALYZE Service - Code analysis and feedback
 2. CHAT Service - Chatbot interactions
 3. HINT Service - AI hints generation
-4. RECOMMEND Service - Mission recommendations
+4. BEHAVIOR Service - Behavior analysis and real-time interventions
+5. RECOMMEND Service - Mission recommendations
 
 Metrics include:
 - Response quality and relevance
@@ -103,12 +104,15 @@ class ComprehensiveAIEvaluator:
         print("\n3️⃣ Evaluating HINT service...")
         hint_metrics = self.evaluate_hint_service(df[df['service'] == 'hint'])
         
-        print("\n4️⃣ Evaluating RECOMMEND service...")
+        print("\n4️⃣ Evaluating BEHAVIOR service...")
+        behavior_metrics = self.evaluate_behavior_service(df[df['service'] == 'behavior'])
+        
+        print("\n5️⃣ Evaluating RECOMMEND service...")
         recommend_metrics = self.evaluate_recommend_service(df[df['service'] == 'recommend'])
         
         # Generate aggregate report
-        print("\n5️⃣ Generating comprehensive report...")
-        self.generate_comprehensive_report(df, analyze_metrics, chat_metrics, hint_metrics, recommend_metrics)
+        print("\n6️⃣ Generating comprehensive report...")
+        self.generate_comprehensive_report(df, analyze_metrics, chat_metrics, hint_metrics, behavior_metrics, recommend_metrics)
         
         print("\n" + "="*80)
         print("✅ EVALUATION COMPLETE!")
@@ -286,6 +290,67 @@ class ComprehensiveAIEvaluator:
         
         return metrics
     
+    # ==================== BEHAVIOR SERVICE EVALUATION ====================
+    
+    def evaluate_behavior_service(self, df: pd.DataFrame) -> Dict[str, Any]:
+        """Evaluate behavior analysis service"""
+        if df.empty:
+            return {}
+        
+        metrics = {
+            'service_name': 'Behavior Analysis',
+            'total_tests': len(df),
+            'models_tested': df['model'].nunique(),
+            'success_rate': (df['success'].sum() / len(df) * 100),
+            'avg_response_time': df['response_time_ms'].mean(),
+            'median_response_time': df['response_time_ms'].median(),
+        }
+        
+        # Extract behavior-specific metrics
+        pattern_detections = []
+        hint_provided = []
+        intervention_counts = []
+        
+        for idx, row in df[df['success']].iterrows():
+            if 'response_data' in row and row['response_data']:
+                data = row['response_data']
+                if 'pattern' in data:
+                    pattern_detections.append(data['pattern'])
+                if 'hint' in data and data['hint']:
+                    hint_provided.append(1)
+                    if isinstance(data['hint'], str):
+                        intervention_counts.append(len(data['hint']))
+                else:
+                    hint_provided.append(0)
+        
+        if pattern_detections:
+            # Count pattern types
+            from collections import Counter
+            pattern_counts = Counter(pattern_detections)
+            metrics['pattern_distribution'] = dict(pattern_counts)
+            metrics['unique_patterns_detected'] = len(pattern_counts)
+        
+        if hint_provided:
+            metrics['intervention_rate'] = (sum(hint_provided) / len(hint_provided) * 100)
+        
+        if intervention_counts:
+            metrics['avg_hint_length'] = np.mean(intervention_counts)
+        
+        # Performance by model
+        model_performance = df.groupby('model').agg({
+            'success': ['count', 'mean'],
+            'response_time_ms': ['mean', 'median']
+        }).round(2)
+        
+        metrics['model_performance'] = model_performance.to_dict()
+        
+        # Save detailed metrics
+        output_file = os.path.join(self.model_output_dir, "behavior_service_metrics.csv")
+        df.to_csv(output_file, index=False)
+        print(f"   ✅ Behavior service metrics: {metrics['success_rate']:.1f}% success, {metrics['avg_response_time']:.0f}ms avg")
+        
+        return metrics
+    
     # ==================== COMPREHENSIVE REPORT ====================
     
     def generate_comprehensive_report(
@@ -294,6 +359,7 @@ class ComprehensiveAIEvaluator:
         analyze_metrics: Dict,
         chat_metrics: Dict,
         hint_metrics: Dict,
+        behavior_metrics: Dict,
         recommend_metrics: Dict
     ):
         """Generate markdown report for all services"""
@@ -351,9 +417,27 @@ class ComprehensiveAIEvaluator:
                     f.write(f"- **Avg Relevance Score:** {hint_metrics['avg_relevance_score']:.2f}\n")
                 f.write("\n")
             
+            # BEHAVIOR Service
+            if behavior_metrics:
+                f.write("### 4️⃣ Behavior Analysis Service\n\n")
+                f.write(f"- **Total Tests:** {behavior_metrics['total_tests']}\n")
+                f.write(f"- **Success Rate:** {behavior_metrics['success_rate']:.2f}%\n")
+                f.write(f"- **Avg Response Time:** {behavior_metrics['avg_response_time']:.0f}ms\n")
+                if 'intervention_rate' in behavior_metrics:
+                    f.write(f"- **Intervention Rate:** {behavior_metrics['intervention_rate']:.1f}%\n")
+                if 'unique_patterns_detected' in behavior_metrics:
+                    f.write(f"- **Unique Patterns Detected:** {behavior_metrics['unique_patterns_detected']}\n")
+                if 'avg_hint_length' in behavior_metrics:
+                    f.write(f"- **Avg Hint Length:** {behavior_metrics['avg_hint_length']:.0f} chars\n")
+                if 'pattern_distribution' in behavior_metrics:
+                    f.write(f"- **Pattern Distribution:**\n")
+                    for pattern, count in behavior_metrics['pattern_distribution'].items():
+                        f.write(f"  - {pattern}: {count} occurrences\n")
+                f.write("\n")
+            
             # RECOMMEND Service
             if recommend_metrics:
-                f.write("### 4️⃣ Recommendation Service\n\n")
+                f.write("### 5️⃣ Recommendation Service\n\n")
                 f.write(f"- **Total Tests:** {recommend_metrics['total_tests']}\n")
                 f.write(f"- **Success Rate:** {recommend_metrics['success_rate']:.2f}%\n")
                 f.write(f"- **Avg Response Time:** {recommend_metrics['avg_response_time']:.0f}ms\n")
@@ -419,6 +503,7 @@ class ComprehensiveAIEvaluator:
             f.write("- `analyze_service_metrics.csv` - Code analysis detailed metrics\n")
             f.write("- `chat_service_metrics.csv` - Chatbot service metrics\n")
             f.write("- `hint_service_metrics.csv` - Hints service metrics\n")
+            f.write("- `behavior_service_metrics.csv` - Behavior analysis metrics\n")
             f.write("- `recommend_service_metrics.csv` - Recommendation service metrics\n")
             f.write("- `COMPREHENSIVE_AI_REPORT.md` - This comprehensive report\n\n")
         
@@ -431,6 +516,7 @@ class ComprehensiveAIEvaluator:
             ('analyze', analyze_metrics),
             ('chat', chat_metrics),
             ('hint', hint_metrics),
+            ('behavior', behavior_metrics),
             ('recommend', recommend_metrics)
         ]:
             if metrics:

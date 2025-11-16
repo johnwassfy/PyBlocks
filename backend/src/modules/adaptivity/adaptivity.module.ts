@@ -7,7 +7,12 @@ import { MissionsModule } from '../missions/missions.module';
 import { LearningProfileModule } from '../learning-profile/learning-profile.module';
 
 @Module({
-  imports: [ProgressModule, GamificationModule, MissionsModule, LearningProfileModule],
+  imports: [
+    ProgressModule,
+    GamificationModule,
+    MissionsModule,
+    LearningProfileModule,
+  ],
   controllers: [AdaptivityController],
   providers: [AdaptivityService],
   exports: [AdaptivityService],

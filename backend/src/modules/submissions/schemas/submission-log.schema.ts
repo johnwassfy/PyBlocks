@@ -155,8 +155,7 @@ export class SubmissionLog {
   additionalMetrics: Record<string, any>; // Extensible for future metrics
 }
 
-export const SubmissionLogSchema =
-  SchemaFactory.createForClass(SubmissionLog);
+export const SubmissionLogSchema = SchemaFactory.createForClass(SubmissionLog);
 
 // Indexes for efficient querying
 SubmissionLogSchema.index({ aiModel: 1, success: 1 });

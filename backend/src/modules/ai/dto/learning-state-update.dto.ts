@@ -27,7 +27,9 @@ class AnalysisDto {
   @IsString({ each: true })
   strengths: string[];
 
-  @ApiProperty({ example: ['Practice nested loops', 'Review range() function'] })
+  @ApiProperty({
+    example: ['Practice nested loops', 'Review range() function'],
+  })
   @IsArray()
   @IsString({ each: true })
   suggestions: string[];

@@ -28,9 +28,7 @@ describe('ProgressService', () => {
   };
 
   beforeEach(async () => {
-    progressDoc.conceptMastery = new Map([
-      ['loops', 40],
-    ]);
+    progressDoc.conceptMastery = new Map([['loops', 40]]);
     progressDoc.weakConcepts = [];
     progressDoc.strongConcepts = [];
     progressDoc.completedConcepts = [];
@@ -60,14 +58,18 @@ describe('ProgressService', () => {
       ['functions', -0.05],
     ]);
 
-    const result = await service.applyAdaptiveMasteryUpdate('507f1f77bcf86cd799439011', adjustments, {
-      score: 95,
-      weakConcepts: ['functions'],
-      strongConcepts: ['loops'],
-      timeSpent: 120,
-      missionId: 'mission123',
-      isSuccessful: true,
-    });
+    const result = await service.applyAdaptiveMasteryUpdate(
+      '507f1f77bcf86cd799439011',
+      adjustments,
+      {
+        score: 95,
+        weakConcepts: ['functions'],
+        strongConcepts: ['loops'],
+        timeSpent: 120,
+        missionId: 'mission123',
+        isSuccessful: true,
+      },
+    );
 
     expect(progressDoc.conceptMastery.get('loops')).toBe(50);
     expect(progressDoc.conceptMastery.get('functions')).toBe(0);
@@ -85,20 +87,20 @@ describe('ProgressService', () => {
     const adjustments = new Map<string, number>([['loops', -0.05]]);
     progressDoc.totalMissionsCompleted = 5;
 
-    await service.applyAdaptiveMasteryUpdate('507f1f77bcf86cd799439011', adjustments, {
-      score: 40,
-      weakConcepts: ['loops'],
-      strongConcepts: [],
-      timeSpent: 60,
-      missionId: 'mission123',
-      isSuccessful: false,
-    });
+    await service.applyAdaptiveMasteryUpdate(
+      '507f1f77bcf86cd799439011',
+      adjustments,
+      {
+        score: 40,
+        weakConcepts: ['loops'],
+        strongConcepts: [],
+        timeSpent: 60,
+        missionId: 'mission123',
+        isSuccessful: false,
+      },
+    );
 
     expect(progressDoc.totalMissionsCompleted).toBe(5);
     expect(learningProfileService.addCompletedMission).not.toHaveBeenCalled();
   });
 });
-
-
-
-

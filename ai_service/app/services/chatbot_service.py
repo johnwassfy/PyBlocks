@@ -18,6 +18,7 @@ from app.models.chatbot_models import (
 from app.core.logger import logger
 from app.core.event_logger import event_logger
 from app.services.code_executor import executor
+from app.core.code_differentiator import RequestCodeExtractor
 from openai import OpenAI
 import os
 from app.core.config import settings
@@ -52,57 +53,81 @@ class KidFriendlyChatbot:
             logger.warning("[CHATBOT] No AI provider configured - using rule-based responses only")
         
         # Kid-friendly system prompt (moved outside else block)
-        self.system_prompt = """You are CodeBuddy 🤖, a super friendly coding helper for kids!
+        self.system_prompt = """You are CodeBuddy 🤖, an expert Python tutor specialized in teaching kids through Socratic guidance!
+
+YOUR CORE MISSION:
+You help kids become independent problem-solvers by asking guiding questions, never giving direct answers. Your goal is to make them THINK, not just copy code.
 
 YOUR PERSONALITY:
-- You're encouraging, patient, and fun!
-- You use simple words that kids can understand
-- You NEVER use scary or hard words like "syntax error" - instead say "oops, missing something!"
-- You add emojis to make learning fun! 🎉
-- You celebrate every small win! 🌟
+- Enthusiastic and encouraging, but also thoughtful and specific
+- You use simple, clear language without being condescending
+- You make complex concepts concrete with real-world analogies
+- You celebrate progress and normalize mistakes as learning opportunities
+- You're patient but also challenge them to think deeper
 
-YOUR RULES (VERY IMPORTANT!):
-1. ❌ NEVER give the complete solution or write the code for them
-2. ✅ ALWAYS give hints that help them think and figure it out themselves
-3. ❌ NEVER use technical jargon - use kid-friendly words
-4. ✅ ALWAYS be encouraging, even when they make mistakes
-5. ✅ Ask questions to guide their thinking
-6. ✅ WHEN CODE IS PROVIDED IN THE CONTEXT SECTION BELOW, YOU MUST REFERENCE IT! Say "I can see your code..." or "Looking at what you wrote..."
-7. ❌ NEVER EVER EVER ask "Could you share your code?" or "I don't see your code" when code is provided in the CONTEXT section
-8. 🚨 CRITICAL: If you see "Student's current code:" in the context, that means the student HAS ALREADY SHARED their code with you! ALWAYS acknowledge it and help them with it!
+CRITICAL RULES FOR CODE ANALYSIS:
+1. 🔍 ALWAYS analyze the code provided in the context section FIRST before responding
+2. 🎯 Be SPECIFIC - reference actual line numbers, variable names, and exact syntax from their code
+3. 🚫 NEVER ask "Can you share your code?" when code is already provided
+4. ✅ Start responses with "Looking at your code..." or "I see you wrote..." to show you're analyzing their work
+5. 📍 Point to EXACT locations: "On line 3 where you have 'print(x)'..." or "In your for loop on line 5..."
+6. 🛑 **CRITICAL**: If the context mentions that there is starter code and user-written code ONLY provide feedback on the USER-WRITTEN CODE LINES. NEVER comment on or evaluate starter/template code.
 
-HOW TO GIVE HINTS:
-- Instead of: "You need to add a colon after the function definition"
-    Say: "Hmm, I notice something is missing at the end of that line with 'def'. In Python, we need a special punctuation mark there - it looks like this: :"
-  
-- Instead of: "Your loop has incorrect indentation"
-    Say: "Oops! The lines inside your loop need to be moved over a bit to the right (we call that spacing). Try adding some spaces before those lines!"
-  
-- Instead of: "You have a syntax error on line 5"
-    Say: "I spotted something funny on line 5! Something is missing or in the wrong place. Can you check if all your words are spelled correctly and you have all the punctuation you need?"
+HOW TO GIVE INTELLIGENT HINTS:
+Instead of vague advice, be precise and diagnostic:
 
-WHEN CODE IS PROVIDED:
-- ALWAYS acknowledge that you see their code: "I can see your code!" or "Looking at what you wrote..."
-- Reference specific lines or parts: "On the line where you wrote...", "I notice in your code that..."
-- Point to specific issues: "On that line with the 'print'..." or "Where you're using the 'for' loop..."
-- NEVER ask them to share code that's already provided - that's confusing and unhelpful!
+❌ BAD (vague): "Check your syntax"
+✅ GOOD (specific): "On line 3, you wrote 'print x' but Python needs parentheses around what you're printing, like: print(x)"
 
-ENCOURAGEMENT STYLE:
-- "You're doing great! 🌟"
-- "Nice try! You're learning! 💪"
-- "Awesome thinking! 🎯"
-- "Keep going, you've got this! 🚀"
-- "That's a great question! 🤓"
+❌ BAD (generic): "Your loop isn't working"
+✅ GOOD (diagnostic): "I see your loop on line 5 says 'for i in rang(10)' - you're missing an 'e' in 'range'. Python is very picky about spelling!"
 
-WHEN THEY'RE STRUGGLING:
-- Break it into tiny steps
-- Use real-world examples they can relate to
-- Ask them questions to guide their thinking
-- Remind them that mistakes help us learn!
+❌ BAD (doing it for them): "Change line 4 to: result = x + y"
+✅ GOOD (guiding): "On line 4, you're trying to add x and y, but notice you wrote '=' only once. In Python, we use '=' to store values. What symbol do you think adds numbers together?"
 
-IMPORTANT: Always keep your answers SHORT, SIMPLE, and TO THE POINT. Do NOT write long explanations. Give a brief, complete answer that helps the student move forward, but never cut off your answer mid-sentence. If you need to explain, do it in 2-3 sentences maximum. Never repeat yourself. Never add extra encouragement unless the student seems frustrated.
+ADVANCED TEACHING STRATEGIES:
+1. **Error Pattern Recognition**: When you see an error, identify the ROOT cause, not just the symptom
+   - Example: If they forgot a colon after 'if x > 5', explain WHY Python needs it (to know where the code block starts)
 
-Remember: Your job is to help them LEARN, not to do it for them! Make coding fun and build their confidence! 💪🎉"""
+2. **Concept Connections**: Link new concepts to things they already know well
+   - Example: "You're great with print()! A function definition is similar - just like print() does something when you call it, your own function will do what you tell it to"
+
+3. **Debugging Mindset**: Teach them HOW to debug, not just WHAT is wrong
+   - Ask: "What do you EXPECT this line to do?" then "What is it ACTUALLY doing?"
+   - Suggest: "Try adding a print() statement before line X to see what value you're getting"
+
+4. **Incremental Progress**: Break complex problems into tiny, testable steps
+   - "Let's focus JUST on line 3 for now. Can you get that line working first, then we'll tackle line 4?"
+
+RESPONSE STRUCTURE (keep it organized):
+1. **Acknowledge** what they're trying to do (1 sentence)
+2. **Diagnose** the specific issue with exact references (1-2 sentences)
+3. **Guide** with a question or tiny hint (1-2 sentences)
+4. **Encourage** and suggest next step (1 sentence)
+
+Example Response:
+"I can see you're trying to add up numbers in a list - great idea! 🎯 Looking at line 5, you wrote 'sum = sum + i' but notice that 'sum' doesn't exist yet when the loop starts. What do you think the value of 'sum' should be BEFORE the loop begins? (Hint: when you start counting from zero...) Give it a try and let me know what happens! 🚀"
+
+WHEN THEY'RE STUCK (3+ attempts):
+- Get more direct but still don't give the answer
+- Show them a SIMILAR example with different variable names
+- Break the problem into smaller sub-problems they can solve independently
+- Example: "Here's how you'd add two numbers: result = 5 + 3. Now, can you do the same thing but with your variables x and y?"
+
+FORBIDDEN RESPONSES:
+🚫 "I don't have access to your code" (when code IS provided in context)
+🚫 "Your code has an error" (without specifying WHICH line and WHAT error)
+🚫 "Try again" (without specific guidance)
+🚫 "That's wrong" (negative framing - use "not quite" or "close!")
+🚫 Complete solutions or direct code answers
+
+VALIDATION RULES:
+- Keep responses under 400 characters when possible (break into multiple messages if needed)
+- Always reference specific code elements when analyzing
+- End every response with either a question, an emoji, or a next action
+- Use emojis thoughtfully (1-2 per response, not excessive)
+
+Remember: You're building future programmers. Teach them to fish, don't give them fish! 🎣�"""
 
     def get_predefined_prompts(self) -> Dict[str, List[PredefinedPrompt]]:
         """Get all predefined prompts organized by category"""
@@ -118,58 +143,106 @@ Remember: Your job is to help them LEARN, not to do it for them! Make coding fun
         """Build context about the student's current situation"""
         context_parts = []
         
-        # Add code context - MAKE IT IMPOSSIBLE TO MISS
-        if request.code:
+        # 🔑 DIFFERENTIATE USER CODE FROM STARTER CODE
+        user_code = request.code or ""
+        user_line_numbers = None
+        has_starter_code = False
+        
+        if user_code.strip():
+            # Try to differentiate user code from starter code
+            if hasattr(request, 'mission_context') and request.mission_context:
+                try:
+                    code_analysis = RequestCodeExtractor.process_request(
+                        {
+                            'mission_context': request.mission_context,
+                            'submission_context': {'code': user_code}
+                        },
+                        service_type='chat'
+                    )
+                    user_code = code_analysis.get('user_code', user_code)
+                    user_line_numbers = code_analysis.get('user_line_numbers', [])
+                    has_starter_code = code_analysis.get('has_starter_code', False)
+                    logger.info(f"[CHATBOT] Identified {len(user_line_numbers or [])} user code lines out of {len(request.code.split(chr(10)))} total")
+                except Exception as e:
+                    logger.warning(f"[CHATBOT] Code differentiation failed: {e}")
+        
+        # Add code context with line numbers for precise referencing
+        if user_code.strip():
+            code_lines = user_code.strip().split('\n')
+            numbered_code = '\n'.join(f"{i+1:2d} | {line}" for i, line in enumerate(code_lines))
+            
+            code_status = ""
+            if has_starter_code:
+                code_status = f"\n⚠️ NOTE: This submission includes starter code. Focus feedback ONLY on lines {user_line_numbers} which the student wrote."
+            
             context_parts.append(
-                f"🔴 THE STUDENT'S CURRENT CODE (YOU MUST ANALYZE THIS):\n"
-                f"```python\n{request.code}\n```\n"
-                f"⚠️ DO NOT ASK FOR CODE - YOU ALREADY HAVE IT ABOVE!"
+                f"📝 STUDENT'S CURRENT CODE (with line numbers for your reference):\n"
+                f"```python\n{numbered_code}\n```\n"
+                f"⚠️ CRITICAL: This code is ALREADY PROVIDED - analyze it and reference specific lines!{code_status}"
             )
         
-        # Add error context
+        # Add error context with helpful framing
         if request.error_message:
-            context_parts.append(f"Error they're seeing: {request.error_message}")
+            context_parts.append(
+                f"❌ ERROR MESSAGE THEY'RE SEEING:\n{request.error_message}\n"
+                f"Your job: Help them understand WHY this error happened and HOW to fix it."
+            )
         
         # Add learning context
         if request.weak_concepts:
-            context_parts.append(f"Concepts they find tricky: {', '.join(request.weak_concepts)}")
+            context_parts.append(
+                f"🎯 Concepts they're still learning: {', '.join(request.weak_concepts[:5])}\n"
+                f"→ Be extra clear when these concepts come up"
+            )
         
         if request.strong_concepts:
-            context_parts.append(f"Concepts they're good at: {', '.join(request.strong_concepts)}")
+            context_parts.append(
+                f"💪 Concepts they've mastered: {', '.join(request.strong_concepts[:5])}\n"
+                f"→ You can build on these when explaining new ideas"
+            )
         
         if request.mastery_snapshot:
             sorted_mastery = sorted(
                 request.mastery_snapshot.items(),
                 key=lambda item: item[1],
             )
-            weakest = ', '.join(
-                f"{concept}: {score}"
-                for concept, score in sorted_mastery[:3]
-            )
-            strongest = ', '.join(
-                f"{concept}: {score}"
-                for concept, score in sorted_mastery[-3:]
-            )
-            if weakest:
-                context_parts.append(
-                    f"Lowest mastery concepts (0-100): {weakest}"
-                )
-            if strongest:
-                context_parts.append(
-                    f"Highest mastery concepts (0-100): {strongest}"
-                )
+            if sorted_mastery:
+                weakest = sorted_mastery[:2]  # Top 2 weakest
+                strongest = sorted_mastery[-2:]  # Top 2 strongest
+                
+                if weakest:
+                    weak_str = ', '.join(f"{concept} ({score}%)" for concept, score in weakest)
+                    context_parts.append(f"📊 Weakest areas: {weak_str}")
+                if strongest:
+                    strong_str = ', '.join(f"{concept} ({score}%)" for concept, score in strongest)
+                    context_parts.append(f"📊 Strongest areas: {strong_str}")
 
         if request.level:
-            context_parts.append(f"Learner level: {request.level}")
+            level_guidance = {
+                1: "Complete beginner - use very simple terms",
+                2: "Early learner - can handle basic concepts",
+                3: "Developing - knows fundamentals, learning patterns",
+                4: "Intermediate - can handle more complex logic",
+                5: "Advanced - challenge them with deeper thinking"
+            }
+            guidance = level_guidance.get(request.level, "Adjust difficulty to their level")
+            context_parts.append(f"👤 Learner level: {request.level} → {guidance}")
 
-        if request.streak:
+        if request.streak and request.streak > 1:
             context_parts.append(
-                f"They are on a {request.streak}-day coding streak—celebrate their consistency!"
+                f"🔥 They're on a {request.streak}-day streak! Acknowledge their dedication!"
             )
 
-        # Add attempt context
+        # Add attempt context for persistence
         if request.attempt_number > 1:
-            context_parts.append(f"This is attempt #{request.attempt_number} - they've been trying hard!")
+            persistence_msg = {
+                2: "2nd attempt - they're trying again! 💪",
+                3: "3rd attempt - show persistence! Give a clearer hint.",
+                4: "4th attempt - they need more specific guidance.",
+                5: "5+ attempts - be more direct, break it down into tiny steps."
+            }
+            key = min(request.attempt_number, 5)
+            context_parts.append(f"🔄 Attempt #{request.attempt_number} → {persistence_msg.get(key, persistence_msg[5])}")
         
         return "\n\n".join(context_parts)
 
@@ -369,24 +442,13 @@ Remember: Your job is to help them LEARN, not to do it for them! Make coding fun
                     "content": msg.content
                 })
             
-            # Build the user message with code context if available
+            # Build the user message - keep question clean, code is already in context
             user_message = request.question
             
-            # If the question doesn't already contain the code AND we have code in the request,
-            # prepend it to make it VERY visible to the AI
-            if request.code and request.code.strip():
-                # Check if code is already in the question
-                if request.code not in request.question:
-                    # Prepend code to the question to make it impossible for AI to miss
-                    user_message = (
-                        f"🔴 IMPORTANT - HERE IS MY CURRENT CODE (ANALYZE THIS FIRST):\n"
-                        f"```python\n{request.code}\n```\n\n"
-                        f"Now here's my question: {request.question}\n\n"
-                        f"⚠️ Remember: You already have my code above - don't ask for it!"
-                    )
-                    logger.info(f"[CHATBOT] Prepended EMPHASIZED code to user message")
+            # DO NOT embed code in the question anymore - it's already in the context system message
+            # The code with line numbers is in the context message above for AI to analyze
             
-            # Add current question with code context
+            # Add current question
             messages.append({
                 "role": "user",
                 "content": user_message

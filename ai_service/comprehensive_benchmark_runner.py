@@ -79,6 +79,7 @@ class ComprehensiveAIBenchmark:
         self.chat_tests = self.load_json_tests("chat.json")
         self.hint_tests = self.load_json_tests("hint.json")
         self.recommend_tests = self.load_json_tests("recommend.json")
+        self.behavior_tests = self.load_json_tests("behavior.json")
         
         # Load META/STRESS trap tests (cross-service tests)
         self.meta_trap_tests = self.load_json_tests("meta_traps.json")
@@ -88,6 +89,7 @@ class ComprehensiveAIBenchmark:
         logger.info(f"  - Chat: {len(self.chat_tests)}")
         logger.info(f"  - Hint: {len(self.hint_tests)}")
         logger.info(f"  - Recommend: {len(self.recommend_tests)}")
+        logger.info(f"  - Behavior: {len(self.behavior_tests)}")
         logger.info(f"  - Meta/Stress: {len(self.meta_trap_tests)}")
         
         # Track results for consistency analysis (when repeat_count > 1)
@@ -842,7 +844,8 @@ class ComprehensiveAIBenchmark:
             len(self.analyze_tests) +
             len(self.chat_tests) +
             len(self.hint_tests) +
-            len(self.recommend_tests)
+            len(self.recommend_tests) +
+            len(self.behavior_tests)
         ) * len(self.models) * repeat_count
         
         print(f"⏱️  Total tests: {total_tests}\n")
@@ -900,6 +903,23 @@ class ComprehensiveAIBenchmark:
                         
                         # Rate limiting: wait between tests (skip on last test)
                         if test_idx < len(self.hint_tests) or attempt < repeat_count:
+                            await asyncio.sleep(self.delay_between_tests)
+                
+                # Delay between services
+                print(f"\n   ⏸️  Waiting {self.delay_between_services}s between services...")
+                await asyncio.sleep(self.delay_between_services)
+                
+                # Test BEHAVIOR service
+                print(f"\n   🧠 BEHAVIOR Service ({len(self.behavior_tests)} tests)")
+                for test_idx, test in enumerate(self.behavior_tests, 1):
+                    for attempt in range(1, repeat_count + 1):
+                        result = await self.test_service("behavior", "behavior/analyze", test, model, client)
+                        all_results.append(result)
+                        status = "✅" if result["success"] else "❌"
+                        print(f"      [{attempt}/{repeat_count}] {status} {test['name']}: {result['response_time_ms']:.0f}ms")
+                        
+                        # Rate limiting: wait between tests (skip on last test)
+                        if test_idx < len(self.behavior_tests) or attempt < repeat_count:
                             await asyncio.sleep(self.delay_between_tests)
                 
                 # Test RECOMMEND service (no AI model parameter)

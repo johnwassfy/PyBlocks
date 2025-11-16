@@ -73,43 +73,6 @@ export class LearningProfileService {
   }
 
   /**
-   * Add XP and update level
-   */
-  async addXP(
-    userId: Types.ObjectId,
-    xpToAdd: number,
-  ): Promise<LearningProfileDocument> {
-    const profile = await this.getByUserId(userId);
-    profile.xp += xpToAdd;
-
-    // Level up logic (every 100 XP = 1 level)
-    const newLevel = Math.floor(profile.xp / 100) + 1;
-    if (newLevel > profile.level) {
-      profile.level = newLevel;
-    }
-
-    profile.lastActive = new Date();
-    return profile.save();
-  }
-
-  /**
-   * Add a completed mission
-   */
-  async addCompletedMission(
-    userId: Types.ObjectId,
-    missionId: string,
-  ): Promise<LearningProfileDocument> {
-    const profile = await this.getByUserId(userId);
-
-    if (!profile.completedMissions.includes(missionId)) {
-      profile.completedMissions.push(missionId);
-    }
-
-    profile.lastActive = new Date();
-    return profile.save();
-  }
-
-  /**
    * Update skill scores (used by AI service)
    */
   async updateSkillScores(
@@ -123,23 +86,6 @@ export class LearningProfileService {
       ...profile.skillScores,
       ...skillScores,
     };
-
-    profile.lastActive = new Date();
-    return profile.save();
-  }
-
-  /**
-   * Add a badge
-   */
-  async addBadge(
-    userId: Types.ObjectId,
-    badge: string,
-  ): Promise<LearningProfileDocument> {
-    const profile = await this.getByUserId(userId);
-
-    if (!profile.badges.includes(badge)) {
-      profile.badges.push(badge);
-    }
 
     profile.lastActive = new Date();
     return profile.save();
@@ -164,6 +110,28 @@ export class LearningProfileService {
     const totalAccuracy =
       profile.avgAccuracy * (profile.totalSubmissions - 1) + accuracy;
     profile.avgAccuracy = totalAccuracy / profile.totalSubmissions;
+
+    profile.lastActive = new Date();
+    return profile.save();
+  }
+
+  /**
+   * Update weak and strong skills
+   */
+  async updateSkills(
+    userId: Types.ObjectId,
+    weakSkills: string[],
+    strongSkills: string[],
+  ): Promise<LearningProfileDocument> {
+    const profile = await this.getByUserId(userId);
+
+    // Merge arrays, avoiding duplicates
+    profile.weakSkills = Array.from(
+      new Set([...profile.weakSkills, ...weakSkills]),
+    );
+    profile.strongSkills = Array.from(
+      new Set([...profile.strongSkills, ...strongSkills]),
+    );
 
     profile.lastActive = new Date();
     return profile.save();

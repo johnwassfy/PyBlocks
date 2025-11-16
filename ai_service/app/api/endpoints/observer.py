@@ -10,6 +10,7 @@ from datetime import datetime
 import difflib
 
 from app.core.security import verify_api_key
+from app.core.code_differentiator import RequestCodeExtractor
 from app.services.chatbot_service import KidFriendlyChatbot
 from app.models.chatbot_models import ChatbotRequest
 
@@ -44,6 +45,9 @@ class BehaviorMetrics(BaseModel):
     weakConcepts: Optional[List[str]] = []
     strongConcepts: Optional[List[str]] = []
     masterySnapshot: Optional[Dict[str, float]] = None
+    
+    # Mission context for code differentiation
+    missionContext: Optional[Dict] = None  # NEW: For identifying starter vs user code
     
     # State
     lastActivity: str  # ISO timestamp
@@ -146,12 +150,33 @@ def analyze_behavior(metrics: BehaviorMetrics) -> DetailedAnalysis:
 async def generate_proactive_message(
     metrics: BehaviorMetrics,
     analysis: DetailedAnalysis,
-    chatbot: KidFriendlyChatbot
+    chatbot: KidFriendlyChatbot,
+    mission_context: Optional[Dict] = None,  # NEW: For code differentiation
 ) -> str:
     """
     Generate a proactive, kid-friendly intervention message using AI
     This should be VERY specific to what the student is struggling with
     """
+    
+    # 🔑 DIFFERENTIATE USER CODE FROM STARTER CODE
+    user_code = metrics.currentCode
+    user_line_numbers = None
+    has_starter_code = False
+    
+    if mission_context:
+        try:
+            code_analysis = RequestCodeExtractor.process_request(
+                {
+                    'mission_context': mission_context,
+                    'activity': {'codeSnapshot': metrics.currentCode}
+                },
+                service_type='behavior'
+            )
+            user_code = code_analysis.get('user_code', metrics.currentCode)
+            user_line_numbers = code_analysis.get('user_line_numbers', [])
+            has_starter_code = code_analysis.get('has_starter_code', False)
+        except Exception as e:
+            pass  # Fallback to full code if differentiation fails
     
     # Determine the specific struggle
     struggle_type = "general"
@@ -183,60 +208,65 @@ async def generate_proactive_message(
         if "math" in str(metrics.weakConcepts).lower() or "arithmetic" in str(metrics.weakConcepts).lower():
             concept_struggles.append("math")
     
+    starter_code_note = ""
+    if has_starter_code and user_line_numbers:
+        starter_code_note = f"⚠️ NOTE: Code has starter template. Focus on USER LINES {user_line_numbers} only."
+    
     context = f"""
-You are a supportive coding tutor for kids. The student is stuck and needs a gentle nudge.
+You are a supportive Python tutor detecting when a student needs help. Generate ONE specific, actionable hint.
 
-**Behavioral Analysis:**
+{starter_code_note}
+
+**ANALYSIS OF STUDENT'S SITUATION:**
 - Stuck/Repeating same code: {analysis.is_stuck}
-- Been idle: {analysis.is_idle} (idle for {metrics.idleTime}s)
-- Consecutive failures: {metrics.consecutiveFailedRuns}
-- Same error repeating: {metrics.sameErrorCount} times
-- Code similarity to previous attempt: {metrics.codeSimilarity:.1%}
+- Idle time: {metrics.idleTime}s (been thinking without coding)
+- Failed runs: {metrics.consecutiveFailedRuns} in a row
+- Same error repeated: {metrics.sameErrorCount} times
+- Code similarity to last attempt: {metrics.codeSimilarity:.0%}
 
-**What They're Struggling With:**
-- Error type: {metrics.lastErrorType or 'No error yet'}
+**WHAT THEY'RE STRUGGLING WITH:**
+- Error type: {metrics.lastErrorType or 'No error yet - just stuck'}
 - Error message: {metrics.lastErrorMessage or 'None'}
-- Struggle category: {struggle_type}
-- Weak concepts: {', '.join(concept_struggles) if concept_struggles else 'Not identified'}
-- All weak areas: {', '.join(metrics.weakConcepts[:3]) if metrics.weakConcepts else 'None'}
+- Difficulty category: {struggle_type}
+- Weak concepts: {', '.join(concept_struggles[:3]) if concept_struggles else 'Not yet identified'}
+- Learning gaps: {', '.join(metrics.weakConcepts[:3]) if metrics.weakConcepts else 'None'}
 
-**Their Current Code (last {len(metrics.currentCode)} chars):**
+**THEIR USER-WRITTEN CODE (last 200 chars):**
 ```python
-{metrics.currentCode[-200:] if len(metrics.currentCode) > 200 else metrics.currentCode}
+{user_code[-200:] if len(user_code) > 200 else user_code}
 ```
 
-**Your Task:**
-Generate ONE short, friendly message (max 2 sentences) that:
-1. Shows you understand SPECIFICALLY what they're stuck on (mention the concept/error)
-2. Offers to help with a SPECIFIC hint (not generic)
-3. Is encouraging and kid-friendly
-4. Uses an appropriate emoji
+**YOUR TASK:**
+Write ONE SHORT message (max 2 sentences, ~100 chars) that:
+1. Shows you understand their SPECIFIC problem (mention the concept/error/code pattern)
+2. Offers concrete help (not generic encouragement)
+3. Uses a relevant emoji
+4. Makes them want to click for help
 
-EXAMPLES:
-- If stuck on syntax: "I see you're having trouble with the syntax around line X! Want me to show you the right way to write it? 🔧"
-- If stuck on loops: "Loops can be tricky! Want a hint about how to make your loop count properly? 🔄"
-- If stuck on math: "Math operations are confusing you a bit! Should I explain how + and * work together? ➕"
-- If idle thinking: "You're thinking hard about this problem! Want me to break it down into smaller steps? 🧩"
-- If repeating same mistake: "I notice you keep trying the same approach! Want to see a different way? 💡"
+**GOOD EXAMPLES:**
+✅ "I see you keep getting 'NameError' with that variable! Want help making sure it's defined first? 🔧"
+✅ "Your loop looks close but line 3 needs a small fix! Should I show you what's missing? 🔄"
+✅ "You've been staring at this for a while! Want me to break it into smaller steps? 🧩"
+✅ "That 'range' spelling is tricky - want to see what's wrong? 🎯"
 
-Generate the message now (just the message, no explanation):
+**BAD EXAMPLES (too vague):**
+❌ "Need some help?" (doesn't show understanding)
+❌ "Looks like you're stuck!" (obvious, not helpful)
+❌ "Want a hint?" (too generic)
+
+Generate the message now (ONLY the message, no explanation):
 """
     
     try:
         # Create ChatbotRequest object
         chatbot_request = ChatbotRequest(
-            message=context,
+            question=context,  # Fixed: use 'question' instead of 'message'
             userId=metrics.userId,
             missionId=metrics.missionId,
-            userCode=metrics.currentCode,
+            code=metrics.currentCode,  # Fixed: use 'code' instead of 'userCode'
             weakConcepts=metrics.weakConcepts or [],
             strongConcepts=metrics.strongConcepts or [],
-            context={
-                "is_proactive_hint": True,
-                "analysis": analysis.dict(),
-                "struggle_type": struggle_type,
-                "concept_struggles": concept_struggles,
-            }
+            # Note: removed 'context' parameter as it's not in the ChatbotRequest model
         )
         
         response = await chatbot.generate_response(chatbot_request)
@@ -325,7 +355,12 @@ async def observe_user_behavior(
         if should_intervene:
             # Initialize chatbot for message generation
             chatbot = KidFriendlyChatbot()
-            message = await generate_proactive_message(metrics, analysis, chatbot)
+            message = await generate_proactive_message(
+                metrics, 
+                analysis, 
+                chatbot,
+                mission_context=metrics.missionContext  # NEW: Pass mission context
+            )
             suggested_action = analysis.recommendation
             
             # Package full context for chatbot to use when user accepts help

@@ -7,6 +7,7 @@ import { LearningProfileService } from '../learning-profile/learning-profile.ser
 import { Types } from 'mongoose';
 import { SubmissionCompletedEvent } from '../../common/events/submission.events';
 import { AiAnalysisResponseDto } from '../ai-connector/dto/ai-analysis.dto';
+import { Achievement } from '../gamification/schemas/achievement.schema';
 
 /**
  * AdaptivityService - The brain of the adaptive learning system
@@ -61,36 +62,90 @@ export class AdaptivityService {
 
     try {
       // 1. Update progress with concept mastery
-      const progressUpdate = await this.updateProgressWithFeedback(
-        userId,
-        aiFeedback,
-        {
-          concepts: missionData.concepts,
-          missionId,
-          timeSpent: missionData.timeSpent,
-          isSuccessful: aiFeedback.success,
-        },
-      );
+      this.logger.log(`🎯 [ADAPTIVITY] Step 1: Updating progress with feedback...`);
+      let progressUpdate;
+      try {
+        progressUpdate = await this.updateProgressWithFeedback(
+          userId,
+          aiFeedback,
+          {
+            concepts: missionData.concepts,
+            missionId,
+            timeSpent: missionData.timeSpent,
+            isSuccessful: aiFeedback.success,
+          },
+        );
+        this.logger.log(`✅ [ADAPTIVITY] Step 1 complete: Progress updated`);
+        this.logger.log(`🎯 [ADAPTIVITY] Improvement factor: ${progressUpdate.improvementFactor}`);
+        this.logger.log(`🎯 [ADAPTIVITY] Weak concepts: ${progressUpdate.weakConcepts.join(', ')}`);
+        this.logger.log(`🎯 [ADAPTIVITY] Strong concepts: ${progressUpdate.strongConcepts.join(', ')}` );
+      } catch (progressError) {
+        this.logger.error(`❌ [ADAPTIVITY] Error in updateProgressWithFeedback: ${progressError.message}`, progressError.stack);
+        // Use fallback values
+        progressUpdate = {
+          conceptMastery: new Map(),
+          improvementFactor: 1,
+          weakConcepts: [],
+          strongConcepts: [],
+        };
+      }
 
-      // 2. Calculate and award XP based on performance
-      const xpReward = this.calculateAdaptiveXP(
-        aiFeedback.score,
-        missionData.difficulty,
-        progressUpdate.improvementFactor,
-      );
-      await this.gamificationService.awardXp(userId, xpReward);
-      await this.gamificationService.updateStreak(userId);
+      // 2. Award XP and update gamification (only on first successful completion)
+      let xpGained = 0;
+      let newAchievements: Achievement[] = [];
+      let leveledUp = false;
 
-      // 3. Check for badge achievements
-      await this.checkAndAwardBadges(userId, aiFeedback, progressUpdate);
+      if (aiFeedback.success) {
+        this.logger.log(`🎯 [ADAPTIVITY] Mission successful - calculating adaptive XP`);
+        
+        const xpReward = this.calculateAdaptiveXP(
+          aiFeedback.score,
+          missionData.difficulty,
+          progressUpdate.improvementFactor,
+        );
 
-      // 4. Detect weak concepts for future recommendations
+        this.logger.log(`🎯 [ADAPTIVITY] XP calculated: ${xpReward}, calling gamificationService.awardMissionXP`);
+
+        const gamificationResult =
+          await this.gamificationService.awardMissionXP(
+            userId,
+            missionId,
+            xpReward,
+            true,
+            missionData.attempts || 1,
+            missionData.timeSpent || 0,
+          );
+
+        this.logger.log(`🎯 [ADAPTIVITY] Gamification result:`, {
+          awarded: gamificationResult.awarded,
+          xpGained: gamificationResult.xpGained,
+          leveledUp: gamificationResult.leveledUp,
+        });
+
+        xpGained = gamificationResult.xpGained;
+        newAchievements = gamificationResult.newAchievements;
+        leveledUp = gamificationResult.leveledUp;
+      } else {
+        this.logger.warn(`⚠️ [ADAPTIVITY] Mission not successful - skipping XP award`);
+      }
+
+      // Update daily streak
+      this.logger.log(`🔥 [ADAPTIVITY] Updating daily streak...`);
+      const streakUpdate = await this.gamificationService.updateStreak(userId);
+      this.logger.log(`✅ [ADAPTIVITY] Streak updated: ${streakUpdate.streak}`);
+      newAchievements.push(...streakUpdate.newAchievements);
+
+      // 3. Detect weak concepts for future recommendations
+      this.logger.log(`🔍 [ADAPTIVITY] Identifying weak concepts...`);
       const weakConcepts = this.identifyWeakConcepts(
         aiFeedback,
         progressUpdate.conceptMastery,
       );
+      this.logger.log(`✅ [ADAPTIVITY] Weak concepts identified: ${weakConcepts.length}`);
+      
 
-      // 5. Recommend next mission based on learning path
+      // 4. Recommend next mission based on learning path
+      this.logger.log(`🎯 [ADAPTIVITY] Recommending next mission...`);
       const nextMission = await this.recommendNextMission(
         userId,
         weakConcepts,
@@ -98,18 +153,26 @@ export class AdaptivityService {
         missionId,
         aiFeedback.success,
       );
+      const nextMissionTitle = Array.isArray(nextMission) ? (nextMission[0]?.title || 'none') : (nextMission?.title || 'none');
+      this.logger.log(`✅ [ADAPTIVITY] Next mission recommended: ${nextMissionTitle}`);
+      
 
-      // 6. Analyze learning patterns
+      // 5. Analyze learning patterns
+      this.logger.log(`📊 [ADAPTIVITY] Analyzing learning patterns...`);
       const learningInsights = await this.analyzeLearningPatterns(
         userId,
         aiFeedback,
       );
+      this.logger.log(`✅ [ADAPTIVITY] Learning patterns analyzed`);
+      
 
       this.submissionMetrics.processed += 1;
       this.submissionMetrics.lastLatencyMs = Date.now() - startTime;
 
       return {
-        xpGained: xpReward,
+        xpGained,
+        newAchievements,
+        leveledUp,
         progressUpdate,
         weakConcepts,
         nextMission,
@@ -208,7 +271,9 @@ export class AdaptivityService {
       },
     );
 
-    const improvementFactor = this.calculateImprovementFactor(persisted.progress);
+    const improvementFactor = this.calculateImprovementFactor(
+      persisted.progress,
+    );
 
     return {
       conceptMastery: persisted.masterySnapshot,
@@ -254,7 +319,7 @@ export class AdaptivityService {
     // Simple improvement detection based on total missions
     // This can be enhanced with more sophisticated ML later
     const completed = progress.totalMissionsCompleted;
-    
+
     if (completed < 2) {
       return 0;
     }
@@ -292,10 +357,10 @@ export class AdaptivityService {
     currentMissionId: string,
     wasSuccessful: boolean,
   ) {
-    const profile = await this.learningProfileService.findByUserId(
-      new Types.ObjectId(userId),
-    );
-    const completedMissions = profile?.completedMissions || [];
+    // Get completed missions from gamification (single source of truth)
+    const gamification = await this.gamificationService.getGamification(userId);
+    const completedMissions =
+      gamification?.completedMissions.map((id) => id.toString()) || [];
     const excludeMissionIds = Array.from(
       new Set<string>([...completedMissions, currentMissionId]),
     );
@@ -353,26 +418,33 @@ export class AdaptivityService {
     ]);
 
     const masterySnapshot = Object.fromEntries(
-      progress.conceptMastery ? Array.from(progress.conceptMastery.entries()) : [],
+      progress.conceptMastery
+        ? Array.from(progress.conceptMastery.entries())
+        : [],
+    );
+
+    // Get completed missions from gamification (single source of truth)
+    const completedMissionIds = gamification.completedMissions.map((id) =>
+      id.toString(),
     );
 
     const recommendedRaw = progress.weakConcepts.length
       ? await this.missionsService.getAdaptiveMissions(
           progress.weakConcepts,
-          profile?.completedMissions || [],
+          completedMissionIds,
           { limit: 3 },
         )
-      : await this.missionsService.getNextMission(profile?.completedMissions || []);
+      : await this.missionsService.getNextMission(completedMissionIds);
 
     const recommendedMissions = Array.isArray(recommendedRaw)
       ? recommendedRaw
       : recommendedRaw
-      ? [recommendedRaw]
-      : [];
+        ? [recommendedRaw]
+        : [];
 
     const fallbackMission =
       recommendedMissions.length === 0
-        ? await this.missionsService.getNextMission(profile?.completedMissions || [])
+        ? await this.missionsService.getNextMission(completedMissionIds)
         : null;
 
     return {
@@ -390,10 +462,6 @@ export class AdaptivityService {
         ? {
             weakSkills: profile.weakSkills,
             strongSkills: profile.strongSkills,
-            completedMissions: profile.completedMissions,
-            level: profile.level,
-            xp: profile.xp,
-            badges: profile.badges,
             avgAccuracy: profile.avgAccuracy,
           }
         : null,
@@ -401,10 +469,12 @@ export class AdaptivityService {
         xp: gamification.xp,
         level: gamification.level,
         streak: gamification.streak,
-        badges: gamification.badges,
+        completedMissions: completedMissionIds,
+        totalMissionsCompleted: gamification.totalMissionsCompleted,
+        achievements: gamification.achievements,
       },
       recommendations: recommendedMissions.map((mission) => ({
-  id: String(mission._id),
+        id: String(mission._id),
         title: mission.title,
         description: mission.description,
         difficulty: mission.difficulty,
@@ -428,37 +498,6 @@ export class AdaptivityService {
       submissionsFailed: this.submissionMetrics.failed,
       lastLatencyMs: this.submissionMetrics.lastLatencyMs,
     };
-  }
-
-  /**
-   * Check and award badges based on achievements
-   */
-  private async checkAndAwardBadges(
-    userId: string,
-    aiFeedback: AiAnalysisResponseDto,
-    progressUpdate: any,
-  ) {
-    const badges: string[] = [];
-
-    // Perfect score badge
-    if (aiFeedback.score === 100) {
-      badges.push('Perfect Score');
-    }
-
-    // Strong concept mastery badge
-    if (progressUpdate.strongConcepts?.length >= 3) {
-      badges.push('Concept Master');
-    }
-
-    // Improvement badge
-    if (progressUpdate.improvementFactor > 0.8) {
-      badges.push('Rising Star');
-    }
-
-    // Award badges if any
-    for (const badge of badges) {
-      await this.gamificationService.awardBadge(userId, badge);
-    }
   }
 
   /**

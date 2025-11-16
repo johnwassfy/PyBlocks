@@ -15,6 +15,10 @@ import {
   LearningProfile,
   LearningProfileDocument,
 } from '../learning-profile/schemas/learning-profile.schema';
+import {
+  Gamification,
+  GamificationDocument,
+} from '../gamification/schemas/gamification.schema';
 
 @Injectable()
 export class AnalyticsService {
@@ -27,6 +31,8 @@ export class AnalyticsService {
     @InjectModel(Mission.name) private missionModel: Model<MissionDocument>,
     @InjectModel(LearningProfile.name)
     private learningProfileModel: Model<LearningProfileDocument>,
+    @InjectModel(Gamification.name)
+    private gamificationModel: Model<GamificationDocument>,
   ) {}
 
   async getOverallStats(): Promise<any> {
@@ -105,9 +111,9 @@ export class AnalyticsService {
 
   async getDashboardData(): Promise<any> {
     const overallStats = await this.getOverallStats();
-    
-    // Get top learning profiles by XP
-    const topLearningProfiles = await this.learningProfileModel
+
+    // Get top gamification profiles by XP
+    const topGamificationProfiles = await this.gamificationModel
       .find()
       .sort({ xp: -1 })
       .limit(10)
@@ -115,11 +121,11 @@ export class AnalyticsService {
       .exec();
 
     // Transform to include username from populated user
-    const topUsers = topLearningProfiles.map((profile) => ({
-      username: (profile.userId as any)?.username || 'Unknown',
-      xp: profile.xp,
-      level: profile.level,
-      badges: profile.badges,
+    const topUsers = topGamificationProfiles.map((gamification) => ({
+      username: (gamification.userId as any)?.username || 'Unknown',
+      xp: gamification.xp,
+      level: gamification.level,
+      achievementCount: gamification.achievements.length,
     }));
 
     const recentSubmissions = await this.submissionModel
@@ -234,9 +240,7 @@ export class AnalyticsService {
           total > 0
             ? modelLogs.reduce((sum, l) => sum + l.feedbackLength, 0) / total
             : 0,
-        uniqueStudents: new Set(
-          modelLogs.map((l) => l.anonymizedUserId),
-        ).size,
+        uniqueStudents: new Set(modelLogs.map((l) => l.anonymizedUserId)).size,
       };
     });
 

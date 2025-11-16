@@ -6,6 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { LearningProfileService } from '../learning-profile/learning-profile.service';
+import { GamificationService } from '../gamification/gamification.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcrypt';
@@ -15,6 +16,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private learningProfileService: LearningProfileService,
+    private gamificationService: GamificationService,
     private jwtService: JwtService,
   ) {}
 
@@ -68,9 +70,13 @@ export class AuthService {
       });
 
       // Create learning profile for the new user
-      const learningProfile = await this.learningProfileService.create(
-        user._id,
-      );
+      await this.learningProfileService.create(user._id);
+
+      // Get or create gamification profile
+      const gamification =
+        await this.gamificationService.getOrCreateGamification(
+          user._id.toString(),
+        );
 
       const payload = {
         sub: user._id.toString(),
@@ -85,8 +91,8 @@ export class AuthService {
           username: user.username,
           avatar: user.avatar,
           ageRange: user.ageRange,
-          xp: learningProfile.xp,
-          level: learningProfile.level,
+          xp: gamification.xp,
+          level: gamification.level,
         },
         warning: emailWarning, // Include warning about email if exists
       };
@@ -117,10 +123,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Fetch learning profile
-    const learningProfile = await this.learningProfileService.findByUserId(
-      user._id,
-    );
+    // Get gamification profile for XP and level
+    const gamification =
+      await this.gamificationService.getOrCreateGamification(
+        user._id.toString(),
+      );
 
     const payload = {
       sub: user._id.toString(),
@@ -135,9 +142,9 @@ export class AuthService {
         username: user.username,
         avatar: user.avatar,
         ageRange: user.ageRange,
-        xp: learningProfile?.xp || 0,
-        level: learningProfile?.level || 1,
-        badges: learningProfile?.badges || [],
+        xp: gamification.xp,
+        level: gamification.level,
+        achievementCount: gamification.achievements.length,
       },
     };
   }

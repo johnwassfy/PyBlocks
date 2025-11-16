@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Mission, MissionDocument } from './schemas/mission.schema';
@@ -7,6 +7,8 @@ import { UpdateMissionDto } from './dto/update-mission.dto';
 
 @Injectable()
 export class MissionsService {
+  private readonly logger = new Logger(MissionsService.name);
+  
   constructor(
     @InjectModel(Mission.name) private missionModel: Model<MissionDocument>,
   ) {}
@@ -256,6 +258,7 @@ export class MissionsService {
             break;
           case 'print':
             conceptFound = /\bprint\s*\(/.test(code);
+            this.logger.log(`🔍 [VALIDATION] Checking for 'print' - Found: ${conceptFound}, Code: "${code}"`);
             break;
           default:
             conceptFound = new RegExp(`\\b${concept}\\b`, 'i').test(code);

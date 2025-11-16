@@ -60,33 +60,48 @@ export type Mission = {
   analytics?: MissionAnalytics;
 };
 export type UserData = {
+  id: string;  // MongoDB _id
   username: string;
   avatar: string;
   ageRange: string;
   role: string;
   guardianEmail?: string;
 };
+
 export type ProfileData = {
   codingExperience: string;
   pythonFamiliarity: string;
   knownConcepts: string[];
   weakSkills: string[];
   strongSkills: string[];
-  completedMissions: string[];
   totalSubmissions: number;
   successfulSubmissions: number;
   avgAccuracy: number;
-  xp: number;
-  level: number;
-  badges: string[];
   skillScores: Record<string, number>;
   lastActive?: string;
 };
 
+export type Achievement = {
+  _id: string;
+  name: string;
+  description: string;
+  icon: string;
+  unlockedAt: Date;
+};
+
+export type GamificationData = {
+  xp: number;
+  level: number;
+  streak: number;
+  completedMissions: string[];
+  totalMissionsCompleted: number;
+  achievements: Achievement[];
+};
 interface BlocklyWorkspaceProps {
   mission: Mission;
   user: UserData | null;
   profile: ProfileData | null;
+  gamification: GamificationData | null;
   sendChatMessage: (request: any) => Promise<any>;
   getPredefinedPrompts: () => Promise<any>;
   checkAIServiceHealth: () => Promise<boolean>;
@@ -96,6 +111,7 @@ export default function BlocklyWorkspace({
   mission,
   user,
   profile,
+  gamification,
   sendChatMessage,
   getPredefinedPrompts,
   checkAIServiceHealth,
@@ -128,7 +144,7 @@ export default function BlocklyWorkspace({
 
   // 🧠 Behavior Tracking for Proactive Hints
   const behaviorTracker = useBehaviorTracker({
-    userId: user?.username || 'anonymous',
+    userId: user?.id || 'anonymous',  // Fixed: use user.id instead of user.username
     missionId: mission?._id || 'free-play',
     weakConcepts: profile?.weakSkills || [],
     strongConcepts: profile?.strongSkills || [],
@@ -412,8 +428,8 @@ export default function BlocklyWorkspace({
    * 🧠 Analyze user behavior and send to AI for live hints
    */
   const analyzeBehavior = async () => {
-    if (!user || !mission) {
-      console.log('⚠️ [AI Behavior] Skipping analysis - no user or mission');
+    if (!user || !mission || !user.id) {
+      console.log('⚠️ [AI Behavior] Skipping analysis - no user, user.id, or mission');
       return;
     }
 
@@ -433,7 +449,7 @@ export default function BlocklyWorkspace({
 
       // Prepare behavior summary
       const behaviorSummary = {
-        userId: user.username,
+        userId: user.id,  // Fixed: use user.id instead of user.username
         missionId: mission._id,
         step: 0, // TODO: Track current step
         activity: {

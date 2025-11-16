@@ -140,7 +140,7 @@ class ThesisVisualizations:
         
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
         
-        services = ['analyze', 'chat', 'hint', 'recommend']
+        services = ['analyze', 'chat', 'hint', 'behavior']
         
         for idx, service in enumerate(services):
             ax = axes[idx // 2, idx % 2]
@@ -209,6 +209,81 @@ class ThesisVisualizations:
         
         plt.tight_layout()
         output_file = self.output_dir / "fig4_quality_metrics.png"
+        plt.savefig(output_file, bbox_inches='tight')
+        print(f"✅ Saved: {output_file}")
+        plt.close()
+    
+    def plot_behavior_analysis(self, df):
+        """Plot behavior service specific metrics"""
+        print("📊 Generating behavior service analysis...")
+        
+        behavior_df = df[df['service'] == 'behavior'].copy()
+        
+        if behavior_df.empty:
+            print("⚠️  No BEHAVIOR service data found")
+            return
+        
+        # Extract behavior metrics
+        behavior_df['pattern'] = behavior_df['response_data'].apply(
+            lambda x: x.get('pattern', '') if isinstance(x, dict) else ''
+        )
+        behavior_df['hint_text'] = behavior_df['response_data'].apply(
+            lambda x: x.get('hint', '') if isinstance(x, dict) else ''
+        )
+        behavior_df['hint_provided'] = behavior_df['hint_text'].apply(lambda x: 1 if x else 0)
+        behavior_df['hint_length'] = behavior_df['hint_text'].apply(len)
+        
+        fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+        
+        # 1. Intervention Rate by Model
+        intervention_rate = behavior_df.groupby('model_name')['hint_provided'].mean() * 100
+        intervention_rate.plot(kind='bar', ax=axes[0, 0], color='coral')
+        axes[0, 0].set_title('Intervention Rate by Model', fontsize=12, fontweight='bold')
+        axes[0, 0].set_xlabel('Model', fontsize=10)
+        axes[0, 0].set_ylabel('Intervention Rate (%)', fontsize=10)
+        axes[0, 0].set_ylim(0, 105)
+        axes[0, 0].grid(axis='y', alpha=0.3)
+        plt.setp(axes[0, 0].xaxis.get_majorticklabels(), rotation=45, ha='right')
+        
+        # Add value labels
+        for container in axes[0, 0].containers:
+            axes[0, 0].bar_label(container, fmt='%.1f%%', padding=3)
+        
+        # 2. Average Hint Length
+        hint_length = behavior_df[behavior_df['hint_provided'] == 1].groupby('model_name')['hint_length'].mean()
+        hint_length.plot(kind='bar', ax=axes[0, 1], color='steelblue')
+        axes[0, 1].set_title('Average Hint Length', fontsize=12, fontweight='bold')
+        axes[0, 1].set_xlabel('Model', fontsize=10)
+        axes[0, 1].set_ylabel('Characters', fontsize=10)
+        axes[0, 1].grid(axis='y', alpha=0.3)
+        plt.setp(axes[0, 1].xaxis.get_majorticklabels(), rotation=45, ha='right')
+        
+        # 3. Pattern Detection Distribution
+        pattern_counts = behavior_df.groupby(['model_name', 'pattern']).size().unstack(fill_value=0)
+        pattern_counts.plot(kind='bar', stacked=True, ax=axes[1, 0], colormap='Set3')
+        axes[1, 0].set_title('Pattern Detection Distribution', fontsize=12, fontweight='bold')
+        axes[1, 0].set_xlabel('Model', fontsize=10)
+        axes[1, 0].set_ylabel('Count', fontsize=10)
+        axes[1, 0].legend(title='Pattern', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
+        axes[1, 0].grid(axis='y', alpha=0.3)
+        plt.setp(axes[1, 0].xaxis.get_majorticklabels(), rotation=45, ha='right')
+        
+        # 4. Success Rate by Model
+        success_rate = behavior_df.groupby('model_name')['semantic_success'].mean() * 100
+        success_rate.plot(kind='bar', ax=axes[1, 1], color='mediumseagreen')
+        axes[1, 1].set_title('Behavior Analysis Success Rate', fontsize=12, fontweight='bold')
+        axes[1, 1].set_xlabel('Model', fontsize=10)
+        axes[1, 1].set_ylabel('Success Rate (%)', fontsize=10)
+        axes[1, 1].set_ylim(0, 105)
+        axes[1, 1].grid(axis='y', alpha=0.3)
+        plt.setp(axes[1, 1].xaxis.get_majorticklabels(), rotation=45, ha='right')
+        
+        # Add value labels
+        for container in axes[1, 1].containers:
+            axes[1, 1].bar_label(container, fmt='%.1f%%', padding=3)
+        
+        plt.tight_layout()
+        output_file = self.output_dir / "fig4b_behavior_analysis.png"
         plt.savefig(output_file, bbox_inches='tight')
         print(f"✅ Saved: {output_file}")
         plt.close()
@@ -287,6 +362,7 @@ class ThesisVisualizations:
         self.plot_response_times(df)
         self.plot_service_breakdown(df)
         self.plot_quality_metrics(df)
+        self.plot_behavior_analysis(df)
         self.plot_overall_summary(df)
         
         print("\n" + "="*80)
