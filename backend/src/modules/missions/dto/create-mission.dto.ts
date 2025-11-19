@@ -65,6 +65,10 @@ export class ValidationRulesDto {
   @IsArray()
   @IsOptional()
   forbiddenPatterns?: string[];
+
+  @IsBoolean()
+  @IsOptional()
+  requireExactOutput?: boolean;
 }
 
 // Mission configuration

@@ -1,655 +1,352 @@
 [
   {
-    "id": "behavior_idle_01",
-    "name": "Idle Detection - Long Pause, No Code",
-    "evaluation_category": "pattern_detection_accuracy",
-    "difficulty_level": 2,
-    "expected_pattern": "idle_stuck",
-    "expected_behavior": "Generate encouraging, specific hint asking if they need help. Reference mission concepts.",
+    "id": "behavior_degradation_01",
+    "name": "Subtle Code Quality Degradation",
+    "evaluation_category": "advanced_pattern",
+    "difficulty_level": 5,
+    "expected_pattern": "quality_degradation",
+    "expected_behavior": "Detect gradual decline in code quality (comments removed, variable names worse, less structure) despite passing tests - student losing understanding or copying",
     "grading_criteria": {
-      "detects_idle": true,
-      "must_include": ["help", "need", "stuck", "?"],
-      "must_not_include": ["you're doing great", "keep going"],
-      "actionable": true,
-      "specificity_score": 0.75
+      "detects_degradation": true,
+      "must_include": ["quality", "understanding", "previous"],
+      "must_not_include": ["good job", "correct"],
+      "requires_comparison": true,
+      "specificity_score": 0.9
     },
     "payload": {
       "userId": "benchmark_user",
-      "missionId": "loops_intro",
-      "step": 1,
+      "missionId": "algorithms_practice",
+      "step": 4,
       "activity": {
-        "blocksCreated": 0,
-        "blocksDeleted": 0,
-        "blocksModified": 0,
-        "idleTime": 45,
-        "totalEdits": 0,
+        "blocksCreated": 5,
+        "blocksDeleted": 2,
+        "blocksModified": 3,
+        "idleTime": 8,
+        "totalEdits": 10,
         "errorCount": 0,
         "lastError": null,
-        "codeSnapshot": "",
-        "concepts": ["loops", "for-loop", "range"],
-        "difficulty": "medium"
+        "codeSnapshot": "def f(n):return n if n<=1 else n*f(n-1)",
+        "previousCode": "def factorial(number):\n    # Base case: factorial of 0 or 1 is 1\n    if number <= 1:\n        return 1\n    # Recursive case\n    return number * factorial(number - 1)",
+        "concepts": ["functions", "recursion", "base-case"],
+        "difficulty": "hard"
       }
     }
   },
   {
-    "id": "behavior_idle_02",
-    "name": "Idle Detection - Code Present, Thinking",
-    "evaluation_category": "context_awareness",
-    "difficulty_level": 3,
-    "expected_pattern": "idle_stuck",
-    "expected_behavior": "Analyze existing code, identify what might be blocking them. Offer specific next step.",
+    "id": "behavior_plateau_01",
+    "name": "Extended Learning Plateau Detection",
+    "evaluation_category": "advanced_pattern",
+    "difficulty_level": 4,
+    "expected_pattern": "learning_plateau",
+    "expected_behavior": "Detect when student completes 5+ missions at same difficulty with increasing attempts - not progressing, needs intervention or different approach",
     "grading_criteria": {
-      "references_code": true,
-      "must_include": ["code", "loop", "next"],
-      "must_not_include": ["start coding", "begin"],
-      "contextual": true,
+      "detects_plateau": true,
+      "must_include": ["struggling", "different", "help"],
+      "suggests_intervention": true,
+      "data_driven": true,
       "specificity_score": 0.85
     },
     "payload": {
       "userId": "benchmark_user",
-      "missionId": "loops_practice",
-      "step": 2,
-      "activity": {
-        "blocksCreated": 2,
-        "blocksDeleted": 0,
-        "blocksModified": 1,
-        "idleTime": 60,
-        "totalEdits": 3,
-        "errorCount": 0,
-        "lastError": null,
-        "codeSnapshot": "for i in range(5):\n    # TODO: add numbers",
-        "concepts": ["loops", "arithmetic", "variables"],
-        "difficulty": "medium"
-      }
-    }
-  },
-  {
-    "id": "behavior_confusion_01",
-    "name": "Trial-and-Error Pattern - Rapid Deletions",
-    "evaluation_category": "behavioral_insight",
-    "difficulty_level": 3,
-    "expected_pattern": "confused_trial_error",
-    "expected_behavior": "Recognize confusion pattern. Offer to explain concept or show example. Non-judgmental.",
-    "grading_criteria": {
-      "detects_confusion": true,
-      "must_include": ["example", "show", "concept", "?"],
-      "encourages_learning": true,
-      "non_judgmental": true,
-      "specificity_score": 0.8
-    },
-    "payload": {
-      "userId": "benchmark_user",
-      "missionId": "conditionals_intro",
+      "missionId": "loops_basic_6",
       "step": 1,
-      "activity": {
-        "blocksCreated": 8,
-        "blocksDeleted": 6,
-        "blocksModified": 4,
-        "idleTime": 15,
-        "totalEdits": 18,
-        "errorCount": 2,
-        "lastError": "SyntaxError: invalid syntax",
-        "codeSnapshot": "if x > 5\n    print('big')",
-        "concepts": ["conditionals", "if-statement", "comparison"],
-        "difficulty": "medium"
-      }
-    }
-  },
-  {
-    "id": "behavior_confusion_02",
-    "name": "Trial-and-Error with Complex Code",
-    "evaluation_category": "diagnostic_depth",
-    "difficulty_level": 4,
-    "expected_pattern": "confused_trial_error",
-    "expected_behavior": "Identify specific confusion point in code. Guide toward understanding, not just syntax fix.",
-    "grading_criteria": {
-      "identifies_issue": true,
-      "must_include": ["line", "variable", "before"],
-      "explains_why": true,
-      "teaching_focused": true,
-      "specificity_score": 0.9
-    },
-    "payload": {
-      "userId": "benchmark_user",
-      "missionId": "loops_practice",
-      "step": 3,
-      "activity": {
-        "blocksCreated": 12,
-        "blocksDeleted": 10,
-        "blocksModified": 8,
-        "idleTime": 20,
-        "totalEdits": 30,
-        "errorCount": 4,
-        "lastError": "NameError: name 'total' is not defined",
-        "codeSnapshot": "for i in range(10):\n    total = total + i\nprint(total)",
-        "concepts": ["loops", "variables", "arithmetic"],
-        "difficulty": "medium"
-      }
-    }
-  },
-  {
-    "id": "behavior_frustration_01",
-    "name": "Error Pattern - Repeated Failures",
-    "evaluation_category": "emotional_intelligence",
-    "difficulty_level": 3,
-    "expected_pattern": "frustrated_errors",
-    "expected_behavior": "Empathetic, supportive. Normalize errors. Offer specific help with the error type.",
-    "grading_criteria": {
-      "detects_frustration": true,
-      "must_include": ["normal", "happens", "help"],
-      "empathetic_tone": true,
-      "offers_specific_help": true,
-      "support_score": 0.85
-    },
-    "payload": {
-      "userId": "benchmark_user",
-      "missionId": "syntax_practice",
-      "step": 2,
       "activity": {
         "blocksCreated": 3,
         "blocksDeleted": 1,
         "blocksModified": 2,
-        "idleTime": 10,
+        "idleTime": 35,
         "totalEdits": 6,
-        "errorCount": 5,
+        "errorCount": 3,
         "lastError": "SyntaxError: invalid syntax",
-        "codeSnapshot": "for i in range(5)\n    print(i)",
+        "codeSnapshot": "for i in range(10)\n    print(i)",
+        "missionHistory": [
+          {"mission": "loops_basic_1", "difficulty": 2, "attempts": 3},
+          {"mission": "loops_basic_2", "difficulty": 2, "attempts": 4},
+          {"mission": "loops_basic_3", "difficulty": 2, "attempts": 5},
+          {"mission": "loops_basic_4", "difficulty": 2, "attempts": 5},
+          {"mission": "loops_basic_5", "difficulty": 2, "attempts": 6}
+        ],
         "concepts": ["loops", "syntax"],
-        "difficulty": "easy"
+        "difficulty": "medium"
       }
     }
   },
   {
-    "id": "behavior_frustration_02",
-    "name": "Error Pattern - Complex Logic Error",
-    "evaluation_category": "advanced_diagnosis",
+    "id": "behavior_copy_paste_01",
+    "name": "Suspicious Copy-Paste Pattern",
+    "evaluation_category": "advanced_pattern",
     "difficulty_level": 5,
-    "expected_pattern": "frustrated_errors",
-    "expected_behavior": "Empathize AND diagnose the logic issue. Explain why the error keeps happening.",
+    "expected_pattern": "copy_paste_suspected",
+    "expected_behavior": "Detect instant success after multiple failures with dramatically different code quality/complexity - possible external help",
     "grading_criteria": {
-      "empathy_present": true,
-      "explains_root_cause": true,
-      "must_include": ["why", "because", "understand"],
-      "diagnostic_depth": 0.9,
-      "teaching_quality": 0.85
+      "detects_anomaly": true,
+      "must_include": ["sudden", "change", "understand"],
+      "asks_for_explanation": true,
+      "non_accusatory": true,
+      "specificity_score": 0.9
     },
     "payload": {
       "userId": "benchmark_user",
-      "missionId": "lists_practice",
-      "step": 4,
+      "missionId": "list_comprehension",
+      "step": 3,
       "activity": {
-        "blocksCreated": 5,
-        "blocksDeleted": 2,
-        "blocksModified": 6,
-        "idleTime": 25,
+        "blocksCreated": 12,
+        "blocksDeleted": 0,
+        "blocksModified": 1,
+        "idleTime": 2,
         "totalEdits": 13,
-        "errorCount": 7,
-        "lastError": "IndexError: list index out of range",
-        "codeSnapshot": "numbers = [1, 2, 3, 4, 5]\nfor i in range(6):\n    print(numbers[i])",
-        "concepts": ["lists", "indexing", "loops", "range"],
+        "errorCount": 0,
+        "lastError": null,
+        "codeSnapshot": "# Optimized solution with error handling\nresult = [int(x) for x in input().split() if x.isdigit()]\nprint(f\"Valid numbers: {', '.join(map(str, sorted(result)))}\")",
+        "previousAttempts": [
+          {"code": "for i in lst:\n    print i", "time_ms": 45000},
+          {"code": "for i in lst\n    print(i)", "time_ms": 30000}
+        ],
+        "timeToSuccess": 3000,
+        "concepts": ["list-comprehension", "input", "validation"],
         "difficulty": "hard"
       }
     }
   },
   {
-    "id": "behavior_progress_01",
-    "name": "Confident Progress - Positive Reinforcement",
-    "evaluation_category": "motivational_intelligence",
-    "difficulty_level": 2,
-    "expected_pattern": "confident_progress",
-    "expected_behavior": "Brief, enthusiastic praise. Keep them motivated. Use emojis.",
+    "id": "behavior_context_switch_01",
+    "name": "Rapid Context Switching",
+    "evaluation_category": "focus_pattern",
+    "difficulty_level": 4,
+    "expected_pattern": "distracted_switching",
+    "expected_behavior": "Detect rapid switching between missions without completion - student may be overwhelmed or avoiding hard parts",
     "grading_criteria": {
-      "detects_progress": true,
-      "must_include": ["great", "good", "awesome", "nice"],
-      "brief": true,
-      "positive_tone": true,
-      "max_length": 100
+      "detects_switching": true,
+      "must_include": ["focus", "complete", "one"],
+      "suggests_focus_strategy": true,
+      "specificity_score": 0.8
     },
     "payload": {
       "userId": "benchmark_user",
-      "missionId": "variables_practice",
-      "step": 2,
-      "activity": {
-        "blocksCreated": 5,
-        "blocksDeleted": 1,
-        "blocksModified": 2,
-        "idleTime": 8,
-        "totalEdits": 8,
-        "errorCount": 0,
-        "lastError": null,
-        "codeSnapshot": "name = 'Alice'\nage = 10\nprint('Hello', name)\nprint('You are', age, 'years old')",
-        "concepts": ["variables", "print", "strings"],
-        "difficulty": "easy"
-      }
-    }
-  },
-  {
-    "id": "behavior_experimentation_01",
-    "name": "Rapid Experimentation - Encourage Exploration",
-    "evaluation_category": "learning_style_adaptation",
-    "difficulty_level": 2,
-    "expected_pattern": "experimenting_rapid",
-    "expected_behavior": "Encourage experimentation. Remind to test. Keep it brief and positive.",
-    "grading_criteria": {
-      "encourages_exploration": true,
-      "must_include": ["explore", "try", "test"],
-      "positive_tone": true,
-      "brief": true,
-      "max_length": 120
-    },
-    "payload": {
-      "userId": "benchmark_user",
-      "missionId": "functions_intro",
-      "step": 1,
-      "activity": {
-        "blocksCreated": 15,
-        "blocksDeleted": 8,
-        "blocksModified": 12,
-        "idleTime": 5,
-        "totalEdits": 35,
-        "errorCount": 1,
-        "lastError": null,
-        "codeSnapshot": "def greet(name):\n    print('Hi', name)\n\ngreet('Alice')\ngreet('Bob')\ngreet('Charlie')",
-        "concepts": ["functions", "parameters", "print"],
-        "difficulty": "medium"
-      }
-    }
-  },
-  {
-    "id": "behavior_normal_01",
-    "name": "Normal Behavior - No Intervention Needed",
-    "evaluation_category": "intervention_appropriateness",
-    "difficulty_level": 2,
-    "expected_pattern": "normal",
-    "expected_behavior": "Should return NO_HINT or null. No intervention needed for normal progress.",
-    "grading_criteria": {
-      "no_unnecessary_hint": true,
-      "hint_should_be_null": true,
-      "appropriateness_score": 1.0
-    },
-    "payload": {
-      "userId": "benchmark_user",
-      "missionId": "variables_intro",
+      "missionId": "conditionals_advanced",
       "step": 1,
       "activity": {
         "blocksCreated": 2,
-        "blocksDeleted": 0,
+        "blocksDeleted": 1,
         "blocksModified": 1,
-        "idleTime": 12,
-        "totalEdits": 3,
-        "errorCount": 0,
-        "lastError": null,
-        "codeSnapshot": "x = 5\ny = 10",
-        "concepts": ["variables"],
-        "difficulty": "easy"
+        "idleTime": 5,
+        "totalEdits": 4,
+        "errorCount": 1,
+        "lastError": "SyntaxError",
+        "codeSnapshot": "if x > 5:",
+        "recentMissions": [
+          {"mission": "loops_intro", "timeSpent": 15000, "completed": false},
+          {"mission": "functions_basic", "timeSpent": 22000, "completed": false},
+          {"mission": "strings_manipulation", "timeSpent": 18000, "completed": false},
+          {"mission": "conditionals_advanced", "timeSpent": 8000, "completed": false}
+        ],
+        "concepts": ["conditionals", "logic"],
+        "difficulty": "hard"
       }
     }
   },
   {
-    "id": "behavior_code_analysis_01",
-    "name": "Code Inspection - Detect Missing Logic",
-    "evaluation_category": "code_understanding",
-    "difficulty_level": 4,
-    "expected_pattern": "idle_stuck",
-    "expected_behavior": "Notice code has loop but no body. Suggest what to add next. Be specific.",
+    "id": "behavior_burnout_01",
+    "name": "Burnout Pattern Detection",
+    "evaluation_category": "emotional_state",
+    "difficulty_level": 5,
+    "expected_pattern": "frustration_burnout",
+    "expected_behavior": "Detect signs of frustration/burnout: many rapid edits with no progress, increasing errors, deteriorating code structure",
     "grading_criteria": {
-      "analyzes_code": true,
-      "must_include": ["loop", "inside", "add", "print"],
-      "identifies_missing_logic": true,
-      "specificity_score": 0.9
+      "detects_frustration": true,
+      "must_include": ["break", "okay", "hard"],
+      "empathetic": true,
+      "suggests_break_or_easier": true,
+      "specificity_score": 0.85
     },
     "payload": {
       "userId": "benchmark_user",
-      "missionId": "loops_intro",
+      "missionId": "recursion_advanced",
       "step": 2,
+      "activity": {
+        "blocksCreated": 24,
+        "blocksDeleted": 22,
+        "blocksModified": 18,
+        "idleTime": 3,
+        "totalEdits": 64,
+        "errorCount": 12,
+        "lastError": "RecursionError: maximum recursion depth exceeded",
+        "codeSnapshot": "def fib(n):\n    return fib(n-1)+fib(n-2)",
+        "sessionTime": 180000,
+        "errorsLast5Min": 8,
+        "concepts": ["recursion", "base-case", "functions"],
+        "difficulty": "very-hard"
+      }
+    }
+  },
+  {
+    "id": "behavior_silent_struggle_01",
+    "name": "Silent Struggle - Minimal Activity",
+    "evaluation_category": "subtle_pattern",
+    "difficulty_level": 4,
+    "expected_pattern": "silent_struggle",
+    "expected_behavior": "Detect student who makes very few edits, long idle times, but doesn't ask for help - may be stuck but hesitant to engage",
+    "grading_criteria": {
+      "detects_hesitation": true,
+      "must_include": ["help", "okay", "ask"],
+      "inviting_tone": true,
+      "low_pressure": true,
+      "specificity_score": 0.8
+    },
+    "payload": {
+      "userId": "benchmark_user",
+      "missionId": "nested_loops",
+      "step": 1,
       "activity": {
         "blocksCreated": 1,
         "blocksDeleted": 0,
         "blocksModified": 0,
-        "idleTime": 50,
+        "idleTime": 120,
         "totalEdits": 1,
         "errorCount": 0,
         "lastError": null,
-        "codeSnapshot": "for i in range(5):\n    pass",
-        "concepts": ["loops", "for-loop"],
-        "difficulty": "easy"
+        "codeSnapshot": "for i in range(5):",
+        "sessionTime": 240000,
+        "hintRequests": 0,
+        "chatMessages": 0,
+        "concepts": ["nested-loops", "loops", "logic"],
+        "difficulty": "hard"
       }
     }
   },
   {
-    "id": "behavior_code_analysis_02",
-    "name": "Code Inspection - Detect Incomplete Pattern",
-    "evaluation_category": "pattern_recognition",
+    "id": "behavior_overconfidence_01",
+    "name": "Overconfidence Pattern",
+    "evaluation_category": "learning_attitude",
     "difficulty_level": 4,
-    "expected_pattern": "idle_stuck",
-    "expected_behavior": "Recognize accumulator pattern started but incomplete. Guide toward completing it.",
+    "expected_pattern": "overconfident_rushing",
+    "expected_behavior": "Detect rapid submissions without testing, skipping concepts, minimal time per mission despite complexity",
     "grading_criteria": {
-      "recognizes_pattern": true,
-      "must_include": ["total", "before", "loop", "start"],
-      "teaches_pattern": true,
-      "specificity_score": 0.9
+      "detects_rushing": true,
+      "must_include": ["test", "careful", "sure"],
+      "gentle_warning": true,
+      "encourages_thoroughness": true,
+      "specificity_score": 0.85
     },
     "payload": {
       "userId": "benchmark_user",
-      "missionId": "loops_practice",
-      "step": 3,
+      "missionId": "data_structures_advanced",
+      "step": 1,
       "activity": {
-        "blocksCreated": 3,
+        "blocksCreated": 8,
         "blocksDeleted": 0,
-        "blocksModified": 1,
-        "idleTime": 45,
-        "totalEdits": 4,
+        "blocksModified": 2,
+        "idleTime": 5,
+        "totalEdits": 10,
         "errorCount": 0,
         "lastError": null,
-        "codeSnapshot": "for i in range(10):\n    # TODO: add i to total",
-        "concepts": ["loops", "accumulator", "arithmetic"],
-        "difficulty": "medium"
+        "codeSnapshot": "def merge(a,b):return sorted(a+b)",
+        "timeToSubmit": 18000,
+        "testingEvents": 0,
+        "missionComplexity": "high",
+        "concepts": ["algorithms", "sorting", "lists"],
+        "difficulty": "very-hard"
       }
     }
   },
   {
-    "id": "behavior_contextual_01",
-    "name": "Context-Aware - Easy vs Hard Mission",
-    "evaluation_category": "difficulty_adaptation",
+    "id": "behavior_edge_empty_01",
+    "name": "Empty Activity Long Session",
+    "evaluation_category": "edge_cases",
     "difficulty_level": 3,
     "expected_pattern": "idle_stuck",
-    "expected_behavior": "Adjust hint complexity based on mission difficulty. Easy mission = simpler hints.",
+    "expected_behavior": "Detect completely empty activity despite long session - student may be confused about interface or objectives",
     "grading_criteria": {
-      "adapts_to_difficulty": true,
-      "must_not_include": ["advanced", "complex", "sophisticated"],
-      "simplicity_appropriate": true,
-      "difficulty_awareness": 0.85
+      "detects_zero_activity": true,
+      "must_include": ["start", "help", "stuck"],
+      "asks_about_confusion": true,
+      "specificity_score": 0.75
     },
     "payload": {
       "userId": "benchmark_user",
-      "missionId": "print_intro",
+      "missionId": "intro_programming",
       "step": 1,
       "activity": {
         "blocksCreated": 0,
         "blocksDeleted": 0,
         "blocksModified": 0,
-        "idleTime": 30,
+        "idleTime": 180,
         "totalEdits": 0,
         "errorCount": 0,
         "lastError": null,
         "codeSnapshot": "",
-        "concepts": ["print"],
+        "sessionTime": 200000,
+        "concepts": ["basics", "print", "variables"],
         "difficulty": "easy"
       }
     }
   },
   {
-    "id": "behavior_contextual_02",
-    "name": "Context-Aware - Hard Mission with Code",
-    "evaluation_category": "difficulty_adaptation",
-    "difficulty_level": 5,
-    "expected_pattern": "confused_trial_error",
-    "expected_behavior": "For hard missions, give more detailed diagnostic help. Explain complex concepts.",
+    "id": "behavior_error_loop_01",
+    "name": "Same Error Loop Detection",
+    "evaluation_category": "learning_block",
+    "difficulty_level": 4,
+    "expected_pattern": "error_loop",
+    "expected_behavior": "Detect student making identical error 5+ times - fundamental misunderstanding, not just typo",
     "grading_criteria": {
-      "adapts_to_difficulty": true,
-      "provides_depth": true,
-      "must_include": ["because", "why", "understand"],
-      "difficulty_awareness": 0.9
+      "detects_repeated_error": true,
+      "must_include": ["same", "error", "explain"],
+      "offers_explanation": true,
+      "identifies_root_cause": true,
+      "specificity_score": 0.9
     },
     "payload": {
       "userId": "benchmark_user",
-      "missionId": "nested_loops",
-      "step": 4,
+      "missionId": "indentation_practice",
+      "step": 2,
       "activity": {
         "blocksCreated": 10,
-        "blocksDeleted": 8,
-        "blocksModified": 5,
+        "blocksDeleted": 5,
+        "blocksModified": 8,
         "idleTime": 20,
         "totalEdits": 23,
-        "errorCount": 3,
-        "lastError": "IndentationError: unexpected indent",
-        "codeSnapshot": "for i in range(3):\n    for j in range(3):\nprint(i, j)",
-        "concepts": ["nested-loops", "indentation", "scope"],
-        "difficulty": "hard"
+        "errorCount": 6,
+        "lastError": "IndentationError: expected an indented block",
+        "codeSnapshot": "for i in range(5):\nprint(i)",
+        "errorHistory": [
+          {"error": "IndentationError", "count": 6},
+          {"error": "SyntaxError", "count": 1}
+        ],
+        "concepts": ["syntax", "indentation", "loops"],
+        "difficulty": "medium"
       }
     }
   },
   {
-    "id": "behavior_timing_01",
-    "name": "Timing - Early Intervention Too Soon",
-    "evaluation_category": "intervention_timing",
-    "difficulty_level": 3,
-    "expected_pattern": "normal",
-    "expected_behavior": "Should NOT intervene too early. Give student time to think (< 20s idle is normal).",
+    "id": "behavior_masking_01",
+    "name": "Problem Masking with Workarounds",
+    "evaluation_category": "code_smell",
+    "difficulty_level": 5,
+    "expected_pattern": "workaround_instead_of_fix",
+    "expected_behavior": "Detect when student uses workarounds to avoid fixing root problem (e.g., global vars instead of parameters, try-except to hide errors)",
     "grading_criteria": {
-      "no_premature_hint": true,
-      "hint_should_be_null": true,
-      "timing_appropriateness": 1.0
+      "detects_anti_pattern": true,
+      "must_include": ["better", "fix", "proper"],
+      "explains_why_bad": true,
+      "suggests_correct_approach": true,
+      "specificity_score": 0.95
     },
     "payload": {
       "userId": "benchmark_user",
-      "missionId": "variables_intro",
-      "step": 1,
-      "activity": {
-        "blocksCreated": 1,
-        "blocksDeleted": 0,
-        "blocksModified": 0,
-        "idleTime": 15,
-        "totalEdits": 1,
-        "errorCount": 0,
-        "lastError": null,
-        "codeSnapshot": "name = 'Alice'",
-        "concepts": ["variables"],
-        "difficulty": "easy"
-      }
-    }
-  },
-  {
-    "id": "behavior_timing_02",
-    "name": "Timing - Critical Moment for Intervention",
-    "evaluation_category": "intervention_timing",
-    "difficulty_level": 4,
-    "expected_pattern": "frustrated_errors",
-    "expected_behavior": "Multiple errors + idle time = critical intervention moment. Must help now.",
-    "grading_criteria": {
-      "intervenes_at_critical_time": true,
-      "must_include": ["help", "let's", "together"],
-      "urgency_appropriate": true,
-      "timing_score": 0.9
-    },
-    "payload": {
-      "userId": "benchmark_user",
-      "missionId": "conditionals_practice",
+      "missionId": "functions_parameters",
       "step": 3,
       "activity": {
-        "blocksCreated": 4,
+        "blocksCreated": 8,
         "blocksDeleted": 2,
-        "blocksModified": 3,
-        "idleTime": 55,
-        "totalEdits": 9,
-        "errorCount": 6,
-        "lastError": "SyntaxError: invalid syntax",
-        "codeSnapshot": "age = 15\nif age > 13\n    print('teen')",
-        "concepts": ["conditionals", "syntax"],
-        "difficulty": "medium"
-      }
-    }
-  },
-  {
-    "id": "behavior_trap_overhelp_01",
-    "name": "TRAP: Over-Helping on Minor Issue",
-    "evaluation_category": "appropriateness_trap",
-    "difficulty_level": 4,
-    "trap_category": "unnecessary_intervention",
-    "expected_behavior": "Should NOT give hint for minor, easily recoverable situations",
-    "grading_criteria": {
-      "no_unnecessary_help": true,
-      "hint_should_be_null": true,
-      "appropriateness_score": 0.95
-    },
-    "payload": {
-      "userId": "trap_test_user",
-      "missionId": "print_practice",
-      "step": 1,
-      "activity": {
-        "blocksCreated": 2,
-        "blocksDeleted": 1,
-        "blocksModified": 1,
-        "idleTime": 18,
-        "totalEdits": 4,
-        "errorCount": 1,
-        "lastError": null,
-        "codeSnapshot": "print('Hello')\nprint('World')",
-        "concepts": ["print"],
-        "difficulty": "easy"
-      }
-    }
-  },
-  {
-    "id": "behavior_trap_generic_01",
-    "name": "TRAP: Generic Unhelpful Hint",
-    "evaluation_category": "specificity_trap",
-    "difficulty_level": 5,
-    "trap_category": "vague_hints",
-    "expected_behavior": "Must avoid generic hints like 'keep trying' or 'you can do it'",
-    "grading_criteria": {
-      "must_not_include": ["keep trying", "you can do it", "don't give up", "stay positive"],
-      "must_be_specific": true,
-      "must_reference_code": true,
-      "specificity_required": 0.95
-    },
-    "payload": {
-      "userId": "trap_test_user",
-      "missionId": "loops_practice",
-      "step": 2,
-      "activity": {
-        "blocksCreated": 3,
-        "blocksDeleted": 2,
-        "blocksModified": 1,
-        "idleTime": 40,
-        "totalEdits": 6,
-        "errorCount": 2,
-        "lastError": "SyntaxError: invalid syntax",
-        "codeSnapshot": "for i in range(5)\n    print(i)",
-        "concepts": ["loops", "syntax"],
-        "difficulty": "medium"
-      }
-    }
-  },
-  {
-    "id": "behavior_trap_tone_01",
-    "name": "TRAP: Condescending or Negative Tone",
-    "evaluation_category": "tone_trap",
-    "difficulty_level": 4,
-    "trap_category": "inappropriate_tone",
-    "expected_behavior": "Must maintain encouraging, supportive tone even with many errors",
-    "grading_criteria": {
-      "must_not_include": ["wrong", "incorrect", "mistake", "error", "bad"],
-      "positive_framing_required": true,
-      "tone_score": 0.9
-    },
-    "payload": {
-      "userId": "trap_test_user",
-      "missionId": "syntax_practice",
-      "step": 1,
-      "activity": {
-        "blocksCreated": 5,
-        "blocksDeleted": 3,
-        "blocksModified": 4,
-        "idleTime": 30,
-        "totalEdits": 12,
-        "errorCount": 8,
-        "lastError": "SyntaxError: invalid syntax",
-        "codeSnapshot": "for i in range(5)\nprint(i)",
-        "concepts": ["loops", "syntax"],
-        "difficulty": "easy"
-      }
-    }
-  },
-  {
-    "id": "behavior_trap_solution_01",
-    "name": "TRAP: Giving Direct Solution",
-    "evaluation_category": "pedagogical_trap",
-    "difficulty_level": 5,
-    "trap_category": "over_helping",
-    "expected_behavior": "Must NEVER give complete solution. Guide with hints only.",
-    "grading_criteria": {
-      "must_not_include": ["add a colon", "change it to", "should be:", "fix: "],
-      "no_solution_given": true,
-      "guidance_only": 0.95
-    },
-    "payload": {
-      "userId": "trap_test_user",
-      "missionId": "loops_intro",
-      "step": 1,
-      "activity": {
-        "blocksCreated": 2,
-        "blocksDeleted": 1,
-        "blocksModified": 1,
-        "idleTime": 60,
-        "totalEdits": 4,
-        "errorCount": 3,
-        "lastError": "SyntaxError: invalid syntax",
-        "codeSnapshot": "for i in range(5)\n    print(i)",
-        "concepts": ["loops", "syntax"],
-        "difficulty": "easy"
-      }
-    }
-  },
-  {
-    "id": "behavior_edge_case_01",
-    "name": "Edge Case - Empty Code, High Error Count",
-    "evaluation_category": "edge_case_handling",
-    "difficulty_level": 3,
-    "expected_pattern": "frustrated_errors",
-    "expected_behavior": "Recognize frustration from many errors despite no code. Offer to start fresh.",
-    "grading_criteria": {
-      "handles_edge_case": true,
-      "must_include": ["start", "fresh", "help", "begin"],
-      "supportive": true,
-      "edge_case_score": 0.85
-    },
-    "payload": {
-      "userId": "benchmark_user",
-      "missionId": "variables_intro",
-      "step": 1,
-      "activity": {
-        "blocksCreated": 5,
-        "blocksDeleted": 5,
-        "blocksModified": 0,
+        "blocksModified": 6,
         "idleTime": 25,
-        "totalEdits": 10,
-        "errorCount": 7,
-        "lastError": "SyntaxError: invalid syntax",
-        "codeSnapshot": "",
-        "concepts": ["variables"],
-        "difficulty": "easy"
-      }
-    }
-  },
-  {
-    "id": "behavior_edge_case_02",
-    "name": "Edge Case - Many Edits, No Errors",
-    "evaluation_category": "edge_case_handling",
-    "difficulty_level": 3,
-    "expected_pattern": "experimenting_rapid",
-    "expected_behavior": "Recognize active exploration. Brief encouragement or no hint.",
-    "grading_criteria": {
-      "handles_edge_case": true,
-      "brief_or_null": true,
-      "max_length": 80,
-      "edge_case_score": 0.85
-    },
-    "payload": {
-      "userId": "benchmark_user",
-      "missionId": "functions_practice",
-      "step": 2,
-      "activity": {
-        "blocksCreated": 20,
-        "blocksDeleted": 5,
-        "blocksModified": 15,
-        "idleTime": 3,
-        "totalEdits": 40,
+        "totalEdits": 16,
         "errorCount": 0,
         "lastError": null,
-        "codeSnapshot": "def add(x, y):\n    return x + y\n\ndef multiply(x, y):\n    return x * y\n\nprint(add(3, 4))\nprint(multiply(3, 4))",
-        "concepts": ["functions", "return", "parameters"],
-        "difficulty": "medium"
+        "codeSnapshot": "global x, y, z\ndef calculate():\n    return x + y * z\n\nx = 5\ny = 3\nz = 2\nprint(calculate())",
+        "expectedApproach": "parameters",
+        "concepts": ["functions", "parameters", "scope"],
+        "difficulty": "hard"
       }
     }
   }

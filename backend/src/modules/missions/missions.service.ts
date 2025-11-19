@@ -8,7 +8,7 @@ import { UpdateMissionDto } from './dto/update-mission.dto';
 @Injectable()
 export class MissionsService {
   private readonly logger = new Logger(MissionsService.name);
-  
+
   constructor(
     @InjectModel(Mission.name) private missionModel: Model<MissionDocument>,
   ) {}
@@ -258,7 +258,9 @@ export class MissionsService {
             break;
           case 'print':
             conceptFound = /\bprint\s*\(/.test(code);
-            this.logger.log(`🔍 [VALIDATION] Checking for 'print' - Found: ${conceptFound}, Code: "${code}"`);
+            this.logger.log(
+              `🔍 [VALIDATION] Checking for 'print' - Found: ${conceptFound}, Code: "${code}"`,
+            );
             break;
           default:
             conceptFound = new RegExp(`\\b${concept}\\b`, 'i').test(code);

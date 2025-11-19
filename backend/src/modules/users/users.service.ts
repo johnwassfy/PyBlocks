@@ -52,7 +52,7 @@ export class UsersService {
     const user = await this.findById(userId);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-unsafe-assignment
     const { password: _, ...profile } = user.toObject();
-    
+
     // Transform _id to id for consistency with auth response
     return {
       ...profile,

@@ -40,8 +40,8 @@ class ComprehensiveAIBenchmark:
         self,
         ai_service_url: str = "http://localhost:8000",
         output_dir: str = "data/benchmark_results",
-        delay_between_tests: float = 4.0,  # Delay in seconds between tests (default: 4s for ~15 req/min)
-        delay_between_services: float = 60.0  # Delay in seconds between services (default: 60s)
+        delay_between_tests: float = 0.0,  # No delays - run at full speed
+        delay_between_services: float = 0.0  # No delays - run at full speed
     ):
         self.ai_service_url = ai_service_url
         self.output_dir = output_dir

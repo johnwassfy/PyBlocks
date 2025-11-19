@@ -13,7 +13,7 @@ import {
 @Injectable()
 export class GamificationService {
   private readonly logger = new Logger(GamificationService.name);
-  
+
   constructor(
     @InjectModel(Gamification.name)
     private gamificationModel: Model<GamificationDocument>,
@@ -37,8 +37,10 @@ export class GamificationService {
     leveledUp: boolean;
     newAchievements: Achievement[];
   }> {
-    this.logger.log(`🏆 [GAMIFICATION] Award XP called - User: ${userId}, Mission: ${missionId}, XP: ${xpAmount}, Success: ${isSuccessful}`);
-    
+    this.logger.log(
+      `🏆 [GAMIFICATION] Award XP called - User: ${userId}, Mission: ${missionId}, XP: ${xpAmount}, Success: ${isSuccessful}`,
+    );
+
     const gamification = await this.getOrCreateGamification(userId);
     const missionObjectId = new Types.ObjectId(missionId);
 
@@ -48,7 +50,9 @@ export class GamificationService {
     );
 
     if (alreadyCompleted) {
-      this.logger.warn(`⚠️ [GAMIFICATION] Mission already completed - skipping XP award`);
+      this.logger.warn(
+        `⚠️ [GAMIFICATION] Mission already completed - skipping XP award`,
+      );
       return {
         awarded: false,
         xpGained: 0,
@@ -60,7 +64,9 @@ export class GamificationService {
 
     // Award XP only if successful
     if (!isSuccessful) {
-      this.logger.warn(`⚠️ [GAMIFICATION] Mission not successful - skipping XP award`);
+      this.logger.warn(
+        `⚠️ [GAMIFICATION] Mission not successful - skipping XP award`,
+      );
       return {
         awarded: false,
         xpGained: 0,
@@ -70,8 +76,10 @@ export class GamificationService {
       };
     }
 
-    this.logger.log(`✅ [GAMIFICATION] Awarding XP and marking mission as completed`);
-    
+    this.logger.log(
+      `✅ [GAMIFICATION] Awarding XP and marking mission as completed`,
+    );
+
     // Mark mission as completed
     gamification.completedMissions.push(missionObjectId);
     gamification.totalMissionsCompleted += 1;
@@ -90,7 +98,9 @@ export class GamificationService {
     gamification.level = Math.floor(gamification.xp / 100) + 1;
     const leveledUp = gamification.level > oldLevel;
 
-    this.logger.log(`💾 [GAMIFICATION] Saving gamification data - XP: ${gamification.xp}, Level: ${gamification.level}`);
+    this.logger.log(
+      `💾 [GAMIFICATION] Saving gamification data - XP: ${gamification.xp}, Level: ${gamification.level}`,
+    );
     await gamification.save();
     this.logger.log(`✅ [GAMIFICATION] Gamification data saved successfully`);
 
@@ -100,7 +110,9 @@ export class GamificationService {
       timeSpentMinutes,
     });
 
-    this.logger.log(`🎉 [GAMIFICATION] XP awarded successfully - ${xpAmount} XP, Level: ${gamification.level}, Achievements: ${newAchievements.length}`);
+    this.logger.log(
+      `🎉 [GAMIFICATION] XP awarded successfully - ${xpAmount} XP, Level: ${gamification.level}, Achievements: ${newAchievements.length}`,
+    );
 
     return {
       awarded: true,

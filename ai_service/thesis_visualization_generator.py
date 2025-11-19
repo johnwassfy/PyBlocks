@@ -231,7 +231,7 @@ class ThesisVisualizations:
             lambda x: x.get('hint', '') if isinstance(x, dict) else ''
         )
         behavior_df['hint_provided'] = behavior_df['hint_text'].apply(lambda x: 1 if x else 0)
-        behavior_df['hint_length'] = behavior_df['hint_text'].apply(len)
+        behavior_df['hint_length'] = behavior_df['hint_text'].apply(lambda x: len(x) if isinstance(x, str) else 0)
         
         fig, axes = plt.subplots(2, 2, figsize=(14, 10))
         
@@ -251,12 +251,18 @@ class ThesisVisualizations:
         
         # 2. Average Hint Length
         hint_length = behavior_df[behavior_df['hint_provided'] == 1].groupby('model_name')['hint_length'].mean()
-        hint_length.plot(kind='bar', ax=axes[0, 1], color='steelblue')
-        axes[0, 1].set_title('Average Hint Length', fontsize=12, fontweight='bold')
-        axes[0, 1].set_xlabel('Model', fontsize=10)
-        axes[0, 1].set_ylabel('Characters', fontsize=10)
-        axes[0, 1].grid(axis='y', alpha=0.3)
-        plt.setp(axes[0, 1].xaxis.get_majorticklabels(), rotation=45, ha='right')
+        if not hint_length.empty:
+            hint_length.plot(kind='bar', ax=axes[0, 1], color='steelblue')
+            axes[0, 1].set_title('Average Hint Length', fontsize=12, fontweight='bold')
+            axes[0, 1].set_xlabel('Model', fontsize=10)
+            axes[0, 1].set_ylabel('Characters', fontsize=10)
+            axes[0, 1].grid(axis='y', alpha=0.3)
+            plt.setp(axes[0, 1].xaxis.get_majorticklabels(), rotation=45, ha='right')
+        else:
+            axes[0, 1].set_title('Average Hint Length', fontsize=12, fontweight='bold')
+            axes[0, 1].text(0.5, 0.5, 'No hints provided', ha='center', va='center', fontsize=12)
+            axes[0, 1].set_xticks([])
+            axes[0, 1].set_yticks([])
         
         # 3. Pattern Detection Distribution
         pattern_counts = behavior_df.groupby(['model_name', 'pattern']).size().unstack(fill_value=0)

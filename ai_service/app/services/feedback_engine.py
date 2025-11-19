@@ -87,6 +87,8 @@ class FeedbackEngine:
         code: str,
         execution_result: Dict[str, Any],
         expected_concepts: List[str] = None,
+        objectives: List[str] = None,  # NEW: Mission objectives
+        mission_description: Optional[str] = None,  # NEW: Mission description
         difficulty: int = 5,
         attempts: Optional[int] = None,
         time_spent: Optional[float] = None,
@@ -107,6 +109,8 @@ class FeedbackEngine:
             code: Student's code
             execution_result: Results from code executor
             expected_concepts: Concepts this mission should teach
+            objectives: Mission learning objectives (what student should achieve)
+            mission_description: Mission description (how to achieve objectives)
             difficulty: Mission difficulty (1-10)
             attempts: Number of attempts made (for adaptive metrics)
             time_spent: Time spent on this mission (for adaptive metrics)
@@ -161,15 +165,17 @@ class FeedbackEngine:
             try:
                 # Build prompt for AI
                 prompt = self._build_analysis_prompt(
-                    code,  # Original full code 
+                    code,  # Original full code (used to show full context to AI)
                     execution_result, 
                     expected_concepts,
                     detected_concepts,
                     success,
                     score,
-                    current_step,
-                    total_steps,
-                    validation_result,
+                    objectives=objectives,  # NEW: Pass objectives
+                    mission_description=mission_description,  # NEW: Pass mission description
+                    current_step=current_step,
+                    total_steps=total_steps,
+                    validation_result=validation_result,
                     user_code=user_code,  # User-written code only
                     user_line_numbers=user_line_numbers,
                     has_starter_code=has_starter_code
@@ -209,6 +215,13 @@ TONE: Encouraging but specific. Avoid generic praise. Reference actual code elem
                 ai_response_time = (time.time() - ai_start) * 1000  # milliseconds
                 feedback = response.choices[0].message.content.strip()
                 logger.info(f"[FEEDBACK] Generated AI feedback ({len(feedback)} chars) in {ai_response_time:.0f}ms")
+                
+                # 🔍 PARSE AI'S SUCCESS DETERMINATION (YES/NO)
+                # The AI is the single source of truth for whether objectives are met
+                ai_determined_success = self._parse_ai_success_determination(feedback)
+                if ai_determined_success is not None:
+                    success = ai_determined_success
+                    logger.info(f"[FEEDBACK] AI determined success: {success}")
                 
                 # 📊 LOG AI FEEDBACK GENERATION EVENT
                 event_logger.log_feedback_generated(
@@ -274,8 +287,9 @@ TONE: Encouraging but specific. Avoid generic praise. Reference actual code elem
             response_time_ms=total_response_time
         )
         
+        # Final return with AI-determined success value
         return CodeAnalysisResponse(
-            success=success,
+            success=success,  # This now reflects AI's YES/NO determination
             score=score,
             feedback=feedback,
             weak_concepts=weak_concepts,
@@ -370,6 +384,8 @@ TONE: Encouraging but specific. Avoid generic praise. Reference actual code elem
         detected_concepts: List[str],
         success: bool,
         score: int,
+        objectives: Optional[List[str]] = None,  # NEW: Mission objectives
+        mission_description: Optional[str] = None,  # NEW: Mission description
         current_step: Optional[int] = None,
         total_steps: Optional[int] = None,
         validation_result: Optional[Dict[str, Any]] = None,
@@ -387,6 +403,8 @@ TONE: Encouraging but specific. Avoid generic praise. Reference actual code elem
             detected_concepts: Concepts detected in code
             success: Whether code passed tests
             score: Calculated score (0-100)
+            objectives: Mission learning objectives (what student should achieve)
+            mission_description: Mission description (how to solve the mission)
             current_step: Current step number (for step-based missions)
             total_steps: Total number of steps (for step-based missions)
             validation_result: Validation result from solution_validator
@@ -399,8 +417,11 @@ TONE: Encouraging but specific. Avoid generic praise. Reference actual code elem
         """
         test_results = execution_result.get('test_results', [])
         error_message = execution_result.get('error_message', '')
+        expected_output = execution_result.get('expected_output', '')
+        actual_output = execution_result.get('stdout', '')
         
-        # Use user code for analysis if available
+        # Use user code for display (not full code with starter)
+        # THIS IS CRITICAL: Show AI ONLY the user-written code, not the starter code
         code_to_show = user_code if user_code else code
         
         # Build step context if available
@@ -408,53 +429,128 @@ TONE: Encouraging but specific. Avoid generic praise. Reference actual code elem
         if current_step is not None and total_steps is not None:
             step_context = f"\n**Mission Progress:** Step {current_step} of {total_steps}"
         
-        # Build validation context if available
-        validation_context = ""
-        if validation_result:
-            if not validation_result.get('is_valid', True):
-                issues = validation_result.get('issues', [])
-                patterns = validation_result.get('detected_patterns', [])
-                validation_context = f"""
-**⚠️ Validation Issues Detected:**
-- Issues: {', '.join(issues)}
-- Patterns: {', '.join(patterns)}
-- Score Multiplier: {validation_result.get('score_multiplier', 1.0):.2f}
-- Complexity Score: {validation_result.get('complexity_score', 0)}
-
-This means the student may be trying to cheat or not learning properly. Please address this in your feedback!"""
-        
         # Build starter code note if applicable
         starter_note = ""
         if has_starter_code and user_line_numbers:
-            starter_note = f"\n⚠️ **IMPORTANT**: This submission includes starter/template code. ONLY provide feedback on the user-written lines {user_line_numbers}. Do NOT comment on the starter code."
+            starter_note = f"\n⚠️ **IMPORTANT**: This submission includes starter/template code. The code shown above is ONLY the user-written portion. Do NOT comment on or suggest changes to any starter code."
         
-        prompt = f"""Analyze this beginner Python code submission and provide encouraging, educational feedback.
+        # NEW: Build mission description section - CRITICAL FOR CONTEXT
+        description_section = ""
+        if mission_description and mission_description.strip():
+            description_section = f"""\n**MISSION DESCRIPTION (What the student needs to do):**
+{mission_description}
 
-**Student's Code:**
+"""
+        
+        # Build objectives section - THIS IS THE KEY!
+        objectives_section = ""
+        if objectives and len(objectives) > 0:
+            objectives_section = f"""\n**MISSION OBJECTIVES (What student should achieve):**
+{chr(10).join(f"{i+1}. {obj}" for i, obj in enumerate(objectives))}
+
+❗ PRIMARY TASK: Determine if the code achieves these objectives AND follows the mission description. Both are MORE IMPORTANT than exact output matching!
+"""
+        
+        prompt = f"""Analyze this beginner Python code submission and determine if it meets the mission requirements.
+
+**Student's Code (User-Written):**
 ```python
 {code_to_show}
-```{starter_note}
-
+```{starter_note}{description_section}{objectives_section}
 **Execution Results:**
 - Success: {success}
 - Score: {score}/100
 - Tests Passed: {sum(1 for t in test_results if t.passed)}/{len(test_results) if test_results else 0}
 - Execution Time: {execution_result.get('execution_time', 0):.3f}s
-{f"- Error: {error_message}" if error_message else ""}{step_context}{validation_context}
+{f"- Error: {error_message}" if error_message else ""}{step_context}
+
+**Expected Output (Example/Reference):** 
+{expected_output if expected_output else "Not specified"}
+
+**Actual Output:**
+{actual_output if actual_output else "(no output)"}
 
 **Expected Concepts:** {', '.join(expected_concepts) if expected_concepts else 'None specified'}
 **Detected Concepts:** {', '.join(detected_concepts) if detected_concepts else 'None detected'}
 
-**Please provide feedback (2-4 sentences) that:**
-1. Starts with praise for what they did well
-2. Identifies 1-2 areas for improvement (if any)
-3. If validation issues detected, gently guide them to learn properly without being accusatory
-4. Encourages them to keep learning
-5. Uses friendly, beginner-appropriate language
+**EVALUATION RULES:**
+1. If mission description is provided: Code must follow the description (PRIMARY)
+2. If objectives are listed above: Code must achieve those objectives (PRIMARY)
+3. Expected output is just an EXAMPLE - different values that meet objectives are OK!
+4. For example: If objective is "print your name", both "John" and "Sarah" are CORRECT
+5. Only fail if: code has errors, produces no output, or clearly doesn't address the mission description/objectives
 
-Keep the tone positive and motivating!"""
+**Please provide feedback (2-3 sentences) that:**
+1. States clearly if objectives are met (YES/NO)
+2. If yes: Praise what they did well
+3. If no: Give ONE specific hint to improve (no spoilers!)
+4. Keep it friendly and encouraging
+
+Keep response concise and focused on objectives!"""
         
         return prompt
+    
+    def _parse_ai_success_determination(self, feedback: str) -> bool | None:
+        """Parse AI feedback to determine if it said YES or NO to objectives being met.
+        
+        Returns:
+            True if AI said YES/objectives met
+            False if AI said NO/objectives not met  
+            None if cannot determine from feedback
+        """
+        feedback_lower = feedback.lower()
+        
+        # Check first 150 characters for YES/NO patterns
+        feedback_start = feedback_lower[:150]
+        
+        # Positive patterns (YES, objectives met)
+        yes_patterns = [
+            'yes.',
+            'yes,',
+            'yes!',
+            'yes:',
+            'objectives are met',
+            'objectives met',
+            'fully met',
+            'successfully meets',
+            'meets both objectives',
+            'meets all objectives',
+            'meets the objectives',
+            'objectives achieved',
+            'perfectly meets'
+        ]
+        
+        # Negative patterns (NO, objectives not met)
+        no_patterns = [
+            'no.',
+            'no,',
+            'no -',
+            'no:',
+            'no!',
+            'objectives not fully met',
+            'objectives are not met',
+            'objectives not met',
+            'doesn\'t meet',
+            'does not meet',
+            'not fully achieved',
+            'partially meets',
+            'misses',
+            'objectives not achieved'
+        ]
+        
+        # Check for NO first (more specific)
+        for pattern in no_patterns:
+            if pattern in feedback_start:
+                return False
+        
+        # Then check for YES
+        for pattern in yes_patterns:
+            if pattern in feedback_start:
+                return True
+        
+        # Cannot determine - return None to keep existing success value
+        logger.warning(f"Could not parse AI success determination from feedback: {feedback[:100]}...")
+        return None
     
     def _calculate_score(
         self,

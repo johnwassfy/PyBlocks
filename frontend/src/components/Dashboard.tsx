@@ -468,7 +468,7 @@ export default function Dashboard() {
                 }`} />
                 <span className={`text-gray-700 transition-all duration-300 ${
                   isScrolled ? 'text-xs' : 'text-sm'
-                }`}>Progress to Level {1}</span>
+                }`}>Progress to Level {gamification?.level || 1}</span>
               </div>
               <span className={`text-gray-600 transition-all duration-300 ${
                 isScrolled ? 'text-xs' : 'text-sm'
@@ -607,7 +607,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Missions completed</span>
                 <span className="font-semibold text-gray-700">
-                  {insights.totals.missionsCompleted}
+                  {insights.gamification.totalMissionsCompleted}
                 </span>
               </div>
               <div className="flex items-center justify-between">

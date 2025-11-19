@@ -124,10 +124,9 @@ export class AuthService {
     }
 
     // Get gamification profile for XP and level
-    const gamification =
-      await this.gamificationService.getOrCreateGamification(
-        user._id.toString(),
-      );
+    const gamification = await this.gamificationService.getOrCreateGamification(
+      user._id.toString(),
+    );
 
     const payload = {
       sub: user._id.toString(),

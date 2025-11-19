@@ -51,10 +51,18 @@ export class SubmissionsService {
     userId: string,
     createSubmissionDto: CreateSubmissionDto,
   ): Promise<any> {
-    this.logger.log(`🔍 [SUBMISSION START] Processing submission for user ${userId}`);
-    this.logger.log(`🔍 [SUBMISSION] Mission ID: ${createSubmissionDto.missionId}`);
-    this.logger.log(`🔍 [SUBMISSION] Code length: ${createSubmissionDto.code?.length || 0} chars`);
-    this.logger.log(`🔍 [SUBMISSION] Actual code:\n${createSubmissionDto.code}`);
+    this.logger.log(
+      `🔍 [SUBMISSION START] Processing submission for user ${userId}`,
+    );
+    this.logger.log(
+      `🔍 [SUBMISSION] Mission ID: ${createSubmissionDto.missionId}`,
+    );
+    this.logger.log(
+      `🔍 [SUBMISSION] Code length: ${createSubmissionDto.code?.length || 0} chars`,
+    );
+    this.logger.log(
+      `🔍 [SUBMISSION] Actual code:\n${createSubmissionDto.code}`,
+    );
 
     // 1. Validate mission exists
     const mission = await this.missionsService.findById(
@@ -62,12 +70,14 @@ export class SubmissionsService {
     );
 
     if (!mission) {
-      this.logger.error(`❌ [SUBMISSION] Mission not found: ${createSubmissionDto.missionId}`);
+      this.logger.error(
+        `❌ [SUBMISSION] Mission not found: ${createSubmissionDto.missionId}`,
+      );
       throw new NotFoundException(
         `Mission with ID ${createSubmissionDto.missionId} not found`,
       );
     }
-    
+
     this.logger.log(`✅ [SUBMISSION] Mission found: ${mission.title}`);
 
     // 🔒 2. Validate code against mission rules
@@ -127,13 +137,41 @@ export class SubmissionsService {
       ? mission.expectedOutput.split('\n').filter((l) => l.trim() !== '').length
       : 0;
 
-    // Determine validation mode based on mission difficulty and tags
-    // Creative mode for storytelling/artistic missions, strict for technical ones
+    // Determine validation mode based on mission type and requirements
+    // CRITICAL FIX: Don't default to 'strict' for all missions!
+    // - 'creative': Storytelling/artistic missions (flexible output)
+    // - 'output-only': No required concepts (accept any reasonable output)
+    // - 'concept-required': Has required concepts (verify concepts used)
+    // - 'strict': Test cases or explicit exact output requirement
     const isCreativeMission =
       mission.tags?.includes('storytelling') ||
       mission.tags?.includes('creative') ||
       mission.tags?.includes('art');
-    const validationMode = isCreativeMission ? 'creative' : 'strict';
+
+    const hasRequiredConcepts =
+      (mission.concepts && mission.concepts.length > 0) ||
+      (mission.validationRules?.requiredConcepts &&
+        mission.validationRules.requiredConcepts.length > 0);
+
+    const requiresExactOutput =
+      mission.validationRules?.requireExactOutput === true ||
+      (mission.testCases && mission.testCases.length > 0);
+
+    // Determine validation mode:
+    let validationMode: string;
+    if (isCreativeMission) {
+      validationMode = 'creative'; // Flexible, encourages creativity
+    } else if (requiresExactOutput) {
+      validationMode = 'strict'; // Must match exact output (test cases)
+    } else if (!hasRequiredConcepts) {
+      validationMode = 'output-only'; // Just verify output exists (no concept requirements)
+    } else {
+      validationMode = 'concept-required'; // Verify concepts are used
+    }
+
+    this.logger.log(
+      `🎯 [SUBMISSION] Validation mode: ${validationMode} (creative: ${isCreativeMission}, concepts: ${hasRequiredConcepts}, exactOutput: ${requiresExactOutput})`,
+    );
 
     const aiResult = this.getAnalysisResult(
       await this.aiService.analyzeSubmission({
@@ -157,20 +195,25 @@ export class SubmissionsService {
         isStoryBased: isCreativeMission,
 
         // Validation context based on mission rules
-        checkExactOutput: validationMode === 'strict',
+        checkExactOutput: validationMode === 'strict', // Only strict mode requires exact match
         checkLineCount: validationMode === 'creative',
-        checkConcepts: true,
-        allowCreativity: validationMode === 'creative',
+        checkConcepts:
+          validationMode === 'concept-required' || validationMode === 'strict',
+        allowCreativity:
+          validationMode === 'creative' || validationMode === 'output-only',
         disallowHardcodedOutput:
-          mission.validationRules?.disallowHardcodedOutput !== false,
+          validationMode === 'concept-required' || validationMode === 'strict',
         forbiddenPatterns: mission.validationRules?.forbiddenPatterns || [],
+        requireExactOutput: validationMode === 'strict', // NEW: Pass this explicitly to AI service
       }),
     );
 
     if (!aiResult) {
       this.logger.warn(this.EMPTY_ANALYSIS_MESSAGE);
     } else {
-      this.logger.log(`✅ [SUBMISSION] AI analysis complete - Success: ${aiResult.success}, Score: ${aiResult.score}`);
+      this.logger.log(
+        `✅ [SUBMISSION] AI analysis complete - Success: ${aiResult.success}, Score: ${aiResult.score}`,
+      );
     }
 
     // 4. Validate AI result structure
@@ -279,44 +322,55 @@ export class SubmissionsService {
     };
     try {
       // Add timeout protection - if adaptivity takes more than 10 seconds, something is wrong
-      const adaptivityPromise = this.adaptivityService.processSubmissionAnalysis(
-        userId,
-        createSubmissionDto.missionId,
-        submissionId,
-        {
-          success: isSuccessful,
-          score: baseScore,
-          feedback: aiResult?.feedback || '',
-          weakConcepts: aiResult?.weakConcepts || [],
-          strongConcepts: aiResult?.strongConcepts || [],
-          hints: aiResult?.hints || [],
-          suggestions: aiResult?.suggestions || [],
-          attempts: aiResult?.attempts,
-          timeSpent: aiResult?.timeSpent,
-        },
-        {
-          difficulty: mission.difficulty,
-          concepts: mission.concepts || [],
-          attempts: aiResult?.attempts || createSubmissionDto.attempts,
-          timeSpent:
-            aiResult?.timeSpent !== undefined
-              ? aiResult.timeSpent
-              : createSubmissionDto.timeSpent,
-        },
-      );
-      
+      const adaptivityPromise =
+        this.adaptivityService.processSubmissionAnalysis(
+          userId,
+          createSubmissionDto.missionId,
+          submissionId,
+          {
+            success: isSuccessful,
+            score: baseScore,
+            feedback: aiResult?.feedback || '',
+            weakConcepts: aiResult?.weakConcepts || [],
+            strongConcepts: aiResult?.strongConcepts || [],
+            hints: aiResult?.hints || [],
+            suggestions: aiResult?.suggestions || [],
+            attempts: aiResult?.attempts,
+            timeSpent: aiResult?.timeSpent,
+          },
+          {
+            difficulty: mission.difficulty,
+            concepts: mission.concepts || [],
+            attempts: aiResult?.attempts || createSubmissionDto.attempts,
+            timeSpent:
+              aiResult?.timeSpent !== undefined
+                ? aiResult.timeSpent
+                : createSubmissionDto.timeSpent,
+          },
+        );
+
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Adaptivity service timeout after 10 seconds')), 10000);
+        setTimeout(
+          () =>
+            reject(new Error('Adaptivity service timeout after 10 seconds')),
+          10000,
+        );
       });
-      
-      adaptiveResults = await Promise.race([adaptivityPromise, timeoutPromise]) as any;
+
+      adaptiveResults = (await Promise.race([
+        adaptivityPromise,
+        timeoutPromise,
+      ])) as any;
       this.logger.log(`✅ [SUBMISSION] Adaptive results:`, {
         xpGained: adaptiveResults.xpGained,
         leveledUp: adaptiveResults.leveledUp,
         achievementsCount: adaptiveResults.newAchievements?.length || 0,
       });
     } catch (err) {
-      this.logger.error(`❌ [SUBMISSION] Error in adaptivityService.processSubmissionAnalysis: ${err.message}`, err.stack);
+      this.logger.error(
+        `❌ [SUBMISSION] Error in adaptivityService.processSubmissionAnalysis: ${err.message}`,
+        err.stack,
+      );
       // Optionally, return a fallback response or rethrow
       adaptiveResults = {
         xpGained: 0,

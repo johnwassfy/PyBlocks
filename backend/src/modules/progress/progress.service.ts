@@ -225,7 +225,9 @@ export class ProgressService {
       throw new Error('Failed to save progress after multiple retries');
     }
 
-    this.logger.log(`📝 [PROGRESS] Updating learning profile for user ${userId}...`);
+    this.logger.log(
+      `📝 [PROGRESS] Updating learning profile for user ${userId}...`,
+    );
     try {
       await this.learningProfileService.update(new Types.ObjectId(userId), {
         weakSkills: savedProgress.weakConcepts,
@@ -233,10 +235,12 @@ export class ProgressService {
       });
       this.logger.log(`✅ [PROGRESS] Learning profile updated successfully`);
     } catch (error) {
-      this.logger.error(`❌ [PROGRESS] Error updating learning profile: ${error.message}`, error.stack);
+      this.logger.error(
+        `❌ [PROGRESS] Error updating learning profile: ${error.message}`,
+        error.stack,
+      );
       // Continue anyway - don't fail the whole submission because of profile update
     }
-    
 
     // Note: completedMissions is now tracked in gamification service
     // via adaptivity service when XP is awarded

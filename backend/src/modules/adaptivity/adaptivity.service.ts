@@ -62,7 +62,9 @@ export class AdaptivityService {
 
     try {
       // 1. Update progress with concept mastery
-      this.logger.log(`🎯 [ADAPTIVITY] Step 1: Updating progress with feedback...`);
+      this.logger.log(
+        `🎯 [ADAPTIVITY] Step 1: Updating progress with feedback...`,
+      );
       let progressUpdate;
       try {
         progressUpdate = await this.updateProgressWithFeedback(
@@ -76,11 +78,20 @@ export class AdaptivityService {
           },
         );
         this.logger.log(`✅ [ADAPTIVITY] Step 1 complete: Progress updated`);
-        this.logger.log(`🎯 [ADAPTIVITY] Improvement factor: ${progressUpdate.improvementFactor}`);
-        this.logger.log(`🎯 [ADAPTIVITY] Weak concepts: ${progressUpdate.weakConcepts.join(', ')}`);
-        this.logger.log(`🎯 [ADAPTIVITY] Strong concepts: ${progressUpdate.strongConcepts.join(', ')}` );
+        this.logger.log(
+          `🎯 [ADAPTIVITY] Improvement factor: ${progressUpdate.improvementFactor}`,
+        );
+        this.logger.log(
+          `🎯 [ADAPTIVITY] Weak concepts: ${progressUpdate.weakConcepts.join(', ')}`,
+        );
+        this.logger.log(
+          `🎯 [ADAPTIVITY] Strong concepts: ${progressUpdate.strongConcepts.join(', ')}`,
+        );
       } catch (progressError) {
-        this.logger.error(`❌ [ADAPTIVITY] Error in updateProgressWithFeedback: ${progressError.message}`, progressError.stack);
+        this.logger.error(
+          `❌ [ADAPTIVITY] Error in updateProgressWithFeedback: ${progressError.message}`,
+          progressError.stack,
+        );
         // Use fallback values
         progressUpdate = {
           conceptMastery: new Map(),
@@ -96,15 +107,19 @@ export class AdaptivityService {
       let leveledUp = false;
 
       if (aiFeedback.success) {
-        this.logger.log(`🎯 [ADAPTIVITY] Mission successful - calculating adaptive XP`);
-        
+        this.logger.log(
+          `🎯 [ADAPTIVITY] Mission successful - calculating adaptive XP`,
+        );
+
         const xpReward = this.calculateAdaptiveXP(
           aiFeedback.score,
           missionData.difficulty,
           progressUpdate.improvementFactor,
         );
 
-        this.logger.log(`🎯 [ADAPTIVITY] XP calculated: ${xpReward}, calling gamificationService.awardMissionXP`);
+        this.logger.log(
+          `🎯 [ADAPTIVITY] XP calculated: ${xpReward}, calling gamificationService.awardMissionXP`,
+        );
 
         const gamificationResult =
           await this.gamificationService.awardMissionXP(
@@ -126,7 +141,9 @@ export class AdaptivityService {
         newAchievements = gamificationResult.newAchievements;
         leveledUp = gamificationResult.leveledUp;
       } else {
-        this.logger.warn(`⚠️ [ADAPTIVITY] Mission not successful - skipping XP award`);
+        this.logger.warn(
+          `⚠️ [ADAPTIVITY] Mission not successful - skipping XP award`,
+        );
       }
 
       // Update daily streak
@@ -141,8 +158,9 @@ export class AdaptivityService {
         aiFeedback,
         progressUpdate.conceptMastery,
       );
-      this.logger.log(`✅ [ADAPTIVITY] Weak concepts identified: ${weakConcepts.length}`);
-      
+      this.logger.log(
+        `✅ [ADAPTIVITY] Weak concepts identified: ${weakConcepts.length}`,
+      );
 
       // 4. Recommend next mission based on learning path
       this.logger.log(`🎯 [ADAPTIVITY] Recommending next mission...`);
@@ -153,9 +171,12 @@ export class AdaptivityService {
         missionId,
         aiFeedback.success,
       );
-      const nextMissionTitle = Array.isArray(nextMission) ? (nextMission[0]?.title || 'none') : (nextMission?.title || 'none');
-      this.logger.log(`✅ [ADAPTIVITY] Next mission recommended: ${nextMissionTitle}`);
-      
+      const nextMissionTitle = Array.isArray(nextMission)
+        ? nextMission[0]?.title || 'none'
+        : nextMission?.title || 'none';
+      this.logger.log(
+        `✅ [ADAPTIVITY] Next mission recommended: ${nextMissionTitle}`,
+      );
 
       // 5. Analyze learning patterns
       this.logger.log(`📊 [ADAPTIVITY] Analyzing learning patterns...`);
@@ -164,7 +185,6 @@ export class AdaptivityService {
         aiFeedback,
       );
       this.logger.log(`✅ [ADAPTIVITY] Learning patterns analyzed`);
-      
 
       this.submissionMetrics.processed += 1;
       this.submissionMetrics.lastLatencyMs = Date.now() - startTime;

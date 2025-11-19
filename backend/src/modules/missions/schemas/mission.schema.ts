@@ -122,6 +122,7 @@ export class Mission {
     disallowHardcodedOutput?: boolean;
     requiredConcepts?: string[];
     forbiddenPatterns?: string[];
+    requireExactOutput?: boolean;
   };
 }
 

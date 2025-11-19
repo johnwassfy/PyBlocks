@@ -231,7 +231,7 @@ class ThesisStatisticalAnalysis:
                 lambda x: x.get('hint', '') if isinstance(x, dict) else ''
             )
             behavior_df['hint_provided'] = behavior_df['hint_text'].apply(lambda x: 1 if x else 0)
-            behavior_df['hint_length'] = behavior_df['hint_text'].apply(len)
+            behavior_df['hint_length'] = behavior_df['hint_text'].apply(lambda x: len(x) if isinstance(x, str) else 0)
             
             quality_stats = behavior_df.groupby('model_name').agg({
                 'hint_provided': ['sum', 'mean'],  # Total hints and intervention rate

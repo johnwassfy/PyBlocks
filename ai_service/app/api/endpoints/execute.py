@@ -1,6 +1,7 @@
 """
 Code Execution Endpoint
 Handles Python code execution with input support and timeout protection
+Integrated with AI validation for mission completion assessment
 """
 
 from fastapi import APIRouter
@@ -13,21 +14,33 @@ import threading
 import ast
 from contextlib import redirect_stdout, redirect_stderr
 
+from app.core.code_differentiator import CodeDifferentiator
+from app.services.code_validation_service import CodeValidationService
+from app.models.validation_models import ValidationRequest
+
 router = APIRouter(prefix="", tags=["Execute"])
 
 
 class CodeExecutionRequest(BaseModel):
-    """Request for code execution"""
+    """Request for code execution with optional validation"""
     code: str
     mission_id: Optional[str] = None
     user_id: Optional[str] = None
     expected_output: Optional[str] = None
     test_cases: Optional[List[Dict[str, str]]] = []
     inputs: Optional[List[str]] = []  # Pre-provided inputs for input() calls
+    
+    # Mission context for validation
+    starter_code: Optional[str] = None
+    mission_title: Optional[str] = None
+    mission_description: Optional[str] = None
+    objectives: Optional[List[str]] = None
+    required_concepts: Optional[List[str]] = None
+    validate_mission: bool = False  # Set to True to run AI validation
 
 
 class CodeExecutionResponse(BaseModel):
-    """Response from code execution"""
+    """Response from code execution with optional validation results"""
     success: bool
     output: str
     error: Optional[str] = None
@@ -40,6 +53,19 @@ class CodeExecutionResponse(BaseModel):
     needs_input: bool = False  # Whether code needs user input
     input_count: int = 0  # Number of input() calls detected
     input_prompts: Optional[List[str]] = []  # The prompt strings from input() calls
+    
+    # Code differentiation results
+    has_starter_code: bool = False
+    user_code_only: Optional[str] = None
+    user_line_numbers: Optional[List[int]] = None
+    
+    # Validation results (only if validate_mission=True)
+    validation: Optional[Dict[str, Any]] = None
+    mission_completed: Optional[bool] = None
+    objectives_met: Optional[int] = None
+    objectives_total: Optional[int] = None
+    creativity_level: Optional[str] = None
+    overall_score: Optional[float] = None
 
 
 class AnalyzeErrorRequest(BaseModel):
@@ -206,12 +232,25 @@ def execute_with_timeout(code: str, timeout_seconds: int = 5, user_inputs: list 
 async def execute_code(request: CodeExecutionRequest):
     """
     Execute Python code and return console output.
-    Provides a real REPL-like experience with proper error handling and timeout.
+    Optionally validates mission completion using AI analysis.
+    Automatically differentiates starter code from user code.
     """
     start_time = time.time()
     
-    input_count = count_input_calls(request.code)
-    input_prompts = extract_input_prompts(request.code)
+    # Differentiate starter code from user code
+    code_diff = None
+    code_to_execute = request.code
+    
+    if request.starter_code:
+        code_diff = CodeDifferentiator.identify_user_additions(
+            request.code,
+            request.starter_code
+        )
+        # Execute full code but only analyze user additions
+        code_to_execute = request.code
+    
+    input_count = count_input_calls(code_to_execute)
+    input_prompts = extract_input_prompts(code_to_execute)
     
     if input_count > 0 and (not request.inputs or len(request.inputs) < input_count):
         return CodeExecutionResponse(
@@ -230,7 +269,7 @@ async def execute_code(request: CodeExecutionRequest):
         )
     
     success, output, error_info = execute_with_timeout(
-        request.code, 
+        code_to_execute, 
         timeout_seconds=5,
         user_inputs=request.inputs or []
     )
@@ -240,6 +279,61 @@ async def execute_code(request: CodeExecutionRequest):
     error_type = error_info['error_type']
     hint = error_info['hint']
     test_results = []
+    
+    # Validation results (only if requested and code executed successfully)
+    validation_result = None
+    mission_completed = None
+    objectives_met = None
+    objectives_total = None
+    creativity_level = None
+    overall_score = None
+    
+    if request.validate_mission and success and request.objectives:
+        # Run AI validation - Always use validation for mission context
+        try:
+            validator = CodeValidationService()
+            
+            # Use user code only for validation
+            code_to_validate = code_diff['user_code'] if code_diff else request.code
+            
+            validation_request = ValidationRequest(
+                mission_id=request.mission_id or "unknown",
+                mission_title=request.mission_title or "Code Execution",
+                mission_description=request.mission_description or "",
+                objectives=request.objectives,
+                required_concepts=request.required_concepts or [],
+                student_code=code_to_validate,
+                expected_output=request.expected_output,
+                test_cases=[tc.get('expectedOutput', '') for tc in (request.test_cases or [])],
+                user_id=request.user_id,
+                allow_creativity=True
+            )
+            
+            validation_response = await validator.validate(validation_request)
+            
+            # Return ONLY kid-friendly feedback, no detailed analysis
+            validation_result = {
+                'passed': validation_response.passed,
+                'feedback': validation_response.summary,  # Kid-friendly summary
+                'score': validation_response.validation_result.overall_score,
+                'objectives_met': validation_response.validation_result.objectives_met_count,
+                'objectives_total': validation_response.validation_result.objectives_total_count,
+                'creativity': validation_response.validation_result.creativity.level,
+            }
+            
+            mission_completed = validation_response.passed
+            objectives_met = validation_response.validation_result.objectives_met_count
+            objectives_total = validation_response.validation_result.objectives_total_count
+            creativity_level = validation_response.validation_result.creativity.level
+            overall_score = validation_response.validation_result.overall_score
+            
+        except Exception as e:
+            # Validation failed, but execution succeeded
+            validation_result = {
+                'error': f"Validation failed: {str(e)}",
+                'passed': False,
+                'feedback': 'Could not assess your code. Try again!'
+            }
     
     if success and request.test_cases and len(request.test_cases) > 0:
         for i, test_case in enumerate(request.test_cases):
@@ -271,7 +365,18 @@ async def execute_code(request: CodeExecutionRequest):
         test_results=test_results if test_results else None,
         needs_input=False,
         input_count=input_count,
-        input_prompts=input_prompts
+        input_prompts=input_prompts,
+        # Code differentiation
+        has_starter_code=bool(code_diff),
+        user_code_only=code_diff['user_code'] if code_diff else None,
+        user_line_numbers=code_diff['user_line_numbers'] if code_diff else None,
+        # Validation results
+        validation=validation_result,
+        mission_completed=mission_completed,
+        objectives_met=objectives_met,
+        objectives_total=objectives_total,
+        creativity_level=creativity_level,
+        overall_score=overall_score
     )
 
 

@@ -24,6 +24,7 @@ interface State {
   isRunning: boolean;
   aiHelper: string | null;
   isThinking: boolean;
+  waitingForSubmission: boolean; // NEW: Waiting for backend submission/AI response
   userInput: string;
   waitingForInput: boolean;
   hasError: boolean;
@@ -75,6 +76,7 @@ export default class FunConsoleModal extends Component<Props, State> {
       isRunning: false,
       aiHelper: null,
       isThinking: false,
+      waitingForSubmission: false, // NEW
       userInput: '',
       waitingForInput: false,
       hasError: false,
@@ -184,63 +186,39 @@ export default class FunConsoleModal extends Component<Props, State> {
           errorLine: checkResult.error_line || null,
         });
 
-        // Check if mission is complete
-        if (this.props.expectedOutput && !checkResult.error) {
-          const actualOutput = checkResult.output?.trim() || '';
-          const expectedOutput = this.props.expectedOutput.trim();
+        // ALWAYS submit to backend for validation (let backend determine success/failure)
+        // Backend uses validation mode logic to properly evaluate objectives
+        if (this.props.missionId && !checkResult.error) {
+          console.log('📤 Submitting to backend for validation...');
+          
+          // Show loading message while waiting for AI
+          this.setState({
+            waitingForSubmission: true,
+            aiHelper: '🤖 Analyzing your code and generating feedback...',
+            isThinking: true,
+          });
+          
+          try {
+            const result = await submitCode({
+              missionId: this.props.missionId,
+              code: this.props.pythonCode,
+              output: checkResult.output || '',
+              attempts: 1,
+              timeSpent: executionTime / 1000,
+            });
 
-          // If creativeMode, check only line count
-          if (this.props.creativeMode) {
-            const actualLines = actualOutput.split('\n').filter((l: string) => l.trim() !== '').length;
-            const expectedLines = expectedOutput.split('\n').filter((l: string) => l.trim() !== '').length;
-            if (actualLines === expectedLines) {
-              // SUCCESS! 🎉 - First submit to backend to save progress
-              console.log('✅ Creative mission completed! Submitting to backend...');
-              try {
-                const result = await submitCode({
-                  missionId: this.props.missionId || '',
-                  code: this.props.pythonCode,
-                  output: checkResult.output || '',
-                  attempts: 1,
-                  timeSpent: executionTime / 1000,
-                });
+            console.log('📥 Backend validation result:', {
+              isSuccessful: result.submission?.isSuccessful,
+              score: result.submission?.score,
+              feedback: result.submission?.feedback
+            });
 
-                // 🏆 Show achievement notifications
-                if (result.newAchievements && result.newAchievements.length > 0) {
-                  console.log('🎉 Achievements unlocked:', result.newAchievements);
-                  showMultipleAchievements(result.newAchievements);
-                }
-
-                // 📈 Log XP and level up
-                if (result.xpGained > 0) {
-                  console.log(`✨ Gained ${result.xpGained} XP!`);
-                }
-                if (result.leveledUp) {
-                  console.log('🎊 Level up!');
-                }
-              } catch (err) {
-                console.error('Error submitting successful solution:', err);
-              }
+            // Check if mission was successful based on BACKEND validation
+            if (result.submission?.isSuccessful) {
+              // SUCCESS! 🎉
+              console.log('✅ Mission completed successfully!');
               
-              this.celebrateMissionComplete();
-              return;
-            }
-          }
-
-          // Otherwise, strict equality
-          if (actualOutput === expectedOutput) {
-            // SUCCESS! 🎉 - First submit to backend to save progress
-            console.log('✅ Mission completed! Submitting to backend...');
-            try {
-              const result = await submitCode({
-                missionId: this.props.missionId || '',
-                code: this.props.pythonCode,
-                output: checkResult.output || '',
-                attempts: 1,
-                timeSpent: executionTime / 1000, // Convert to seconds
-              });
-
-              // 🏆 Show achievement notifications if any were unlocked
+              // 🏆 Show achievement notifications
               if (result.newAchievements && result.newAchievements.length > 0) {
                 console.log('🎉 Achievements unlocked:', result.newAchievements);
                 showMultipleAchievements(result.newAchievements);
@@ -253,21 +231,28 @@ export default class FunConsoleModal extends Component<Props, State> {
               if (result.leveledUp) {
                 console.log('🎊 Level up!');
               }
-            } catch (err) {
-              console.error('Error submitting successful solution:', err);
-              // Continue to celebrate even if submission fails
+
+              this.celebrateMissionComplete();
+            } else {
+              // Not successful - show AI feedback
+              console.log('⚠️ Mission not completed, showing feedback');
+              this.setState({ waitingForSubmission: false });
+              await this.getSmartAIHelp(checkResult.output, null, 'wrong_output');
             }
-            
-            this.celebrateMissionComplete();
-          } else {
-            // Wrong output - get AI help
-            await this.getSmartAIHelp(checkResult.output, checkResult.error, 'wrong_output');
+          } catch (err) {
+            console.error('Error submitting to backend:', err);
+            // Fallback: show encouragement
+            this.setState({
+              waitingForSubmission: false,
+              aiHelper: `🤖 Oops! Couldn't connect to the validation server. Your code ran successfully though! ${this.getRandomEncouragement()}`,
+              isThinking: false,
+            });
           }
         } else if (checkResult.error) {
           // Error - get AI help
           await this.getSmartAIHelp(checkResult.output, checkResult.error, 'error');
-        } else if (!this.props.expectedOutput) {
-          // Free play mode - show encouragement
+        } else if (!this.props.missionId) {
+          // Free play mode (no mission) - show encouragement
           this.setState({
             aiHelper: `✨ ${this.getRandomEncouragement()} Your code ran successfully!`,
           });
@@ -349,6 +334,7 @@ export default class FunConsoleModal extends Component<Props, State> {
       this.setState({
         aiHelper: aiResponse.trim() || this.getRandomEncouragement(),
         isThinking: false,
+        waitingForSubmission: false,
         encouragementMessage: this.getRandomEncouragement(),
       });
     } catch (err: any) {
@@ -368,6 +354,7 @@ export default class FunConsoleModal extends Component<Props, State> {
       this.setState({
         aiHelper: contextualHelp,
         isThinking: false,
+        waitingForSubmission: false,
       });
     }
   }
@@ -439,69 +426,52 @@ export default class FunConsoleModal extends Component<Props, State> {
           errorLine: result.error_line || null,
         });
 
-        // Check success
-        if (this.props.expectedOutput && !result.error) {
-          const actualOutput = result.output?.trim() || '';
-          const expectedOutput = this.props.expectedOutput.trim();
+        // ALWAYS submit to backend for validation (let backend determine success/failure)
+        if (this.props.missionId && !result.error) {
+          console.log('📤 Submitting to backend for validation (with inputs)...');
+          this.setState({ waitingForSubmission: true, isThinking: true });
+          try {
+            const submitResult = await submitCode({
+              missionId: this.props.missionId,
+              code: this.props.pythonCode,
+              output: result.output || '',
+              attempts: 1,
+              timeSpent: executionTime / 1000,
+            });
 
-          // If creativeMode, check only line count
-          if (this.props.creativeMode) {
-            const actualLines = actualOutput.split('\n').filter((l: string) => l.trim() !== '').length;
-            const expectedLines = expectedOutput.split('\n').filter((l: string) => l.trim() !== '').length;
-            if (actualLines === expectedLines) {
-              // SUCCESS! Submit to backend
-              console.log('✅ Creative mission with input completed! Submitting to backend...');
-              try {
-                const result = await submitCode({
-                  missionId: this.props.missionId || '',
-                  code: this.props.pythonCode,
-                  output: actualOutput,
-                  attempts: 1,
-                  timeSpent: executionTime / 1000,
-                });
+            console.log('📥 Backend validation result:', {
+              isSuccessful: submitResult.submission?.isSuccessful,
+              score: submitResult.submission?.score
+            });
 
-                if (result.newAchievements && result.newAchievements.length > 0) {
-                  showMultipleAchievements(result.newAchievements);
-                }
-                if (result.xpGained > 0) {
-                  console.log(`✨ Gained ${result.xpGained} XP!`);
-                }
-              } catch (err) {
-                console.error('Error submitting:', err);
+            // Check if mission was successful based on BACKEND validation
+            if (submitResult.submission?.isSuccessful) {
+              console.log('✅ Mission with input completed successfully!');
+              
+              if (submitResult.newAchievements && submitResult.newAchievements.length > 0) {
+                showMultipleAchievements(submitResult.newAchievements);
               }
+              if (submitResult.xpGained > 0) {
+                console.log(`✨ Gained ${submitResult.xpGained} XP!`);
+              }
+              
               this.celebrateMissionComplete();
-              return;
+            } else {
+              console.log('⚠️ Mission not completed, showing feedback');
+              this.setState({ waitingForSubmission: false });
+              await this.getSmartAIHelp(result.output, null, 'wrong_output');
             }
-          }
-
-          if (actualOutput === expectedOutput) {
-            // SUCCESS! Submit to backend
-            console.log('✅ Mission with input completed! Submitting to backend...');
-            try {
-              const result = await submitCode({
-                missionId: this.props.missionId || '',
-                code: this.props.pythonCode,
-                output: actualOutput,
-                attempts: 1,
-                timeSpent: executionTime / 1000,
-              });
-
-              if (result.newAchievements && result.newAchievements.length > 0) {
-                showMultipleAchievements(result.newAchievements);
-              }
-              if (result.xpGained > 0) {
-                console.log(`✨ Gained ${result.xpGained} XP!`);
-              }
-            } catch (err) {
-              console.error('Error submitting:', err);
-            }
-            this.celebrateMissionComplete();
-          } else {
-            await this.getSmartAIHelp(result.output, result.error, 'wrong_output');
+          } catch (err) {
+            console.error('Error submitting to backend:', err);
+            this.setState({
+              waitingForSubmission: false,
+              aiHelper: `🤖 Couldn't connect to validation server, but your code ran successfully!`,
+              isThinking: false,
+            });
           }
         } else if (result.error) {
           await this.getSmartAIHelp(result.output, result.error, 'error');
-        } else {
+        } else if (!this.props.missionId) {
           this.setState({
             aiHelper: `✨ Great job! Your code ran perfectly!`,
           });
@@ -598,36 +568,6 @@ export default class FunConsoleModal extends Component<Props, State> {
                       {output}
                     </pre>
 
-                    {/* Output Comparison - Show when output is wrong */}
-                    {!isSuccess && !error && this.props.expectedOutput && output && (
-                      <div className="mt-4 p-4 bg-yellow-900/30 border border-yellow-500/50 rounded-lg">
-                        <div className="flex items-center gap-2 text-yellow-400 font-semibold mb-3">
-                          <AlertCircle className="w-4 h-4" />
-                          <span>Let's Compare!</span>
-                        </div>
-                        
-                        <div className="space-y-3">
-                          <div>
-                            <p className="text-yellow-300 text-xs font-semibold mb-1">Your Output:</p>
-                            <pre className="text-red-300 bg-red-900/20 p-2 rounded text-xs whitespace-pre-wrap break-words border border-red-500/30">
-                              {output.trim()}
-                            </pre>
-                          </div>
-                          
-                          <div>
-                            <p className="text-yellow-300 text-xs font-semibold mb-1">Expected Output:</p>
-                            <pre className="text-green-300 bg-green-900/20 p-2 rounded text-xs whitespace-pre-wrap break-words border border-green-500/30">
-                              {this.props.expectedOutput.trim()}
-                            </pre>
-                          </div>
-                        </div>
-                        
-                        <p className="text-yellow-200 text-xs mt-3">
-                          💡 Spot the difference? Check what's missing or extra!
-                        </p>
-                      </div>
-                    )}
-
                     {/* Error */}
                     {error && (
                       <div className="mt-4 p-3 bg-red-900/30 border border-red-500/50 rounded-lg">
@@ -695,14 +635,14 @@ export default class FunConsoleModal extends Component<Props, State> {
               </div>
 
               <div className="flex-1 overflow-y-auto">
-                {isThinking ? (
+                {isThinking || this.state.waitingForSubmission ? (
                   <div className="flex flex-col items-center justify-center gap-4 py-8">
                     <div className="relative">
                       <Star className="w-12 h-12 text-purple-400 animate-spin" />
                       <Heart className="w-6 h-6 text-pink-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
                     </div>
                     <p className="text-purple-300 text-center animate-pulse">
-                      Thinking...
+                      {this.state.waitingForSubmission ? "Analyzing your code..." : "Thinking..."}
                     </p>
                   </div>
                 ) : aiHelper ? (

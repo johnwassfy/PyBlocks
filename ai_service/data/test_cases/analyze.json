@@ -1,1389 +1,1306 @@
 [
   {
-    "id": "analyze_syntax_01",
-    "name": "Missing Closing Parenthesis",
-    "evaluation_category": "syntax",
-    "difficulty_level": 1,
-    "expected_behavior": "Detect missing closing parenthesis and provide clear fix guidance",
-    "missionId": "hello_world",
+    "id": "test_001_yes_correct_logic",
+    "name": "[OBJECTIVES] Correct Logic - AI Says YES",
+    "evaluation_category": "objectives_validation",
+    "difficulty_level": 3,
+    "expected_behavior": "AI should say YES when code meets objectives with correct logic",
+    "missionId": "positive_negative_zero",
     "mission_context": {
-      "title": "Hello World",
-      "description": "Print Hello, World!",
+      "title": "Positive, Negative, or Zero",
+      "description": "Check if a number is positive, negative, or zero",
       "objectives": [
-        "Use print statement"
+        "Check if number is positive",
+        "Check if number is negative",
+        "Check if number is zero"
       ],
-      "concepts": [
-        "print",
-        "strings"
+      "concepts": ["if", "elif", "else", "comparison"],
+      "difficulty": 2,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "n = 5\nif n > 0:\n    print('Positive')\nelif n < 0:\n    print('Negative')\nelse:\n    print('Zero')",
+      "expected_output": "Positive",
+      "line_count": 7
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES",
+      "should_mention": ["objectives", "met", "correct"]
+    }
+  },
+  {
+    "id": "test_002_no_missing_zero_case",
+    "name": "[CRITICAL BUG] Missing Zero Case - AI Says NO",
+    "evaluation_category": "logic_errors",
+    "difficulty_level": 3,
+    "expected_behavior": "AI MUST say NO when zero case logic is missing (intentional bug test)",
+    "missionId": "positive_negative_zero",
+    "mission_context": {
+      "title": "Positive, Negative, or Zero",
+      "description": "Check if a number is positive, negative, or zero",
+      "objectives": [
+        "Check if number is positive",
+        "Check if number is negative",
+        "Check if number is zero"
       ],
+      "concepts": ["if", "elif", "comparison"],
+      "difficulty": 2,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "n = -2\nif n >= 0:\n    print('Positive')\nelif n < 0:\n    print('Negative')",
+      "expected_output": "Negative",
+      "line_count": 5
+    },
+    "expected_ai_response": {
+      "success": false,
+      "feedback_starts_with": "NO",
+      "should_mention": ["zero", "missing", "case", "objective"]
+    }
+  },
+  {
+    "id": "test_003_yes_loops_correct",
+    "name": "[LOOPS] Correct Loop Usage - AI Says YES",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 2,
+    "expected_behavior": "AI should say YES when loop is used correctly",
+    "missionId": "repeat_hello",
+    "mission_context": {
+      "title": "Repeat Hello 5 Times",
+      "description": "Use a loop to print Hello 5 times",
+      "objectives": [
+        "Use a for loop",
+        "Print Hello 5 times"
+      ],
+      "concepts": ["loops", "for", "range", "print"],
+      "difficulty": 1,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "for i in range(5):\n    print('Hello')",
+      "expected_output": "Hello\nHello\nHello\nHello\nHello",
+      "line_count": 2
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES",
+      "should_mention": ["loop", "objectives", "met"]
+    }
+  },
+  {
+    "id": "test_004_no_hardcoded_output",
+    "name": "[HARDCODING] Hardcoded Output Without Loop - AI Says NO",
+    "evaluation_category": "hardcoding_detection",
+    "difficulty_level": 2,
+    "expected_behavior": "AI MUST say NO when output is hardcoded without using required concepts",
+    "missionId": "repeat_hello",
+    "mission_context": {
+      "title": "Repeat Hello 5 Times",
+      "description": "Use a loop to print Hello 5 times",
+      "objectives": [
+        "Use a for loop",
+        "Print Hello 5 times"
+      ],
+      "concepts": ["loops", "for"],
+      "difficulty": 1,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "print('Hello\\nHello\\nHello\\nHello\\nHello')",
+      "expected_output": "Hello\nHello\nHello\nHello\nHello",
+      "line_count": 1
+    },
+    "expected_ai_response": {
+      "success": false,
+      "feedback_starts_with": "NO",
+      "should_mention": ["loop", "not", "hardcoded", "concept"]
+    }
+  },
+  {
+    "id": "test_005_yes_different_name",
+    "name": "[OUTPUT!=OBJECTIVE] Different Name Same Objective - AI Says YES",
+    "evaluation_category": "output_vs_objectives",
+    "difficulty_level": 1,
+    "expected_behavior": "AI MUST say YES when student prints their own name (different from example) - THIS WAS THE ORIGINAL BUG",
+    "missionId": "print_your_name",
+    "mission_context": {
+      "title": "Print Your Name",
+      "description": "Print your name and age",
+      "objectives": [
+        "Print your name",
+        "Print your age"
+      ],
+      "concepts": ["print", "strings"],
+      "difficulty": 1,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "print('Sarah, age 10')",
+      "expected_output": "Alex, age 11",
+      "line_count": 1
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES",
+      "should_mention": ["name", "age", "objectives", "met"]
+    }
+  },
+  {
+    "id": "test_006_yes_arithmetic_correct",
+    "name": "[ARITHMETIC] Correct Arithmetic - AI Says YES",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 2,
+    "expected_behavior": "AI should say YES when arithmetic is used correctly",
+    "missionId": "simple_math",
+    "mission_context": {
+      "title": "Simple Math",
+      "description": "Calculate and print 5 + 3",
+      "objectives": [
+        "Use arithmetic operators",
+        "Print the result"
+      ],
+      "concepts": ["arithmetic", "print", "operators"],
+      "difficulty": 1,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "print(5 + 3)",
+      "expected_output": "8",
+      "line_count": 1
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES",
+      "should_mention": ["arithmetic", "correct", "objectives"]
+    }
+  },
+  {
+    "id": "test_007_no_wrong_operator",
+    "name": "[ARITHMETIC] Wrong Operator - AI Says NO",
+    "evaluation_category": "logic_errors",
+    "difficulty_level": 2,
+    "expected_behavior": "AI should say NO when wrong operator produces wrong result",
+    "missionId": "simple_math",
+    "mission_context": {
+      "title": "Simple Math",
+      "description": "Calculate and print 10 - 4",
+      "objectives": [
+        "Use subtraction",
+        "Print the result"
+      ],
+      "concepts": ["arithmetic", "print"],
       "difficulty": 1,
       "validation_mode": "strict"
     },
     "submission_context": {
-      "code": "print(\"Hello, World!\"",
+      "code": "print(10 + 4)",
+      "expected_output": "6",
+      "line_count": 1
+    },
+    "expected_ai_response": {
+      "success": false,
+      "feedback_starts_with": "NO",
+      "should_mention": ["wrong", "operator", "subtraction", "addition"]
+    }
+  },
+  {
+    "id": "test_008_yes_comparison_operators",
+    "name": "[COMPARISON] Comparison Operators Used - AI Says YES",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 3,
+    "expected_behavior": "AI should detect and approve comparison operators",
+    "missionId": "pass_fail_check",
+    "mission_context": {
+      "title": "Pass or Fail",
+      "description": "Check if score >= 60 for pass",
+      "objectives": [
+        "Use comparison operators",
+        "Print Pass or Fail based on score"
+      ],
+      "concepts": ["comparison", "if", "else"],
+      "difficulty": 2,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "score = 75\nif score >= 60:\n    print('Pass')\nelse:\n    print('Fail')",
+      "expected_output": "Pass",
+      "line_count": 5
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES",
+      "should_mention": ["comparison", "objectives", "met"]
+    }
+  },
+  {
+    "id": "test_009_yes_creative_different_story",
+    "name": "[CREATIVE MODE] Different Story Text - AI Says YES",
+    "evaluation_category": "creative_validation",
+    "difficulty_level": 2,
+    "expected_behavior": "AI should say YES for creative missions with different output text but same structure",
+    "missionId": "three_line_story",
+    "mission_context": {
+      "title": "Three Line Story",
+      "description": "Write a three-line story",
+      "objectives": [
+        "Print exactly 3 lines",
+        "Each line tells part of a story"
+      ],
+      "concepts": ["print", "strings"],
+      "difficulty": 1,
+      "validation_mode": "creative"
+    },
+    "submission_context": {
+      "code": "print('A dog found a bone')\nprint('He buried it deep')\nprint('And never forgot where')",
+      "expected_output": "Once upon a time\nThere was a dragon\nIt learned to code",
+      "line_count": 3
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES",
+      "should_mention": ["creative", "three", "lines", "objectives"]
+    }
+  },
+  {
+    "id": "test_010_no_wrong_line_count",
+    "name": "[CREATIVE MODE] Wrong Line Count - AI Says NO",
+    "evaluation_category": "creative_validation",
+    "difficulty_level": 2,
+    "expected_behavior": "AI should say NO when creative mission has wrong number of lines",
+    "missionId": "three_line_story",
+    "mission_context": {
+      "title": "Three Line Story",
+      "description": "Write a three-line story",
+      "objectives": [
+        "Print exactly 3 lines"
+      ],
+      "concepts": ["print", "strings"],
+      "difficulty": 1,
+      "validation_mode": "creative"
+    },
+    "submission_context": {
+      "code": "print('A dog')\nprint('Found bone')",
+      "expected_output": "Once upon a time\nThere was a dragon\nIt learned to code",
+      "line_count": 2
+    },
+    "expected_ai_response": {
+      "success": false,
+      "feedback_starts_with": "NO",
+      "should_mention": ["three", "lines", "two", "objective"]
+    }
+  },
+  {
+    "id": "test_011_syntax_error_quote",
+    "name": "[SYNTAX ERROR] Missing Quote",
+    "evaluation_category": "syntax_errors",
+    "difficulty_level": 1,
+    "expected_behavior": "Should detect syntax error and provide clear feedback",
+    "missionId": "hello_world",
+    "mission_context": {
+      "title": "Hello World",
+      "description": "Print Hello, World!",
+      "objectives": ["Use print statement"],
+      "concepts": ["print", "strings"],
+      "difficulty": 1,
+      "validation_mode": "strict"
+    },
+    "submission_context": {
+      "code": "print('Hello, World!",
       "expected_output": "Hello, World!",
       "line_count": 1
     },
-    "student_context": {
-      "user_id": "benchmark_user",
-      "level": 1,
-      "xp": 0,
-      "weak_skills": [
-        "syntax"
-      ],
-      "strong_skills": [],
-      "attempt_number": 1
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false
+    "expected_ai_response": {
+      "success": false,
+      "should_mention": ["syntax", "error", "quote", "missing"]
     }
   },
   {
-    "id": "analyze_syntax_02",
-    "name": "Missing Colon in For Loop",
-    "evaluation_category": "syntax",
+    "id": "test_012_runtime_error_division",
+    "name": "[RUNTIME ERROR] Division by Zero",
+    "evaluation_category": "runtime_errors",
     "difficulty_level": 2,
-    "expected_behavior": "Identify missing colon after for statement",
-    "missionId": "loops_intro",
+    "expected_behavior": "AI should say NO when code has runtime errors",
+    "missionId": "division",
     "mission_context": {
-      "title": "Loop Practice",
-      "description": "Print numbers 1 to 5",
-      "objectives": [
-        "Use for loop"
-      ],
-      "concepts": [
-        "for",
-        "range",
-        "print"
-      ],
-      "difficulty": 2,
+      "title": "Division",
+      "description": "Divide two numbers",
+      "objectives": ["Divide 10 by 2"],
+      "concepts": ["arithmetic", "division"],
+      "difficulty": 1,
       "validation_mode": "strict"
     },
     "submission_context": {
-      "code": "for i in range(1, 6)\n    print(i)",
-      "expected_output": "1\n2\n3\n4\n5",
+      "code": "print(10 / 0)",
+      "expected_output": "5",
+      "line_count": 1
+    },
+    "expected_ai_response": {
+      "success": false,
+      "feedback_starts_with": "NO",
+      "should_mention": ["error", "zero", "division"]
+    }
+  },
+  {
+    "id": "test_013_no_output",
+    "name": "[NO OUTPUT] Code Produces Nothing",
+    "evaluation_category": "output_validation",
+    "difficulty_level": 1,
+    "expected_behavior": "AI should say NO when code produces no output",
+    "missionId": "hello_world",
+    "mission_context": {
+      "title": "Hello World",
+      "description": "Print Hello, World!",
+      "objectives": ["Print a greeting"],
+      "concepts": ["print"],
+      "difficulty": 1,
+      "validation_mode": "strict"
+    },
+    "submission_context": {
+      "code": "x = 5",
+      "expected_output": "Hello, World!",
+      "line_count": 1
+    },
+    "expected_ai_response": {
+      "success": false,
+      "feedback_starts_with": "NO",
+      "should_mention": ["output", "print", "nothing"]
+    }
+  },
+  {
+    "id": "test_014_yes_f_strings",
+    "name": "[CONCEPT: F-STRINGS] F-String Detection",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 2,
+    "expected_behavior": "Should detect f-strings concept",
+    "missionId": "format_string",
+    "mission_context": {
+      "title": "Format String",
+      "description": "Use f-strings to format output",
+      "objectives": ["Use f-strings to display name and age"],
+      "concepts": ["f-strings", "variables"],
+      "difficulty": 2,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "name = 'Alice'\nage = 10\nprint(f'My name is {name} and I am {age} years old')",
+      "expected_output": "My name is Alice and I am 10 years old",
+      "line_count": 3
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES",
+      "should_mention": ["f-string", "concept"]
+    }
+  },
+  {
+    "id": "test_015_yes_concatenation",
+    "name": "[CONCEPT: CONCATENATION] String Concatenation",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 2,
+    "expected_behavior": "Should detect concatenation concept",
+    "missionId": "concat_strings",
+    "mission_context": {
+      "title": "Concatenate Strings",
+      "description": "Join strings together",
+      "objectives": ["Combine strings using +"],
+      "concepts": ["concatenation", "strings"],
+      "difficulty": 1,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "print('Hello' + ' ' + 'World')",
+      "expected_output": "Hello World",
+      "line_count": 1
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
+    }
+  },
+  {
+    "id": "test_016_yes_range",
+    "name": "[CONCEPT: RANGE] Range Function",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 2,
+    "expected_behavior": "Should detect range concept",
+    "missionId": "use_range",
+    "mission_context": {
+      "title": "Use Range",
+      "description": "Use range in a loop",
+      "objectives": ["Use range function"],
+      "concepts": ["range", "loops"],
+      "difficulty": 2,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "for i in range(3):\n    print(i)",
+      "expected_output": "0\n1\n2",
       "line_count": 2
     },
-    "student_context": {
-      "user_id": "benchmark_user",
-      "level": 2,
-      "xp": 100,
-      "weak_skills": [
-        "loops",
-        "syntax"
-      ],
-      "strong_skills": [
-        "print"
-      ],
-      "attempt_number": 2
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
     }
   },
   {
-    "id": "analyze_syntax_03",
-    "name": "Indentation Error",
-    "evaluation_category": "syntax",
+    "id": "test_017_yes_len",
+    "name": "[CONCEPT: LEN] Len Function",
+    "evaluation_category": "concept_detection",
     "difficulty_level": 2,
-    "expected_behavior": "Detect indentation error and explain Python indentation rules",
-    "missionId": "if_else_intro",
+    "expected_behavior": "Should detect len concept",
+    "missionId": "string_length",
     "mission_context": {
-      "title": "Conditionals",
-      "description": "Check if number is positive",
-      "objectives": [
-        "Use if statement"
-      ],
-      "concepts": [
-        "if",
-        "print"
-      ],
-      "difficulty": 2,
-      "validation_mode": "strict"
+      "title": "String Length",
+      "description": "Find length of a string",
+      "objectives": ["Use len function"],
+      "concepts": ["len", "strings"],
+      "difficulty": 1,
+      "validation_mode": "concept-required"
     },
     "submission_context": {
-      "code": "x = 5\nif x > 0:\nprint(\"Positive\")",
-      "expected_output": "Positive",
-      "line_count": 3
+      "code": "s = 'hello'\nprint(len(s))",
+      "expected_output": "5",
+      "line_count": 2
     },
-    "student_context": {
-      "user_id": "benchmark_user",
-      "level": 2,
-      "xp": 150,
-      "weak_skills": [
-        "conditionals",
-        "syntax"
-      ],
-      "strong_skills": [
-        "print",
-        "variables"
-      ],
-      "attempt_number": 1
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
     }
   },
   {
-    "id": "analyze_logic_01",
-    "name": "Factorial Calculator - Correct",
-    "evaluation_category": "logic",
-    "difficulty_level": 3,
-    "expected_behavior": "Verify correct factorial logic and provide encouraging feedback",
-    "missionId": "factorial_mission",
-    "mission_context": {
-      "title": "Factorial Calculator",
-      "description": "Calculate factorial of 5",
-      "objectives": [
-        "Use loop",
-        "Accumulate result"
-      ],
-      "concepts": [
-        "for",
-        "variables",
-        "multiplication"
-      ],
-      "difficulty": 3,
-      "validation_mode": "strict"
-    },
-    "submission_context": {
-      "code": "n = 5\nresult = 1\nfor i in range(1, n+1):\n    result *= i\nprint(result)",
-      "expected_output": "120",
-      "line_count": 5
-    },
-    "student_context": {
-      "user_id": "benchmark_user",
-      "level": 3,
-      "xp": 300,
-      "weak_skills": [],
-      "strong_skills": [
-        "loops",
-        "variables"
-      ],
-      "attempt_number": 1
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false
-    }
-  },
-  {
-    "id": "analyze_logic_02",
-    "name": "Average Calculator - Off by One",
-    "evaluation_category": "logic",
-    "difficulty_level": 3,
-    "expected_behavior": "Detect logic error in division (dividing by wrong count)",
-    "missionId": "average_calc",
-    "mission_context": {
-      "title": "Average Calculator",
-      "description": "Calculate average of 3 numbers",
-      "objectives": [
-        "Sum numbers",
-        "Divide by count"
-      ],
-      "concepts": [
-        "variables",
-        "arithmetic",
-        "print"
-      ],
-      "difficulty": 3,
-      "validation_mode": "strict"
-    },
-    "submission_context": {
-      "code": "a = 10\nb = 20\nc = 30\navg = (a + b + c) / 2\nprint(avg)",
-      "expected_output": "20",
-      "line_count": 5
-    },
-    "student_context": {
-      "user_id": "benchmark_user",
-      "level": 3,
-      "xp": 280,
-      "weak_skills": [
-        "arithmetic"
-      ],
-      "strong_skills": [
-        "variables"
-      ],
-      "attempt_number": 3
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false
-    }
-  },
-  {
-    "id": "analyze_logic_03",
-    "name": "Even/Odd Checker - Correct",
-    "evaluation_category": "logic",
+    "id": "test_018_yes_casting",
+    "name": "[CONCEPT: CASTING] Type Casting",
+    "evaluation_category": "concept_detection",
     "difficulty_level": 2,
-    "expected_behavior": "Confirm correct use of modulo operator for even/odd detection",
-    "missionId": "even_odd",
+    "expected_behavior": "Should detect casting concept",
+    "missionId": "convert_types",
     "mission_context": {
-      "title": "Even or Odd",
-      "description": "Check if number is even or odd",
-      "objectives": [
-        "Use modulo",
-        "Use if/else"
-      ],
-      "concepts": [
-        "conditionals",
-        "modulo",
-        "print"
-      ],
+      "title": "Convert Types",
+      "description": "Convert string to integer",
+      "objectives": ["Use type casting"],
+      "concepts": ["casting", "variables"],
       "difficulty": 2,
-      "validation_mode": "strict"
+      "validation_mode": "concept-required"
     },
     "submission_context": {
-      "code": "num = 7\nif num % 2 == 0:\n    print(\"Even\")\nelse:\n    print(\"Odd\")",
-      "expected_output": "Odd",
-      "line_count": 5
-    },
-    "student_context": {
-      "user_id": "benchmark_user",
-      "level": 2,
-      "xp": 200,
-      "weak_skills": [],
-      "strong_skills": [
-        "conditionals",
-        "print"
-      ],
-      "attempt_number": 1
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false
-    }
-  },
-  {
-    "id": "analyze_concept_01",
-    "name": "Variable Reuse Detection",
-    "evaluation_category": "concepts",
-    "difficulty_level": 2,
-    "expected_behavior": "Detect that student properly reuses variables",
-    "missionId": "variable_practice",
-    "mission_context": {
-      "title": "Variable Practice",
-      "description": "Store and update a counter",
-      "objectives": [
-        "Declare variable",
-        "Update variable"
-      ],
-      "concepts": [
-        "variables",
-        "assignment",
-        "print"
-      ],
-      "difficulty": 2,
-      "validation_mode": "strict"
-    },
-    "submission_context": {
-      "code": "counter = 0\ncounter = counter + 1\ncounter = counter + 1\nprint(counter)",
-      "expected_output": "2",
-      "line_count": 4
-    },
-    "student_context": {
-      "user_id": "benchmark_user",
-      "level": 2,
-      "xp": 120,
-      "weak_skills": [
-        "variables"
-      ],
-      "strong_skills": [
-        "print"
-      ],
-      "attempt_number": 1
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false
-    }
-  },
-  {
-    "id": "analyze_concept_02",
-    "name": "List Indexing",
-    "evaluation_category": "concepts",
-    "difficulty_level": 3,
-    "expected_behavior": "Verify correct use of list indexing",
-    "missionId": "lists_intro",
-    "mission_context": {
-      "title": "List Basics",
-      "description": "Access list elements by index",
-      "objectives": [
-        "Create list",
-        "Access elements",
-        "Print values"
-      ],
-      "concepts": [
-        "lists",
-        "indexing",
-        "print"
-      ],
-      "difficulty": 3,
-      "validation_mode": "strict"
-    },
-    "submission_context": {
-      "code": "fruits = [\"apple\", \"banana\", \"cherry\"]\nprint(fruits[0])\nprint(fruits[2])",
-      "expected_output": "apple\ncherry",
-      "line_count": 3
-    },
-    "student_context": {
-      "user_id": "benchmark_user",
-      "level": 3,
-      "xp": 250,
-      "weak_skills": [
-        "lists"
-      ],
-      "strong_skills": [
-        "variables",
-        "print"
-      ],
-      "attempt_number": 1
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false
-    }
-  },
-  {
-    "id": "analyze_creative_01",
-    "name": "Three-Line Story",
-    "evaluation_category": "creative",
-    "difficulty_level": 4,
-    "expected_behavior": "Evaluate creativity and structure, not exact wording",
-    "missionId": "story_mission",
-    "mission_context": {
-      "title": "Creative Story",
-      "description": "Write a three-line story about a robot",
-      "objectives": [
-        "Creativity",
-        "Multiple print statements",
-        "Story structure"
-      ],
-      "concepts": [
-        "print",
-        "strings",
-        "creativity"
-      ],
-      "difficulty": 4,
-      "validation_mode": "creative"
-    },
-    "submission_context": {
-      "code": "print(\"Once upon a time\")\nprint(\"there was a robot\")\nprint(\"who loved to code\")",
-      "expected_output": "Once upon a time\nthere was a robot\nwho loved to code",
-      "line_count": 3
-    },
-    "student_context": {
-      "user_id": "benchmark_user",
-      "level": 3,
-      "xp": 400,
-      "weak_skills": [],
-      "strong_skills": [
-        "print",
-        "strings"
-      ],
-      "attempt_number": 1
-    },
-    "validation_context": {
-      "check_exact_output": false,
-      "allow_creativity": true
-    }
-  },
-  {
-    "id": "analyze_creative_02",
-    "name": "Poem Generator",
-    "evaluation_category": "creative",
-    "difficulty_level": 5,
-    "expected_behavior": "Assess poetic structure and use of print statements",
-    "missionId": "poem_mission",
-    "mission_context": {
-      "title": "Poetry Time",
-      "description": "Write a 4-line poem about coding",
-      "objectives": [
-        "Creativity",
-        "Multiple lines",
-        "Rhythm"
-      ],
-      "concepts": [
-        "print",
-        "strings",
-        "creativity"
-      ],
-      "difficulty": 5,
-      "validation_mode": "creative"
-    },
-    "submission_context": {
-      "code": "print(\"Code all day\")\nprint(\"Debug all night\")\nprint(\"Fix the bugs\")\nprint(\"Till morning light\")",
-      "expected_output": "Code all day\nDebug all night\nFix the bugs\nTill morning light",
-      "line_count": 4
-    },
-    "student_context": {
-      "user_id": "benchmark_user",
-      "level": 4,
-      "xp": 600,
-      "weak_skills": [],
-      "strong_skills": [
-        "print",
-        "strings",
-        "creativity"
-      ],
-      "attempt_number": 1
-    },
-    "validation_context": {
-      "check_exact_output": false,
-      "allow_creativity": true
-    }
-  },
-  {
-    "id": "analyze_cheating_01",
-    "name": "Hardcoded Output Detection",
-    "evaluation_category": "cheating",
-    "difficulty_level": 3,
-    "expected_behavior": "Detect that student hardcoded expected output without solving problem",
-    "missionId": "sum_mission",
-    "mission_context": {
-      "title": "Sum Two Numbers",
-      "description": "Calculate sum of two variables",
-      "objectives": [
-        "Add numbers",
-        "Use variables"
-      ],
-      "concepts": [
-        "variables",
-        "arithmetic",
-        "print"
-      ],
-      "difficulty": 2,
-      "validation_mode": "strict"
-    },
-    "submission_context": {
-      "code": "a = 5\nb = 3\nprint(8)",
+      "code": "x = '5'\ny = int(x)\nprint(y + 3)",
       "expected_output": "8",
       "line_count": 3
     },
-    "student_context": {
-      "user_id": "benchmark_user",
-      "level": 2,
-      "xp": 150,
-      "weak_skills": [
-        "arithmetic"
-      ],
-      "strong_skills": [
-        "print"
-      ],
-      "attempt_number": 5
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
     }
   },
   {
-    "id": "analyze_efficiency_01",
-    "name": "Large Loop - Performance",
-    "evaluation_category": "efficiency",
+    "id": "test_019_yes_modulo",
+    "name": "[CONCEPT: MODULO] Modulo Operator",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 3,
+    "expected_behavior": "Should detect modulo concept",
+    "missionId": "check_even",
+    "mission_context": {
+      "title": "Check Even",
+      "description": "Check if number is even using modulo",
+      "objectives": ["Use modulo operator"],
+      "concepts": ["modulo", "operators", "if"],
+      "difficulty": 2,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "n = 4\nif n % 2 == 0:\n    print('Even')\nelse:\n    print('Odd')",
+      "expected_output": "Even",
+      "line_count": 5
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
+    }
+  },
+  {
+    "id": "test_020_yes_list_append",
+    "name": "[CONCEPT: LIST APPEND] List Append",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 3,
+    "expected_behavior": "Should detect append concept",
+    "missionId": "build_list",
+    "mission_context": {
+      "title": "Build List",
+      "description": "Build a list using append",
+      "objectives": ["Use list append"],
+      "concepts": ["list", "append", "loops"],
+      "difficulty": 3,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "numbers = []\nfor i in range(3):\n    numbers.append(i)\nprint(numbers)",
+      "expected_output": "[0, 1, 2]",
+      "line_count": 4
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
+    }
+  },
+  {
+    "id": "test_021_yes_string_split",
+    "name": "[CONCEPT: SPLIT] String Split",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 3,
+    "expected_behavior": "Should detect split concept",
+    "missionId": "split_words",
+    "mission_context": {
+      "title": "Split Words",
+      "description": "Split a sentence into words",
+      "objectives": ["Use string split"],
+      "concepts": ["split", "strings"],
+      "difficulty": 2,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "sentence = 'hello world'\nwords = sentence.split()\nprint(words)",
+      "expected_output": "['hello', 'world']",
+      "line_count": 3
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
+    }
+  },
+  {
+    "id": "test_022_yes_in_operator",
+    "name": "[CONCEPT: IN OPERATOR] In Operator",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 3,
+    "expected_behavior": "Should detect in-operator concept",
+    "missionId": "check_membership",
+    "mission_context": {
+      "title": "Check Membership",
+      "description": "Check if value is in list",
+      "objectives": ["Use in operator"],
+      "concepts": ["in-operator", "list"],
+      "difficulty": 2,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "numbers = [1, 2, 3]\nif 2 in numbers:\n    print('Found')\nelse:\n    print('Not found')",
+      "expected_output": "Found",
+      "line_count": 5
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
+    }
+  },
+  {
+    "id": "test_023_yes_slicing",
+    "name": "[CONCEPT: SLICING] List Slicing",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 3,
+    "expected_behavior": "Should detect slicing concept",
+    "missionId": "slice_list",
+    "mission_context": {
+      "title": "Slice List",
+      "description": "Get first 3 elements from list",
+      "objectives": ["Use list slicing"],
+      "concepts": ["slicing", "list"],
+      "difficulty": 3,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "numbers = [1, 2, 3, 4, 5]\nfirst_three = numbers[:3]\nprint(first_three)",
+      "expected_output": "[1, 2, 3]",
+      "line_count": 3
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
+    }
+  },
+  {
+    "id": "test_024_yes_while_loop",
+    "name": "[CONCEPT: WHILE LOOP] While Loop",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 3,
+    "expected_behavior": "Should detect while-loop concept",
+    "missionId": "count_down",
+    "mission_context": {
+      "title": "Count Down",
+      "description": "Count down from 5 to 1",
+      "objectives": ["Use while loop"],
+      "concepts": ["while-loop", "loops", "variables"],
+      "difficulty": 2,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "n = 5\nwhile n > 0:\n    print(n)\n    n = n - 1",
+      "expected_output": "5\n4\n3\n2\n1",
+      "line_count": 4
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
+    }
+  },
+  {
+    "id": "test_025_yes_nested_loops",
+    "name": "[CONCEPT: NESTED LOOPS] Nested Loops",
+    "evaluation_category": "concept_detection",
     "difficulty_level": 4,
-    "expected_behavior": "Handle large loop without timeout, verify correctness",
-    "missionId": "big_loop",
+    "expected_behavior": "Should detect nested-loops concept",
+    "missionId": "print_grid",
     "mission_context": {
-      "title": "Big Loop",
-      "description": "Sum numbers from 1 to 1000",
-      "objectives": [
-        "Use loop",
-        "Handle large ranges"
-      ],
-      "concepts": [
-        "for",
-        "variables",
-        "arithmetic"
-      ],
+      "title": "Print Grid",
+      "description": "Print 3x3 grid of stars",
+      "objectives": ["Use nested loops"],
+      "concepts": ["nested-loops", "loops"],
+      "difficulty": 3,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "for i in range(3):\n    for j in range(3):\n        print('*', end='')\n    print()",
+      "expected_output": "***\n***\n***",
+      "line_count": 4
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
+    }
+  },
+  {
+    "id": "test_026_yes_function_definition",
+    "name": "[CONCEPT: FUNCTION] Function Definition",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 4,
+    "expected_behavior": "Should detect function-definition concept",
+    "missionId": "create_function",
+    "mission_context": {
+      "title": "Create Function",
+      "description": "Define a function that greets",
+      "objectives": ["Define a function"],
+      "concepts": ["function-definition", "functions"],
+      "difficulty": 3,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "def greet():\n    print('Hello')\ngreet()",
+      "expected_output": "Hello",
+      "line_count": 3
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
+    }
+  },
+  {
+    "id": "test_027_yes_return",
+    "name": "[CONCEPT: RETURN] Function Return",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 4,
+    "expected_behavior": "Should detect return concept",
+    "missionId": "return_value",
+    "mission_context": {
+      "title": "Return Value",
+      "description": "Function that returns a value",
+      "objectives": ["Use return statement"],
+      "concepts": ["return", "functions"],
+      "difficulty": 3,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "def add(a, b):\n    return a + b\nprint(add(3, 5))",
+      "expected_output": "8",
+      "line_count": 3
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
+    }
+  },
+  {
+    "id": "test_028_yes_lambda",
+    "name": "[CONCEPT: LAMBDA] Lambda Function",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 4,
+    "expected_behavior": "Should detect lambda concept",
+    "missionId": "use_lambda",
+    "mission_context": {
+      "title": "Use Lambda",
+      "description": "Create a lambda function",
+      "objectives": ["Use lambda"],
+      "concepts": ["lambda", "functions"],
       "difficulty": 4,
-      "validation_mode": "strict"
+      "validation_mode": "concept-required"
     },
     "submission_context": {
-      "code": "total = 0\nfor i in range(1, 1001):\n    total += i\nprint(total)",
-      "expected_output": "500500",
-      "line_count": 4
+      "code": "double = lambda x: x * 2\nprint(double(5))",
+      "expected_output": "10",
+      "line_count": 2
     },
-    "student_context": {
-      "user_id": "benchmark_user",
-      "level": 4,
-      "xp": 500,
-      "weak_skills": [],
-      "strong_skills": [
-        "loops",
-        "variables"
-      ],
-      "attempt_number": 1
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
     }
   },
   {
-    "id": "analyze_efficiency_02",
-    "name": "Nested Loops - Complexity",
-    "evaluation_category": "efficiency",
-    "difficulty_level": 5,
-    "expected_behavior": "Handle nested loops and verify pattern output",
-    "missionId": "nested_loops",
+    "id": "test_029_yes_dict",
+    "name": "[CONCEPT: DICT] Dictionary",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 3,
+    "expected_behavior": "Should detect dict concept",
+    "missionId": "use_dict",
     "mission_context": {
-      "title": "Nested Loops",
-      "description": "Print a 3x3 grid of stars",
-      "objectives": [
-        "Use nested loops",
-        "Print patterns"
-      ],
-      "concepts": [
-        "for",
-        "nested_loops",
-        "print"
-      ],
-      "difficulty": 5,
-      "validation_mode": "strict"
+      "title": "Use Dictionary",
+      "description": "Create and use a dictionary",
+      "objectives": ["Use dictionary"],
+      "concepts": ["dict", "variables"],
+      "difficulty": 3,
+      "validation_mode": "concept-required"
     },
     "submission_context": {
-      "code": "for i in range(3):\n    for j in range(3):\n        print(\"*\", end=\" \")\n    print()",
-      "expected_output": "* * * \n* * * \n* * * \n",
-      "line_count": 4
+      "code": "student = {'name': 'Alice', 'age': 10}\nprint(student['name'])",
+      "expected_output": "Alice",
+      "line_count": 2
     },
-    "student_context": {
-      "user_id": "benchmark_user",
-      "level": 5,
-      "xp": 800,
-      "weak_skills": [],
-      "strong_skills": [
-        "loops",
-        "print"
-      ],
-      "attempt_number": 1
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
     }
   },
   {
-    "id": "analyze_adaptive_01",
-    "name": "Multiple Attempts - Encouraging Tone",
-    "evaluation_category": "adaptive",
+    "id": "test_030_yes_tuple",
+    "name": "[CONCEPT: TUPLE] Tuple",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 3,
+    "expected_behavior": "Should detect tuple concept",
+    "missionId": "use_tuple",
+    "mission_context": {
+      "title": "Use Tuple",
+      "description": "Create and use a tuple",
+      "objectives": ["Use tuple"],
+      "concepts": ["tuple", "variables"],
+      "difficulty": 3,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "coords = (10, 20)\nprint(coords[0])",
+      "expected_output": "10",
+      "line_count": 2
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
+    }
+  },
+  {
+    "id": "test_031_yes_indexing",
+    "name": "[CONCEPT: INDEXING] List Indexing",
+    "evaluation_category": "concept_detection",
     "difficulty_level": 2,
-    "expected_behavior": "Provide encouraging, supportive feedback for student on 5th attempt",
-    "missionId": "hello_world",
+    "expected_behavior": "Should detect indexing concept",
+    "missionId": "access_element",
     "mission_context": {
-      "title": "Hello World",
-      "description": "Print Hello, World!",
+      "title": "Access Element",
+      "description": "Access element from list",
+      "objectives": ["Use indexing"],
+      "concepts": ["indexing", "list"],
+      "difficulty": 2,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "numbers = [10, 20, 30]\nprint(numbers[1])",
+      "expected_output": "20",
+      "line_count": 2
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
+    }
+  },
+  {
+    "id": "test_032_yes_input",
+    "name": "[CONCEPT: INPUT] Input Function",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 2,
+    "expected_behavior": "Should detect input concept",
+    "missionId": "get_input",
+    "mission_context": {
+      "title": "Get Input",
+      "description": "Get user input",
+      "objectives": ["Use input function"],
+      "concepts": ["input", "variables"],
+      "difficulty": 2,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "name = input('Enter name: ')\nprint(f'Hello {name}')",
+      "expected_output": "Enter name: \nHello Alice",
+      "line_count": 2
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
+    }
+  },
+  {
+    "id": "test_033_yes_formatting",
+    "name": "[CONCEPT: FORMATTING] String Formatting",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 2,
+    "expected_behavior": "Should detect formatting concept",
+    "missionId": "format_output",
+    "mission_context": {
+      "title": "Format Output",
+      "description": "Format string output",
+      "objectives": ["Use string formatting"],
+      "concepts": ["formatting", "strings"],
+      "difficulty": 2,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "print('Score: {}'.format(95))",
+      "expected_output": "Score: 95",
+      "line_count": 1
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
+    }
+  },
+  {
+    "id": "test_034_yes_elif",
+    "name": "[CONCEPT: ELIF] Elif Statement",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 3,
+    "expected_behavior": "Should detect elif concept",
+    "missionId": "multiple_conditions",
+    "mission_context": {
+      "title": "Multiple Conditions",
+      "description": "Use elif for multiple conditions",
+      "objectives": ["Use elif"],
+      "concepts": ["elif", "if", "conditionals"],
+      "difficulty": 2,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "score = 75\nif score >= 90:\n    print('A')\nelif score >= 80:\n    print('B')\nelse:\n    print('C')",
+      "expected_output": "C",
+      "line_count": 7
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
+    }
+  },
+  {
+    "id": "test_035_yes_all_concepts",
+    "name": "[MULTIPLE CONCEPTS] All Concepts Present - AI Says YES",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 4,
+    "expected_behavior": "AI should say YES when all required concepts are present",
+    "missionId": "complex_task",
+    "mission_context": {
+      "title": "Complex Task",
+      "description": "Use loops, conditionals, and lists",
       "objectives": [
-        "Use print statement"
+        "Use for loop",
+        "Use if statement",
+        "Use list"
       ],
-      "concepts": [
-        "print",
-        "strings"
+      "concepts": ["loops", "for", "if", "list"],
+      "difficulty": 4,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "numbers = [1, 2, 3, 4, 5]\nfor n in numbers:\n    if n > 2:\n        print(n)",
+      "expected_output": "3\n4\n5",
+      "line_count": 4
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
+    }
+  },
+  {
+    "id": "test_036_no_missing_concept",
+    "name": "[MULTIPLE CONCEPTS] One Missing - AI Says NO",
+    "evaluation_category": "concept_detection",
+    "difficulty_level": 4,
+    "expected_behavior": "AI MUST say NO when one required concept is missing",
+    "missionId": "complex_task",
+    "mission_context": {
+      "title": "Complex Task",
+      "description": "Use loops, conditionals, and modulo",
+      "objectives": [
+        "Use for loop",
+        "Use if statement",
+        "Use modulo operator"
       ],
+      "concepts": ["loops", "for", "if", "modulo"],
+      "difficulty": 4,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "numbers = [1, 2, 3, 4, 5]\nfor n in numbers:\n    if n > 2:\n        print(n)",
+      "expected_output": "3\n4\n5",
+      "line_count": 4
+    },
+    "expected_ai_response": {
+      "success": false,
+      "feedback_starts_with": "NO",
+      "should_mention": ["modulo", "missing", "concept"]
+    }
+  },
+  {
+    "id": "test_037_edge_empty_output",
+    "name": "[EDGE CASE] Empty Expected Output",
+    "evaluation_category": "edge_cases",
+    "difficulty_level": 2,
+    "expected_behavior": "Should handle missions with no expected output",
+    "missionId": "variable_practice",
+    "mission_context": {
+      "title": "Variable Practice",
+      "description": "Create and use variables",
+      "objectives": ["Create variables"],
+      "concepts": ["variables"],
+      "difficulty": 1,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "x = 5\ny = 10\nz = x + y",
+      "expected_output": "",
+      "line_count": 3
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
+    }
+  },
+  {
+    "id": "test_038_edge_special_chars",
+    "name": "[EDGE CASE] Special Characters",
+    "evaluation_category": "edge_cases",
+    "difficulty_level": 2,
+    "expected_behavior": "Should handle special characters in output",
+    "missionId": "print_special",
+    "mission_context": {
+      "title": "Print Special",
+      "description": "Print special characters",
+      "objectives": ["Print text with special chars"],
+      "concepts": ["print", "strings"],
       "difficulty": 1,
       "validation_mode": "strict"
     },
     "submission_context": {
-      "code": "print(\"Hello World\")",
-      "expected_output": "Hello, World!",
+      "code": "print('Hello!@#$%')",
+      "expected_output": "Hello!@#$%",
       "line_count": 1
     },
-    "student_context": {
-      "user_id": "benchmark_user",
-      "level": 1,
-      "xp": 20,
-      "weak_skills": [
-        "syntax"
-      ],
-      "strong_skills": [],
-      "attempt_number": 5
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
     }
   },
   {
-    "id": "analyze_adaptive_02",
-    "name": "High Performer - Advanced Feedback",
-    "evaluation_category": "adaptive",
-    "difficulty_level": 4,
-    "expected_behavior": "Provide advanced suggestions or challenges for high-XP student",
-    "missionId": "loops_advanced",
+    "id": "test_039_edge_multiline_string",
+    "name": "[EDGE CASE] Multiline String",
+    "evaluation_category": "edge_cases",
+    "difficulty_level": 2,
+    "expected_behavior": "Should handle multiline strings",
+    "missionId": "multiline_print",
     "mission_context": {
-      "title": "Advanced Loops",
-      "description": "Sum even numbers from 1 to 100",
-      "objectives": [
-        "Use loop",
-        "Use conditionals",
-        "Accumulate"
-      ],
-      "concepts": [
-        "for",
-        "if",
-        "modulo",
-        "variables"
-      ],
-      "difficulty": 4,
+      "title": "Multiline Print",
+      "description": "Print multiline text",
+      "objectives": ["Print multiple lines"],
+      "concepts": ["print", "strings"],
+      "difficulty": 1,
       "validation_mode": "strict"
     },
     "submission_context": {
-      "code": "total = 0\nfor i in range(1, 101):\n    if i % 2 == 0:\n        total += i\nprint(total)",
-      "expected_output": "2550",
-      "line_count": 5
+      "code": "print('''Line 1\nLine 2\nLine 3''')",
+      "expected_output": "Line 1\nLine 2\nLine 3",
+      "line_count": 1
     },
-    "student_context": {
-      "user_id": "benchmark_user",
-      "level": 6,
-      "xp": 1200,
-      "weak_skills": [],
-      "strong_skills": [
-        "loops",
-        "conditionals",
-        "variables"
-      ],
-      "attempt_number": 1
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
     }
   },
   {
-    "id": "analyze_trap_creative_strict_01",
-    "name": "Creative Mode Rejected - Story Variant",
-    "evaluation_category": "validation_conflict",
-    "difficulty_level": 4,
-    "trap_category": "creative_vs_strict",
-    "expected_behavior": "Model should PASS creative story variant when allow_creativity=true, even if output differs from expected",
-    "missionId": "story_mission",
+    "id": "test_040_mode_output_only",
+    "name": "[MODE: OUTPUT-ONLY] No Concepts Required",
+    "evaluation_category": "validation_modes",
+    "difficulty_level": 1,
+    "expected_behavior": "Should accept any code that produces output in output-only mode",
+    "missionId": "free_print",
     "mission_context": {
-      "title": "Write Your Story",
-      "description": "Create a three-line story",
-      "objectives": [
-        "Creative expression",
-        "Multiple print statements"
-      ],
-      "concepts": [
-        "print",
-        "strings",
-        "creativity"
-      ],
-      "difficulty": 4,
-      "validation_mode": "creative",
-      "expected_output": "Once upon a time\nthere was a dragon\nwho loved to code"
+      "title": "Free Print",
+      "description": "Print anything you want",
+      "objectives": ["Print something"],
+      "concepts": [],
+      "difficulty": 1,
+      "validation_mode": "output-only"
     },
     "submission_context": {
-      "code": "print(\"In a magical land\")\nprint(\"lived a curious robot\")\nprint(\"who dreamed of adventures\")",
-      "expected_output": "In a magical land\nlived a curious robot\nwho dreamed of adventures",
-      "line_count": 3
+      "code": "print('Anything')",
+      "expected_output": "Something",
+      "line_count": 1
     },
-    "student_context": {
-      "user_id": "trap_test_user",
-      "level": 4,
-      "xp": 500,
-      "weak_skills": [],
-      "strong_skills": [
-        "print",
-        "creativity"
-      ],
-      "attempt_number": 1
-    },
-    "validation_context": {
-      "check_exact_output": false,
-      "allow_creativity": true
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
     }
   },
   {
-    "id": "analyze_trap_creative_strict_02",
-    "name": "Strict Mode Requires Exact Match",
-    "evaluation_category": "validation_conflict",
+    "id": "test_041_mode_strict_exact",
+    "name": "[MODE: STRICT] Exact Output Match",
+    "evaluation_category": "validation_modes",
     "difficulty_level": 2,
-    "trap_category": "creative_vs_strict",
-    "expected_behavior": "Model should FAIL when output doesn't match exactly in strict mode",
-    "missionId": "exact_greeting",
+    "expected_behavior": "Should require exact output match in strict mode",
+    "missionId": "exact_hello",
     "mission_context": {
-      "title": "Exact Greeting",
-      "description": "Print exactly: Hello, Python!",
-      "objectives": [
-        "Follow exact instructions"
-      ],
-      "concepts": [
-        "print",
-        "strings"
-      ],
-      "difficulty": 2,
-      "validation_mode": "strict",
-      "expected_output": "Hello, Python!"
+      "title": "Exact Hello",
+      "description": "Print exactly: Hello, World!",
+      "objectives": ["Print exact text"],
+      "concepts": ["print"],
+      "difficulty": 1,
+      "validation_mode": "strict"
     },
     "submission_context": {
-      "code": "print(\"Hello Python!\")",
-      "expected_output": "Hello Python!",
+      "code": "print('Hello, World!')",
+      "expected_output": "Hello, World!",
       "line_count": 1
     },
-    "student_context": {
-      "user_id": "trap_test_user",
-      "level": 2,
-      "xp": 150,
-      "weak_skills": [
-        "attention_to_detail"
-      ],
-      "strong_skills": [
-        "print"
-      ],
-      "attempt_number": 2
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
     }
   },
   {
-    "id": "analyze_trap_multiple_valid_01",
-    "name": "Multiple Valid Loop Implementations",
-    "evaluation_category": "multiple_solutions",
-    "difficulty_level": 3,
-    "trap_category": "multiple_valid_outputs",
-    "expected_behavior": "Model should accept both while and for loop solutions producing same output",
-    "missionId": "count_to_five",
+    "id": "test_042_mode_strict_wrong",
+    "name": "[MODE: STRICT] Wrong Output - AI Says NO",
+    "evaluation_category": "validation_modes",
+    "difficulty_level": 2,
+    "expected_behavior": "Should fail when output doesn't match exactly in strict mode",
+    "missionId": "exact_hello",
     "mission_context": {
-      "title": "Count to Five",
-      "description": "Print numbers 1 to 5",
-      "objectives": [
-        "Use iteration"
-      ],
-      "concepts": [
-        "loops",
-        "print"
-      ],
-      "difficulty": 3,
-      "validation_mode": "flexible",
-      "expected_output": "1\n2\n3\n4\n5"
+      "title": "Exact Hello",
+      "description": "Print exactly: Hello, World!",
+      "objectives": ["Print exact text"],
+      "concepts": ["print"],
+      "difficulty": 1,
+      "validation_mode": "strict"
     },
     "submission_context": {
-      "code": "i = 1\nwhile i <= 5:\n    print(i)\n    i += 1",
-      "expected_output": "1\n2\n3\n4\n5",
-      "line_count": 4
-    },
-    "student_context": {
-      "user_id": "trap_test_user",
-      "level": 3,
-      "xp": 350,
-      "weak_skills": [],
-      "strong_skills": [
-        "while",
-        "print"
-      ],
-      "attempt_number": 1
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false,
-      "accept_alternative_approaches": true
-    }
-  },
-  {
-    "id": "analyze_trap_hidden_constraint_01",
-    "name": "Missing Required Concept - List Usage",
-    "evaluation_category": "concept_detection",
-    "difficulty_level": 4,
-    "trap_category": "hidden_constraints",
-    "expected_behavior": "Model should FAIL because student didn't use required 'list' concept despite correct output",
-    "missionId": "list_practice",
-    "mission_context": {
-      "title": "Work with Lists",
-      "description": "Print all fruits",
-      "objectives": [
-        "Use list data structure"
-      ],
-      "concepts": [
-        "list",
-        "for",
-        "print"
-      ],
-      "required_concepts": [
-        "list"
-      ],
-      "difficulty": 4,
-      "validation_mode": "strict",
-      "expected_output": "apple\nbanana\norange"
-    },
-    "submission_context": {
-      "code": "print(\"apple\")\nprint(\"banana\")\nprint(\"orange\")",
-      "expected_output": "apple\nbanana\norange",
-      "line_count": 3
-    },
-    "student_context": {
-      "user_id": "trap_test_user",
-      "level": 4,
-      "xp": 450,
-      "weak_skills": [
-        "lists"
-      ],
-      "strong_skills": [
-        "print"
-      ],
-      "attempt_number": 1
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false,
-      "enforce_concept_usage": true
-    }
-  },
-  {
-    "id": "analyze_trap_hardcoded_01",
-    "name": "Hardcoded Output Detection",
-    "evaluation_category": "hardcoded_detection",
-    "difficulty_level": 3,
-    "trap_category": "hardcoded_output",
-    "expected_behavior": "Model should FAIL and detect hardcoded answer instead of calculation",
-    "missionId": "sum_calculator",
-    "mission_context": {
-      "title": "Sum Two Numbers",
-      "description": "Calculate sum of x and y",
-      "objectives": [
-        "Use addition operator"
-      ],
-      "concepts": [
-        "variables",
-        "arithmetic",
-        "print"
-      ],
-      "difficulty": 3,
-      "validation_mode": "strict",
-      "expected_output": "15"
-    },
-    "submission_context": {
-      "code": "x = 5\ny = 10\nprint(15)",
-      "expected_output": "15",
-      "line_count": 3
-    },
-    "student_context": {
-      "user_id": "trap_test_user",
-      "level": 3,
-      "xp": 300,
-      "weak_skills": [
-        "arithmetic"
-      ],
-      "strong_skills": [
-        "variables"
-      ],
-      "attempt_number": 3
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false,
-      "detect_hardcoded_values": true
-    }
-  },
-  {
-    "id": "analyze_trap_semantic_drift_01",
-    "name": "Correct Output, Wrong Concept",
-    "evaluation_category": "semantic_drift",
-    "difficulty_level": 4,
-    "trap_category": "semantic_drift",
-    "expected_behavior": "Model should detect that student used string multiplication instead of loop",
-    "missionId": "repeat_star",
-    "mission_context": {
-      "title": "Repeat Character",
-      "description": "Print * five times using a loop",
-      "objectives": [
-        "Use for loop to repeat"
-      ],
-      "concepts": [
-        "for",
-        "range",
-        "print"
-      ],
-      "required_concepts": [
-        "for"
-      ],
-      "difficulty": 4,
-      "validation_mode": "strict",
-      "expected_output": "*****"
-    },
-    "submission_context": {
-      "code": "print('*' * 5)",
-      "expected_output": "*****",
+      "code": "print('Hello World')",
+      "expected_output": "Hello, World!",
       "line_count": 1
     },
-    "student_context": {
-      "user_id": "trap_test_user",
-      "level": 4,
-      "xp": 400,
-      "weak_skills": [
-        "loops"
-      ],
-      "strong_skills": [
-        "strings"
-      ],
-      "attempt_number": 1
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false,
-      "enforce_concept_usage": true
+    "expected_ai_response": {
+      "success": false,
+      "feedback_starts_with": "NO",
+      "should_mention": ["exact", "different", "comma"]
     }
   },
   {
-    "id": "analyze_trap_edge_case_01",
-    "name": "Empty List Edge Case",
-    "evaluation_category": "edge_cases",
-    "difficulty_level": 5,
-    "trap_category": "edge_cases",
-    "expected_behavior": "Model should recognize empty list produces no output (valid behavior)",
-    "missionId": "list_printer",
+    "id": "test_043_mode_concept_only",
+    "name": "[MODE: CONCEPT-ONLY] Ignore Output",
+    "evaluation_category": "validation_modes",
+    "difficulty_level": 2,
+    "expected_behavior": "Should only check concepts in concept-only mode",
+    "missionId": "use_loop",
     "mission_context": {
-      "title": "Print List Items",
-      "description": "Print each item in a list",
-      "objectives": [
-        "Iterate through list"
-      ],
-      "concepts": [
-        "list",
-        "for",
-        "print"
-      ],
-      "difficulty": 5,
-      "validation_mode": "flexible",
-      "expected_output": ""
+      "title": "Use Loop",
+      "description": "Practice loops",
+      "objectives": ["Use a loop"],
+      "concepts": ["loops"],
+      "difficulty": 1,
+      "validation_mode": "concept-only"
     },
     "submission_context": {
-      "code": "items = []\nfor item in items:\n    print(item)",
-      "expected_output": "",
-      "line_count": 3
-    },
-    "student_context": {
-      "user_id": "trap_test_user",
-      "level": 5,
-      "xp": 600,
-      "weak_skills": [],
-      "strong_skills": [
-        "lists",
-        "for"
-      ],
-      "attempt_number": 1
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false
-    }
-  },
-  {
-    "id": "analyze_trap_edge_case_02",
-    "name": "Division by Zero Handling",
-    "evaluation_category": "edge_cases",
-    "difficulty_level": 5,
-    "trap_category": "edge_cases",
-    "expected_behavior": "Model should detect missing error handling for division by zero",
-    "missionId": "safe_division",
-    "mission_context": {
-      "title": "Safe Division",
-      "description": "Divide x by y safely",
-      "objectives": [
-        "Handle division errors"
-      ],
-      "concepts": [
-        "conditionals",
-        "division",
-        "error_handling"
-      ],
-      "difficulty": 5,
-      "validation_mode": "strict",
-      "expected_output": "Cannot divide by zero"
-    },
-    "submission_context": {
-      "code": "x = 10\ny = 0\nresult = x / y\nprint(result)",
-      "expected_output": "",
-      "line_count": 4
-    },
-    "student_context": {
-      "user_id": "trap_test_user",
-      "level": 5,
-      "xp": 550,
-      "weak_skills": [
-        "error_handling"
-      ],
-      "strong_skills": [
-        "arithmetic"
-      ],
-      "attempt_number": 2
-    },
-    "validation_context": {
-      "check_exact_output": false,
-      "allow_creativity": false,
-      "expect_error_handling": true
-    }
-  },
-  {
-    "id": "analyze_trap_off_by_one_01",
-    "name": "Classic Off-By-One in Range",
-    "evaluation_category": "logic",
-    "difficulty_level": 3,
-    "trap_category": "off_by_one",
-    "expected_behavior": "Model should detect range(1, 5) produces 1-4, not 1-5",
-    "missionId": "count_one_to_five",
-    "mission_context": {
-      "title": "Count 1 to 5",
-      "description": "Print numbers from 1 to 5 inclusive",
-      "objectives": [
-        "Understand range boundaries"
-      ],
-      "concepts": [
-        "for",
-        "range",
-        "print"
-      ],
-      "difficulty": 3,
-      "validation_mode": "strict",
-      "expected_output": "1\n2\n3\n4\n5"
-    },
-    "submission_context": {
-      "code": "for i in range(1, 5):\n    print(i)",
-      "expected_output": "1\n2\n3\n4",
+      "code": "for i in range(3):\n    print(i * 2)",
+      "expected_output": "0\n1\n2",
       "line_count": 2
     },
-    "student_context": {
-      "user_id": "trap_test_user",
-      "level": 3,
-      "xp": 280,
-      "weak_skills": [
-        "range"
-      ],
-      "strong_skills": [
-        "for",
-        "print"
-      ],
-      "attempt_number": 2
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES"
     }
   },
   {
-    "id": "analyze_trap_off_by_one_02",
-    "name": "List Index Off-By-One",
-    "evaluation_category": "logic",
-    "difficulty_level": 4,
-    "trap_category": "off_by_one",
-    "expected_behavior": "Model should detect list[3] accesses 4th element, causing IndexError for 3-item list",
-    "missionId": "list_access",
+    "id": "test_044_syntax_indent",
+    "name": "[SYNTAX ERROR] Indentation Error",
+    "evaluation_category": "syntax_errors",
+    "difficulty_level": 1,
+    "expected_behavior": "Should detect indentation errors",
+    "missionId": "if_practice",
     "mission_context": {
-      "title": "Access List Elements",
-      "description": "Print the third element",
-      "objectives": [
-        "Understand zero-based indexing"
-      ],
-      "concepts": [
-        "list",
-        "indexing",
-        "print"
-      ],
-      "difficulty": 4,
-      "validation_mode": "strict",
-      "expected_output": "orange"
+      "title": "If Practice",
+      "description": "Use if statement",
+      "objectives": ["Use if"],
+      "concepts": ["if"],
+      "difficulty": 1,
+      "validation_mode": "concept-required"
     },
     "submission_context": {
-      "code": "fruits = ['apple', 'banana', 'orange']\nprint(fruits[3])",
-      "expected_output": "",
+      "code": "if True:\nprint('Yes')",
+      "expected_output": "Yes",
       "line_count": 2
     },
-    "student_context": {
-      "user_id": "trap_test_user",
-      "level": 4,
-      "xp": 420,
-      "weak_skills": [
-        "indexing"
-      ],
-      "strong_skills": [
-        "lists"
-      ],
-      "attempt_number": 1
-    },
-    "validation_context": {
-      "check_exact_output": false,
-      "allow_creativity": false,
-      "expect_runtime_error": true
+    "expected_ai_response": {
+      "success": false,
+      "should_mention": ["indent", "error", "syntax"]
     }
   },
   {
-    "id": "analyze_trap_incomplete_logic_01",
-    "name": "Loop Without Accumulation",
-    "evaluation_category": "incomplete_logic",
-    "difficulty_level": 4,
-    "trap_category": "incomplete_understanding",
-    "expected_behavior": "Model should detect missing accumulation logic in sum calculation",
-    "missionId": "sum_list",
+    "id": "test_045_syntax_colon",
+    "name": "[SYNTAX ERROR] Missing Colon",
+    "evaluation_category": "syntax_errors",
+    "difficulty_level": 1,
+    "expected_behavior": "Should detect missing colon",
+    "missionId": "if_practice",
     "mission_context": {
-      "title": "Sum List Numbers",
-      "description": "Calculate sum of all numbers in list",
-      "objectives": [
-        "Use loop and accumulator"
-      ],
-      "concepts": [
-        "for",
-        "list",
-        "accumulator",
-        "arithmetic"
-      ],
-      "required_concepts": [
-        "accumulator"
-      ],
-      "difficulty": 4,
-      "validation_mode": "strict",
-      "expected_output": "15"
+      "title": "If Practice",
+      "description": "Use if statement",
+      "objectives": ["Use if"],
+      "concepts": ["if"],
+      "difficulty": 1,
+      "validation_mode": "concept-required"
     },
     "submission_context": {
-      "code": "numbers = [1, 2, 3, 4, 5]\nfor num in numbers:\n    total = num\nprint(total)",
+      "code": "if True\n    print('Yes')",
+      "expected_output": "Yes",
+      "line_count": 2
+    },
+    "expected_ai_response": {
+      "success": false,
+      "should_mention": ["colon", "error", "syntax"]
+    }
+  },
+  {
+    "id": "test_046_syntax_paren",
+    "name": "[SYNTAX ERROR] Unmatched Parenthesis",
+    "evaluation_category": "syntax_errors",
+    "difficulty_level": 1,
+    "expected_behavior": "Should detect unmatched parenthesis",
+    "missionId": "print_practice",
+    "mission_context": {
+      "title": "Print Practice",
+      "description": "Print text",
+      "objectives": ["Use print"],
+      "concepts": ["print"],
+      "difficulty": 1,
+      "validation_mode": "strict"
+    },
+    "submission_context": {
+      "code": "print('Hello'",
+      "expected_output": "Hello",
+      "line_count": 1
+    },
+    "expected_ai_response": {
+      "success": false,
+      "should_mention": ["paren", "error", "syntax"]
+    }
+  },
+  {
+    "id": "test_047_runtime_name_error",
+    "name": "[RUNTIME ERROR] Name Error",
+    "evaluation_category": "runtime_errors",
+    "difficulty_level": 2,
+    "expected_behavior": "Should detect name errors",
+    "missionId": "use_variable",
+    "mission_context": {
+      "title": "Use Variable",
+      "description": "Use variables",
+      "objectives": ["Use variable"],
+      "concepts": ["variables"],
+      "difficulty": 1,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "print(undefined_var)",
       "expected_output": "5",
-      "line_count": 4
+      "line_count": 1
     },
-    "student_context": {
-      "user_id": "trap_test_user",
-      "level": 4,
-      "xp": 450,
-      "weak_skills": [
-        "accumulator_pattern"
-      ],
-      "strong_skills": [
-        "for",
-        "list"
-      ],
-      "attempt_number": 3
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false,
-      "enforce_concept_usage": true
+    "expected_ai_response": {
+      "success": false,
+      "should_mention": ["name", "error", "undefined"]
     }
   },
   {
-    "id": "analyze_trap_whitespace_01",
-    "name": "Extra Whitespace in Output",
-    "evaluation_category": "whitespace_sensitivity",
+    "id": "test_048_runtime_index_error",
+    "name": "[RUNTIME ERROR] Index Error",
+    "evaluation_category": "runtime_errors",
     "difficulty_level": 2,
-    "trap_category": "edge_cases",
-    "expected_behavior": "Model should detect extra trailing space in strict mode",
-    "missionId": "exact_message",
+    "expected_behavior": "Should detect index errors",
+    "missionId": "access_list",
     "mission_context": {
-      "title": "Print Exact Message",
-      "description": "Print: Hello",
-      "objectives": [
-        "Exact output match"
-      ],
-      "concepts": [
-        "print",
-        "strings"
-      ],
+      "title": "Access List",
+      "description": "Access list elements",
+      "objectives": ["Access element"],
+      "concepts": ["list", "indexing"],
       "difficulty": 2,
-      "validation_mode": "strict",
-      "expected_output": "Hello"
+      "validation_mode": "concept-required"
     },
     "submission_context": {
-      "code": "print(\"Hello \")",
-      "expected_output": "Hello ",
-      "line_count": 1
+      "code": "numbers = [1, 2, 3]\nprint(numbers[10])",
+      "expected_output": "1",
+      "line_count": 2
     },
-    "student_context": {
-      "user_id": "trap_test_user",
-      "level": 2,
-      "xp": 120,
-      "weak_skills": [
-        "attention_to_detail"
-      ],
-      "strong_skills": [
-        "print"
-      ],
-      "attempt_number": 1
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false,
-      "strict_whitespace": true
+    "expected_ai_response": {
+      "success": false,
+      "should_mention": ["index", "error", "out of range"]
     }
   },
   {
-    "id": "analyze_trap_variable_scope_01",
-    "name": "Variable Not Initialized",
-    "evaluation_category": "variable_scope",
-    "difficulty_level": 3,
-    "trap_category": "runtime_errors",
-    "expected_behavior": "Model should detect NameError from uninitialized variable",
-    "missionId": "variable_basics",
-    "mission_context": {
-      "title": "Work with Variables",
-      "description": "Store and print a value",
-      "objectives": [
-        "Variable initialization"
-      ],
-      "concepts": [
-        "variables",
-        "print"
-      ],
-      "difficulty": 3,
-      "validation_mode": "strict",
-      "expected_output": "10"
-    },
-    "submission_context": {
-      "code": "print(x)",
-      "expected_output": "",
-      "line_count": 1
-    },
-    "student_context": {
-      "user_id": "trap_test_user",
-      "level": 3,
-      "xp": 200,
-      "weak_skills": [
-        "variables"
-      ],
-      "strong_skills": [
-        "print"
-      ],
-      "attempt_number": 1
-    },
-    "validation_context": {
-      "check_exact_output": false,
-      "allow_creativity": false,
-      "expect_runtime_error": true
-    }
-  },
-  {
-    "id": "analyze_trap_infinite_loop_01",
-    "name": "Infinite Loop Detection",
-    "evaluation_category": "logic_errors",
-    "difficulty_level": 5,
-    "trap_category": "infinite_patterns",
-    "expected_behavior": "Model should warn about potential infinite loop (missing increment)",
-    "missionId": "while_practice",
-    "mission_context": {
-      "title": "While Loop",
-      "description": "Count from 1 to 5",
-      "objectives": [
-        "Use while loop correctly"
-      ],
-      "concepts": [
-        "while",
-        "variables",
-        "conditionals"
-      ],
-      "difficulty": 5,
-      "validation_mode": "strict",
-      "expected_output": "1\n2\n3\n4\n5"
-    },
-    "submission_context": {
-      "code": "i = 1\nwhile i <= 5:\n    print(i)",
-      "expected_output": "",
-      "line_count": 3
-    },
-    "student_context": {
-      "user_id": "trap_test_user",
-      "level": 5,
-      "xp": 580,
-      "weak_skills": [
-        "while"
-      ],
-      "strong_skills": [
-        "print"
-      ],
-      "attempt_number": 2
-    },
-    "validation_context": {
-      "check_exact_output": false,
-      "allow_creativity": false,
-      "detect_infinite_loop": true
-    }
-  },
-  {
-    "id": "analyze_trap_case_sensitivity_01",
-    "name": "Wrong Case in Function Name",
-    "evaluation_category": "syntax",
+    "id": "test_049_runtime_type_error",
+    "name": "[RUNTIME ERROR] Type Error",
+    "evaluation_category": "runtime_errors",
     "difficulty_level": 2,
-    "trap_category": "case_sensitivity",
-    "expected_behavior": "Model should detect Print vs print case error",
-    "missionId": "hello_world",
+    "expected_behavior": "Should detect type errors",
+    "missionId": "string_ops",
     "mission_context": {
-      "title": "Hello World",
-      "description": "Print a greeting",
-      "objectives": [
-        "Use print function"
-      ],
-      "concepts": [
-        "print",
-        "strings"
-      ],
+      "title": "String Operations",
+      "description": "Work with strings",
+      "objectives": ["Concatenate strings"],
+      "concepts": ["strings", "concatenation"],
       "difficulty": 2,
-      "validation_mode": "strict",
-      "expected_output": "Hello"
+      "validation_mode": "concept-required"
     },
     "submission_context": {
-      "code": "Print(\"Hello\")",
-      "expected_output": "",
+      "code": "print('Hello' + 5)",
+      "expected_output": "Hello5",
       "line_count": 1
     },
-    "student_context": {
-      "user_id": "trap_test_user",
-      "level": 2,
-      "xp": 50,
-      "weak_skills": [
-        "syntax"
-      ],
-      "strong_skills": [],
-      "attempt_number": 1
-    },
-    "validation_context": {
-      "check_exact_output": false,
-      "allow_creativity": false,
-      "expect_runtime_error": true
+    "expected_ai_response": {
+      "success": false,
+      "should_mention": ["type", "error", "string", "int"]
     }
   },
   {
-    "id": "analyze_trap_string_vs_number_01",
-    "name": "String Concatenation Instead of Math",
-    "evaluation_category": "type_errors",
-    "difficulty_level": 3,
-    "trap_category": "type_confusion",
-    "expected_behavior": "Model should detect string concatenation instead of addition",
-    "missionId": "calculator",
+    "id": "test_050_ai_parse_yes_pattern_1",
+    "name": "[AI PARSING] YES Pattern 'objectives met'",
+    "evaluation_category": "ai_feedback_parsing",
+    "difficulty_level": 1,
+    "expected_behavior": "AI parser should recognize 'objectives met' as YES",
+    "missionId": "simple_print",
     "mission_context": {
-      "title": "Simple Calculator",
-      "description": "Add two numbers",
-      "objectives": [
-        "Use arithmetic operators"
-      ],
-      "concepts": [
-        "variables",
-        "arithmetic",
-        "print"
-      ],
-      "difficulty": 3,
-      "validation_mode": "strict",
-      "expected_output": "15"
+      "title": "Simple Print",
+      "description": "Print hello",
+      "objectives": ["Print hello"],
+      "concepts": ["print"],
+      "difficulty": 1,
+      "validation_mode": "strict"
     },
     "submission_context": {
-      "code": "a = \"5\"\nb = \"10\"\nresult = a + b\nprint(result)",
-      "expected_output": "510",
-      "line_count": 4
+      "code": "print('hello')",
+      "expected_output": "hello",
+      "line_count": 1
     },
-    "student_context": {
-      "user_id": "trap_test_user",
-      "level": 3,
-      "xp": 250,
-      "weak_skills": [
-        "types"
-      ],
-      "strong_skills": [
-        "variables"
-      ],
-      "attempt_number": 2
-    },
-    "validation_context": {
-      "check_exact_output": true,
-      "allow_creativity": false
+    "expected_ai_response": {
+      "success": true,
+      "feedback_contains": "objectives met"
     }
   }
 ]

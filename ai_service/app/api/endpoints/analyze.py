@@ -229,60 +229,15 @@ async def analyze_code(
                 output_score = 100
                 output_matches = True
             
-            # Run anti-cheating validation if output matches
-            if output_matches and val_ctx.disallow_hardcoded_output:
-                # Get difficulty from mission context or legacy field
-                difficulty = 'easy'
-                if request.mission_context:
-                    difficulty = str(request.mission_context.difficulty or 1)
-                elif request.difficulty:
-                    difficulty = str(request.difficulty)
-                
-                # Build validation rules dict
-                validation_rules = {}
-                if request.validation_rules:
-                    validation_rules = request.validation_rules
-                elif val_ctx.forbidden_patterns:
-                    validation_rules['forbiddenPatterns'] = val_ctx.forbidden_patterns
-                
-                validation_result_obj = solution_validator.validate_solution(
-                    code=code,
-                    expected_output=expected,
-                    required_concepts=required_concepts,
-                    difficulty=difficulty,
-                    actual_output=actual_output,
-                    validation_rules=validation_rules
-                )
-                
-                validation_result = {
-                    'is_valid': validation_result_obj.is_valid,
-                    'score_multiplier': validation_result_obj.score_multiplier,
-                    'issues': validation_result_obj.issues,
-                    'detected_patterns': validation_result_obj.detected_patterns,
-                    'complexity_score': validation_result_obj.complexity_score,
-                    'feedback': ''
-                }
-                
-                if not validation_result_obj.is_valid:
-                    # Cheating detected - penalize output score
-                    output_score *= validation_result_obj.score_multiplier
-                    output_matches = False
-                    execution_result['success'] = False
-                    
-                    # Build feedback
-                    feedback_parts = ["⚠️ Learning Progress Issue Detected\n"]
-                    for issue in validation_result_obj.issues:
-                        feedback_parts.append(f"• {issue}")
-                    
-                    if 'hardcoded_output' in validation_result_obj.detected_patterns:
-                        feedback_parts.append("\n💡 Tip: Don't just print the expected answer - use the programming concepts to solve it!")
-                    if 'missing_concepts' in validation_result_obj.detected_patterns:
-                        feedback_parts.append("\n📚 Tip: Make sure to use the concepts taught in this step!")
-                    if 'forbidden_pattern' in validation_result_obj.detected_patterns:
-                        feedback_parts.append("\n🚫 Tip: Some code patterns are not allowed in this mission!")
-                    
-                    validation_result['feedback'] = '\n'.join(feedback_parts)
-                    logger.warning(f"Validation failed - Issues: {validation_result_obj.issues}")
+            # DISABLED: Legacy rule-based validation - using AI-only validation now
+            # The solution_validator was creating duplicate/conflicting validations
+            # AI service now handles ALL validation through concept detection and AI feedback
+            # 
+            # if output_matches and val_ctx.disallow_hardcoded_output:
+            #     validation_result_obj = solution_validator.validate_solution(...)
+            #     ...
+            # 
+            # RESULT: Cleaner validation flow with no contradictions between validator and AI
         else:
             # No expected output - full credit for output component
             output_score = 100
@@ -294,26 +249,69 @@ async def analyze_code(
         
         # Common Python concepts to detect
         concept_patterns = {
+            # Basic I/O
             'print': ['print(', 'print '],
             'input': ['input(', 'input '],
+            
+            # Variables and Data Types
             'variables': ['='],
             'strings': ['"', "'"],
+            'casting': ['int(', 'str(', 'float(', 'bool('],
+            
+            # Arithmetic and Math
+            'arithmetic': ['+', '-', '*', '/'],
+            'math': ['+', '-', '*', '/', '**', '//'],
+            'operators': ['+', '-', '*', '/', '%', '**', '//'],
+            'modulo': ['%'],
+            'division': ['/'],
+            
+            # Comparison and Logic
+            'comparison': ['==', '!=', '<', '>', '<=', '>='],
+            'conditionals': ['if '],
             'if': ['if '],
             'else': ['else:'],
             'elif': ['elif '],
+            
+            # Loops
+            'loops': ['for ', 'for(', 'while ', 'while('],
             'for': ['for ', 'for('],
             'while': ['while ', 'while('],
+            'for-loop': ['for ', 'for('],
+            'while-loop': ['while ', 'while('],
+            'nested-loops': ['for ', 'while '],  # Detected by structure analysis
+            'range': ['range('],
+            
+            # Functions
             'function': ['def '],
+            'functions': ['def '],
+            'function-definition': ['def '],
             'return': ['return '],
+            'lambda': ['lambda '],
+            
+            # String Operations
+            'concatenation': ['+', 'f"', "f'"],
+            'f-strings': ['f"', "f'"],
+            'formatting': ['.format(', 'f"', "f'", '%s', '%d'],
+            'split': ['.split('],
+            
+            # Built-in Functions
+            'len': ['len('],
+            
+            # Collections
             'list': ['[', 'list('],
             'dict': ['{', 'dict('],
             'tuple': ['(', 'tuple('],
+            'indexing': ['['],
+            'slicing': ['[', ':'],
+            'append': ['.append('],
+            'in-operator': [' in ', ' in('],
+            
+            # Advanced
             'class': ['class '],
             'import': ['import ', 'from '],
             'try': ['try:'],
             'except': ['except'],
             'with': ['with '],
-            'lambda': ['lambda '],
             'comprehension': ['for ', 'if ']
         }
         
@@ -479,10 +477,26 @@ async def analyze_code(
                 should_offer_proactive_help = True
         
         # Generate AI feedback with rich context
+        # Extract objectives from mission context
+        objectives = []
+        if request.mission_context and request.mission_context.objectives:
+            objectives = request.mission_context.objectives
+        elif hasattr(request, 'objectives'):
+            objectives = request.objectives or []
+        
+        # Extract mission description from mission context
+        mission_description = None
+        if request.mission_context and request.mission_context.description:
+            mission_description = request.mission_context.description
+        elif hasattr(request, 'description'):
+            mission_description = request.description
+        
         analysis = feedback_engine.generate_analysis(
             code=code,
             execution_result=execution_result,
             expected_concepts=required_concepts,
+            objectives=objectives,  # NEW: Pass objectives to AI
+            mission_description=mission_description,  # NEW: Pass mission description to AI
             difficulty=request.mission_context.difficulty if request.mission_context else request.difficulty,
             attempts=attempt_number,
             time_spent=student_ctx.time_spent if student_ctx else request.time_spent,
@@ -493,9 +507,11 @@ async def analyze_code(
             mission_context=request.mission_context.dict() if request.mission_context else None,  # NEW: For code differentiation
         )
         
-        # Override analysis with weighted scoring results
+        # Use AI's success determination (DO NOT OVERRIDE!)
+        # The AI has already parsed its own YES/NO and set analysis.success
+        # We only override score and concepts, NOT success
         analysis.score = final_score
-        analysis.success = success
+        # analysis.success = success  # REMOVED: Don't override AI's decision!
         analysis.detected_concepts = detected_concepts
         
         # Calculate weak and strong concepts
@@ -529,43 +545,14 @@ async def analyze_code(
             elif behavior_ctx and behavior_ctx.idle_time and behavior_ctx.idle_time > 300:
                 analysis.hints.insert(0, "🤔 Feeling stuck? Try breaking down the problem into smaller steps!")
         
-        # Add validation feedback if cheating detected
-        if validation_result and not validation_result['is_valid']:
-            analysis.feedback = f"{validation_result['feedback']}\n\n**AI Feedback:**\n{analysis.feedback}"
-            
-            for issue in validation_result['issues']:
-                if 'hardcode' in issue.lower():
-                    analysis.hints.insert(0, "💡 Don't just print the expected answer - use the programming concepts to solve it!")
-                if 'missing' in issue.lower():
-                    analysis.hints.insert(0, "📚 Make sure to use the concepts taught in this mission!")
+        # REMOVED: Dual validation system disabled
+        # Previously, solution_validator would check concepts separately from AI
+        # This caused contradictions where AI said "success" but validator said "missing concepts"
+        # NOW: Only AI service validates - single source of truth
         
-        # === OBJECTIVES-FOCUSED FEEDBACK ===
-        # Provide meaningful feedback based on what was achieved, not just output matching
-        
-        if success:
-            # SUCCESS: Objectives achieved!
-            if validation_mode == 'creative':
-                analysis.feedback = f"🌟 Excellent! You achieved the mission objectives!\n\n✅ Concepts mastered: {', '.join(strong_concepts) if strong_concepts else 'None'}\n✅ Code structure: Good\n✅ Creativity: Well done!\n\n{analysis.feedback}"
-            elif validation_mode == 'concept-only':
-                analysis.feedback = f"🎯 Perfect! You used the required concepts correctly!\n\n✅ Concepts used: {', '.join(strong_concepts) if strong_concepts else 'None'}\n\n{analysis.feedback}"
-            else:
-                analysis.feedback = f"✨ Great work! Mission objectives achieved!\n\n✅ All required concepts used\n✅ Code executes correctly\n\n{analysis.feedback}"
-        else:
-            # NOT SUCCESS: Provide constructive feedback based on what's missing
-            missing_parts = []
-            
-            if not code_runs:
-                missing_parts.append("⚠️ Code has execution errors")
-            if not concepts_achieved:
-                missing_parts.append(f"📚 Missing concepts: {', '.join(weak_concepts) if weak_concepts else 'None'}")
-            if not structure_valid and validation_mode != 'concept-only':
-                if validation_mode == 'creative':
-                    missing_parts.append(f"📏 Output structure: Expected {expected_line_count} lines, got {len([l for l in (execution_result.get('stdout') or '').split('\\n') if l.strip()])}")
-                else:
-                    missing_parts.append("📊 Output doesn't match expected result")
-            
-            feedback_header = "🔍 Mission objectives not fully achieved yet. Here's what to work on:\n\n"
-            analysis.feedback = feedback_header + '\n'.join(missing_parts) + f"\n\n{analysis.feedback}"
+        # SIMPLIFIED: Just provide clean AI feedback without prepending status headers
+        # The AI's feedback already includes appropriate success/failure messaging
+        # Don't add confusing "Mission objectives not fully achieved" when AI says otherwise
         
         # Add informational output comparison (not judgemental)
         if expected_output and validation_mode != 'concept-only':

@@ -61,15 +61,48 @@ class SolutionValidator:
         score_multiplier = 1.0
         validation_rules = validation_rules or {}
         
-        # 1. Check if output matches (prerequisite)
-        if actual_output.strip() != expected_output.strip():
-            return ValidationResult(
-                is_valid=False,
-                score_multiplier=0.0,
-                issues=["Output doesn't match expected result"],
-                detected_patterns=[],
-                complexity_score=0
-            )
+        # CRITICAL: Determine validation mode FIRST
+        # MODE A: OUTPUT-ONLY - No required concepts = just verify output exists (not exact match)
+        # MODE B: CONCEPT-REQUIRED - Has required concepts = verify concepts + reasonable output
+        all_required_concepts = list(required_concepts)
+        if validation_rules.get('requiredConcepts'):
+            all_required_concepts.extend(validation_rules['requiredConcepts'])
+        
+        is_output_only_mode = len(all_required_concepts) == 0
+        
+        # 1. Check output appropriately based on mode
+        if validation_rules.get('requireExactOutput', False):
+            # EXPLICIT requirement for exact output match (e.g., test cases)
+            if actual_output.strip() != expected_output.strip():
+                return ValidationResult(
+                    is_valid=False,
+                    score_multiplier=0.0,
+                    issues=["Output doesn't match expected result"],
+                    detected_patterns=[],
+                    complexity_score=0
+                )
+        elif not is_output_only_mode:
+            # CONCEPT-REQUIRED mode: Output should be reasonable but doesn't need exact match
+            # Check if there's SOME output at least
+            if not actual_output.strip():
+                return ValidationResult(
+                    is_valid=False,
+                    score_multiplier=0.0,
+                    issues=["No output produced"],
+                    detected_patterns=[],
+                    complexity_score=0
+                )
+        else:
+            # OUTPUT-ONLY mode: Just verify SOME output exists
+            # Student can print ANYTHING reasonable (different names, ages, etc.)
+            if not actual_output.strip():
+                return ValidationResult(
+                    is_valid=False,
+                    score_multiplier=0.0,
+                    issues=["No output produced"],
+                    detected_patterns=[],
+                    complexity_score=0
+                )
         
         # 2. Check for forbidden patterns (NEW from schema)
         if validation_rules.get('forbiddenPatterns'):
@@ -82,8 +115,12 @@ class SolutionValidator:
                 score_multiplier *= 0.3  # Severe penalty for using forbidden code
         
         # 3. Detect hardcoded output (cheating)
-        # Only check if explicitly enabled in validation rules
-        if validation_rules.get('disallowHardcodedOutput', True):
+        # IMPORTANT: Only check if EXPLICITLY ENABLED in validation rules
+        # By default, students can write simple code if it meets objectives
+        # The mission objectives define requirements, not how code is structured
+        should_check_hardcoding = validation_rules.get('disallowHardcodedOutput', False)
+        
+        if should_check_hardcoding:
             is_hardcoded, hardcode_issues = self._check_hardcoded_output(
                 code, expected_output
             )
@@ -92,33 +129,33 @@ class SolutionValidator:
                 detected_patterns.append("hardcoded_output")
                 score_multiplier *= 0.3  # Severe penalty
         
-        # 4. Check for required concepts (merge mission concepts + validation rules)
-        all_required_concepts = list(required_concepts)
-        if validation_rules.get('requiredConcepts'):
-            all_required_concepts.extend(validation_rules['requiredConcepts'])
-        
-        missing_concepts = self._check_required_concepts(code, all_required_concepts)
+        # 4. Check for required concepts (only in CONCEPT-REQUIRED mode)
+        missing_concepts = []
+        if not is_output_only_mode:
+            missing_concepts = self._check_required_concepts(code, all_required_concepts)
         if missing_concepts:
             issues.append(f"Missing required concepts: {', '.join(missing_concepts)}")
             detected_patterns.append("missing_concepts")
             score_multiplier *= 0.6
         
-        # 5. Analyze code complexity
+        # 5. Analyze code complexity (for metrics only, not validation)
+        # REMOVED PENALTY: Don't penalize simple code if it meets objectives
+        # The mission objectives define what's required, not arbitrary complexity metrics
         complexity_score = self._analyze_complexity(code, difficulty)
-        if complexity_score < 20:
-            issues.append("Code is too simple for this mission")
-            detected_patterns.append("insufficient_complexity")
-            score_multiplier *= 0.7
         
-        # 6. Check for proper structure
-        structure_issues = self._check_code_structure(code, all_required_concepts)
+        # 6. Check for proper structure (only if concepts are required AND not met)
+        # Don't penalize structure if objectives are met
+        structure_issues = []
+        if not is_output_only_mode and missing_concepts:
+            # Only check structure if concepts are missing
+            structure_issues = self._check_code_structure(code, all_required_concepts)
         if structure_issues:
             issues.extend(structure_issues)
             detected_patterns.append("poor_structure")
-            score_multiplier *= 0.8
+            score_multiplier *= 0.9  # Reduced penalty
         
         # 7. Detect copy-paste patterns (only if hardcoded output check is enabled)
-        if validation_rules.get('disallowHardcodedOutput', True):
+        if should_check_hardcoding:
             if self._detect_copy_paste(code, expected_output):
                 issues.append("Code appears to be directly copying expected output")
                 detected_patterns.append("copy_paste")
@@ -169,7 +206,10 @@ class SolutionValidator:
         expected_output: str
     ) -> Tuple[bool, List[str]]:
         """
-        Check if code directly prints the expected output without computation.
+        Check if code directly prints the expected output without ANY programming logic.
+        
+        CRITICAL: Only flag as hardcoding if code has ZERO programming constructs.
+        If code uses variables, operations, loops, conditionals, etc., it's NOT hardcoding!
         
         Returns:
             Tuple of (is_hardcoded, list of issues)
@@ -178,30 +218,36 @@ class SolutionValidator:
         code_clean = code.strip()
         expected_clean = expected_output.strip()
         
-        # Check if code is just a single print statement with the exact output
-        single_print_pattern = r'^\s*print\s*\(\s*["\']' + re.escape(expected_clean) + r'["\']\s*\)\s*$'
-        if re.match(single_print_pattern, code_clean, re.MULTILINE | re.DOTALL):
-            issues.append("Code directly prints the expected output without any logic")
-            return True, issues
+        # FIRST: Check if code has ANY programming constructs
+        # If it does, it's NOT hardcoding regardless of output matching
+        has_logic_constructs = any(keyword in code_clean for keyword in [
+            'for ', 'while ', 'if ', 'elif ', 'else:', 'def ', 'class ',
+            '=',  # Variable assignment ← KEY: This means code has logic!
+            '+', '-', '*', '/', '//', '%', '**',  # Arithmetic operations
+            'input(', 'range(', 'len(', 'int(', 'str(', 'float(',  # Function calls
+            '[', '{',  # Data structures (lists, dicts)
+        ])
         
-        # Check if code contains the exact expected output as a string literal
-        # BUT ONLY if there's no conditional logic (if/else/elif/for/while)
-        if expected_clean and len(expected_clean) > 3:
-            # Check if code has control flow structures
-            has_conditional = re.search(r'\b(if|elif|else|for|while|def)\b', code_clean)
-            
-            # If code has control flow, it's likely legitimate use of string literals
-            # Only flag as hardcoded if it's direct printing without logic
-            if not has_conditional:
-                # Escape special regex characters in expected output
-                escaped_expected = re.escape(expected_clean)
-                # Check for the string in quotes
-                if re.search(r'["\']' + escaped_expected + r'["\']', code_clean):
-                    issues.append("Code contains hardcoded expected output as string literal")
-                    return True, issues
+        if has_logic_constructs:
+            # Code has programming logic - NOT hardcoding!
+            # Example: name = "Alex"; print(name) ← Uses variable = NOT hardcoding
+            # Example: print(40 + 2) ← Uses arithmetic = NOT hardcoding
+            return False, []
+        
+        # SECOND: Only check for hardcoding if code has NO logic
+        # Check if code is extremely simple and just prints a literal
+        code_lines = [line.strip() for line in code_clean.split('\n') if line.strip() and not line.strip().startswith('#')]
+        
+        # If code is very short (< 50 chars) and contains expected output as literal
+        if len(code_clean) < 50 and expected_clean and len(expected_clean) > 3:
+            # Check if it's just print("expected output")
+            escaped_expected = re.escape(expected_clean)
+            if re.search(r'print\s*\(\s*["\']' + escaped_expected + r'["\']\s*\)', code_clean):
+                issues.append("Code directly prints the expected output without any logic or variables")
+                return True, issues
         
         # Check for hardcoded numbers that match expected output
-        if expected_clean.isdigit():
+        if expected_clean.isdigit() and len(code_clean) < 30:
             # Check if code just prints the number directly
             if re.match(r'^\s*print\s*\(\s*' + expected_clean + r'\s*\)\s*$', code_clean):
                 issues.append("Code directly prints the expected number without calculation")
@@ -361,26 +407,38 @@ class SolutionValidator:
     def _detect_copy_paste(self, code: str, expected_output: str) -> bool:
         """
         Detect if student just copied expected output into print statement.
-        Only flags as copy-paste if there's NO conditional logic.
+        
+        CRITICAL: Only flags as copy-paste if there's NO programming logic.
+        If code has variables, operations, loops, conditionals, it's NOT copy-paste!
         
         Returns:
             True if copy-paste detected
         """
-        # If code has control flow structures, it's likely legitimate
-        has_control_flow = re.search(r'\b(if|elif|else|for|while|def)\b', code)
-        if has_control_flow:
-            # Code has logic, not just copy-paste
+        # FIRST: Check if code has ANY programming constructs
+        has_logic_constructs = any(keyword in code for keyword in [
+            'for ', 'while ', 'if ', 'elif ', 'else:', 'def ', 'class ',
+            '=',  # Variable assignment ← KEY: This means code has logic!
+            '+', '-', '*', '/', '//', '%', '**',  # Arithmetic operations
+            'input(', 'range(', 'len(', 'int(', 'str(', 'float(',  # Function calls
+            '[', '{',  # Data structures
+        ])
+        
+        if has_logic_constructs:
+            # Code has programming logic - NOT copy-paste!
+            # Example: name = "Alex"; print(name) ← Uses variable = NOT copy-paste
+            # Example: print(40 + 2) ← Uses arithmetic = NOT copy-paste
             return False
         
-        # Check if expected output appears verbatim in code as string
-        if expected_output and len(expected_output) > 5:
+        # SECOND: Only check for copy-paste if code has NO logic
+        # Check if expected output appears verbatim in code as string (only if code is simple)
+        if expected_output and len(expected_output) > 5 and len(code) < 100:
             # Look for the exact string in the code
             pattern = r'["\']' + re.escape(expected_output.strip()) + r'["\']'
             if re.search(pattern, code):
                 return True
         
-        # Check for multi-line output being directly printed
-        if '\n' in expected_output:
+        # Check for multi-line output being directly printed (only if code is simple)
+        if '\n' in expected_output and len(code) < 200:
             lines = expected_output.strip().split('\n')
             if len(lines) > 2:
                 # Check if all lines appear as string literals
