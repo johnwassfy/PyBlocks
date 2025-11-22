@@ -7,7 +7,7 @@ import { LearningProfileService } from '../learning-profile/learning-profile.ser
 import { Types } from 'mongoose';
 import { SubmissionCompletedEvent } from '../../common/events/submission.events';
 import { AiAnalysisResponseDto } from '../ai-connector/dto/ai-analysis.dto';
-import { Achievement } from '../gamification/schemas/achievement.schema';
+import { Achievement } from '../achievements/schemas/achievement.schema';
 
 /**
  * AdaptivityService - The brain of the adaptive learning system

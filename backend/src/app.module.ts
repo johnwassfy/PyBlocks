@@ -11,6 +11,7 @@ import { MissionsModule } from './modules/missions/missions.module';
 import { SubmissionsModule } from './modules/submissions/submissions.module';
 import { ProgressModule } from './modules/progress/progress.module';
 import { GamificationModule } from './modules/gamification/gamification.module';
+import { AchievementsModule } from './modules/achievements/achievements.module';
 import { AiModule } from './modules/ai/ai.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AdaptivityModule } from './modules/adaptivity/adaptivity.module';
@@ -42,6 +43,7 @@ import { LearningProfileModule } from './modules/learning-profile/learning-profi
     SubmissionsModule,
     ProgressModule,
     GamificationModule,
+    AchievementsModule,
     AiModule,
     AnalyticsModule,
     AdaptivityModule, // New adaptive learning brain

@@ -6,12 +6,17 @@ import {
   Gamification,
   GamificationSchema,
 } from './schemas/gamification.schema';
+import {
+  Achievement,
+  AchievementSchema,
+} from '../achievements/schemas/achievement.schema';
 import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Gamification.name, schema: GamificationSchema },
+      { name: Achievement.name, schema: AchievementSchema },
     ]),
     forwardRef(() => UsersModule),
   ],

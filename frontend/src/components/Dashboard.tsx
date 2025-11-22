@@ -27,6 +27,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from './ui/sheet';
+import AchievementsSidebar from './AchievementsSidebar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -308,130 +309,9 @@ export default function Dashboard() {
                     <span className="sm:hidden">Achievements</span>
                   </Button>
                 </SheetTrigger>
-                <SheetContent className="w-full sm:max-w-md overflow-y-auto">
-                <SheetHeader>
-                  <SheetTitle className="text-2xl">Your Achievements 🏆</SheetTitle>
-                  <SheetDescription>
-                    Keep coding to unlock more achievements!
-                    {insights?.gamification?.achievements && 
-                      ` ${insights.gamification.achievements.length} unlocked so far!`}
-                  </SheetDescription>
-                </SheetHeader>
-                
-                <div className="mt-6 space-y-4">
-                  {insights?.gamification?.achievements ? (() => {
-                    // Define all possible achievements
-                    const allAchievements = [
-                      { id: 'first_mission', name: 'First Steps 🐣', description: 'Complete your very first mission!', icon: '🐣', rarity: 'common', category: 'mission' },
-                      { id: 'five_missions', name: 'Getting Started 🌱', description: 'Complete 5 missions!', icon: '🌱', rarity: 'common', category: 'mission' },
-                      { id: 'ten_missions', name: 'Problem Solver 🧩', description: 'Complete 10 missions!', icon: '🧩', rarity: 'rare', category: 'mission' },
-                      { id: 'twenty_missions', name: 'Code Explorer 🗺️', description: 'Complete 20 missions!', icon: '🗺️', rarity: 'rare', category: 'mission' },
-                      { id: 'fifty_missions', name: 'Master Coder 🎓', description: 'Complete 50 missions!', icon: '🎓', rarity: 'epic', category: 'mission' },
-                      { id: 'hundred_missions', name: 'Coding Legend 👑', description: 'Complete 100 missions! You are amazing!', icon: '👑', rarity: 'legendary', category: 'mission' },
-                      { id: 'xp_100', name: 'Rookie Coder 🌟', description: 'Earn 100 XP!', icon: '🌟', rarity: 'common', category: 'xp' },
-                      { id: 'xp_500', name: 'Rising Star ⭐', description: 'Earn 500 XP!', icon: '⭐', rarity: 'common', category: 'xp' },
-                      { id: 'xp_1000', name: 'Code Warrior ⚔️', description: 'Earn 1,000 XP!', icon: '⚔️', rarity: 'rare', category: 'xp' },
-                      { id: 'xp_2500', name: 'Python Wizard 🧙', description: 'Earn 2,500 XP!', icon: '🧙', rarity: 'epic', category: 'xp' },
-                      { id: 'xp_5000', name: 'Coding Champion 🏆', description: 'Earn 5,000 XP!', icon: '🏆', rarity: 'legendary', category: 'xp' },
-                      { id: 'streak_3', name: 'On Fire 🔥', description: 'Learn for 3 days in a row!', icon: '🔥', rarity: 'common', category: 'streak' },
-                      { id: 'streak_7', name: 'Week Warrior 📅', description: 'Learn for 7 days in a row!', icon: '📅', rarity: 'rare', category: 'streak' },
-                      { id: 'streak_14', name: 'Dedicated Learner 💪', description: 'Learn for 14 days in a row!', icon: '💪', rarity: 'rare', category: 'streak' },
-                      { id: 'streak_30', name: 'Monthly Master 🌙', description: 'Learn for 30 days in a row!', icon: '🌙', rarity: 'epic', category: 'streak' },
-                      { id: 'streak_100', name: 'Unstoppable 🚀', description: 'Learn for 100 days in a row! Incredible!', icon: '🚀', rarity: 'legendary', category: 'streak' },
-                      { id: 'speed_demon', name: 'Speed Demon ⚡', description: 'Complete a mission in under 2 minutes!', icon: '⚡', rarity: 'rare', category: 'speed' },
-                      { id: 'lightning_fast', name: 'Lightning Fast 🌩️', description: 'Complete a hard mission in under 5 minutes!', icon: '🌩️', rarity: 'epic', category: 'speed' },
-                      { id: 'perfect_ten', name: 'Perfect Ten 💯', description: 'Get a perfect score on 10 missions!', icon: '💯', rarity: 'epic', category: 'mastery' },
-                      { id: 'no_hints', name: 'Brain Power 🧠', description: 'Complete a hard mission without using hints!', icon: '🧠', rarity: 'rare', category: 'mastery' },
-                      { id: 'first_try', name: 'One Shot Wonder 🎯', description: 'Complete a mission on your first try!', icon: '🎯', rarity: 'rare', category: 'mastery' },
-                      { id: 'night_owl', name: 'Night Owl 🦉', description: 'Complete a mission after 9 PM!', icon: '🦉', rarity: 'common', category: 'special' },
-                      { id: 'early_bird', name: 'Early Bird 🐦', description: 'Complete a mission before 7 AM!', icon: '🐦', rarity: 'common', category: 'special' },
-                      { id: 'weekend_warrior', name: 'Weekend Warrior 🎮', description: 'Complete 5 missions on a weekend!', icon: '🎮', rarity: 'rare', category: 'special' },
-                      { id: 'bug_hunter', name: 'Bug Hunter 🐛', description: 'Fix 10 syntax errors!', icon: '🐛', rarity: 'common', category: 'special' },
-                      { id: 'creative_genius', name: 'Creative Genius 🎨', description: 'Be creative with code!', icon: '🎨', rarity: 'rare', category: 'special' },
-                    ];
-                    
-                    const unlockedIds = new Set(insights.gamification.achievements.map((a: any) => a.id));
-                    
-                    const rarityStyles = {
-                      common: 'from-gray-50 to-gray-100 border-gray-300',
-                      rare: 'from-blue-50 to-blue-100 border-blue-400',
-                      epic: 'from-purple-50 to-purple-100 border-purple-400',
-                      legendary: 'from-yellow-50 to-amber-100 border-amber-400'
-                    };
-                    
-                    const rarityBadges = {
-                      common: 'bg-gray-500',
-                      rare: 'bg-blue-500',
-                      epic: 'bg-purple-500',
-                      legendary: 'bg-gradient-to-r from-yellow-500 to-amber-500'
-                    };
-                    
-                    return allAchievements.map((achievement, i) => {
-                      const isUnlocked = unlockedIds.has(achievement.id);
-                      const unlockedAchievement = insights.gamification.achievements.find((a: any) => a.id === achievement.id);
-                      
-                      return (
-                        <motion.div
-                          key={achievement.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.05 }}
-                          whileHover={isUnlocked ? { scale: 1.02 } : {}}
-                          className={`p-4 rounded-2xl border-2 bg-gradient-to-br transition-all ${
-                            isUnlocked
-                              ? `${rarityStyles[achievement.rarity as 'common' | 'rare' | 'epic' | 'legendary'] || rarityStyles.common} shadow-md opacity-100`
-                              : 'from-gray-100 to-gray-150 border-gray-200 shadow-sm opacity-60 grayscale'
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className={`text-5xl transition-all ${!isUnlocked ? 'opacity-50 grayscale' : ''}`}>
-                              {achievement.icon}
-                            </div>
-                            <div className="flex-1">
-                              <h4 className={`font-bold mb-1 ${isUnlocked ? 'text-gray-800' : 'text-gray-500'}`}>
-                                {achievement.name}
-                              </h4>
-                              <p className={`text-xs mb-2 ${isUnlocked ? 'text-gray-600' : 'text-gray-400'}`}>
-                                {achievement.description}
-                              </p>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <Badge className={`${
-                                  isUnlocked
-                                    ? `${rarityBadges[achievement.rarity as 'common' | 'rare' | 'epic' | 'legendary'] || rarityBadges.common} text-white border-0`
-                                    : 'bg-gray-300 text-gray-600 border-0'
-                                } text-xs capitalize`}>
-                                  {achievement.rarity}
-                                </Badge>
-                                <Badge className={`text-xs capitalize ${
-                                  isUnlocked
-                                    ? 'bg-indigo-100 text-indigo-700 border-indigo-200'
-                                    : 'bg-gray-200 text-gray-500 border-gray-300'
-                                }`}>
-                                  {achievement.category}
-                                </Badge>
-                                {isUnlocked && unlockedAchievement?.unlockedAt && (
-                                  <span className="text-xs text-gray-500">
-                                    {new Date(unlockedAchievement.unlockedAt).toLocaleDateString()}
-                                  </span>
-                                )}
-                                {!isUnlocked && (
-                                  <span className="text-xs text-gray-400 font-medium">🔒 Locked</span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </motion.div>
-                      );
-                    });
-                  })() : (
-                    <div className="text-center text-gray-400 py-8">
-                      <Trophy className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                      <p>No achievements data available.</p>
-                      <p className="text-sm mt-2">Complete missions to earn your first achievement!</p>
-                    </div>
-                  )}
-                </div>
-              </SheetContent>
+                <SheetContent className="w-full overflow-y-auto p-0">
+                  <AchievementsSidebar gamification={gamification} />
+                </SheetContent>
               </Sheet>
 
               {/* Settings Menu */}
@@ -776,8 +656,6 @@ export default function Dashboard() {
             })}
           </div>
         </div>
-
-
       </div>
     </div>
   );

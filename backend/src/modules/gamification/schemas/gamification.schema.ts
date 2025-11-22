@@ -1,6 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { Achievement, AchievementSchema } from './achievement.schema';
+import {
+  UserAchievement,
+  UserAchievementSchema,
+} from '../../achievements/schemas/achievement.schema';
 
 export type GamificationDocument = Gamification & Document;
 
@@ -16,9 +19,9 @@ export class Gamification {
   @Prop({ default: 1 })
   level: number;
 
-  // 🏆 Achievements (Rich structure with unlock dates)
-  @Prop({ type: [AchievementSchema], default: [] })
-  achievements: Achievement[];
+  // 🏆 Achievements (References to unlocked canonical achievements)
+  @Prop({ type: [UserAchievementSchema], default: [] })
+  achievements: UserAchievement[];
 
   // 🔥 Daily Streak Tracking
   @Prop({ default: 0 })

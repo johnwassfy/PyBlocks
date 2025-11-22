@@ -5,10 +5,7 @@ import {
   Gamification,
   GamificationDocument,
 } from './schemas/gamification.schema';
-import {
-  ACHIEVEMENT_DEFINITIONS,
-  Achievement,
-} from './schemas/achievement.schema';
+import { Achievement } from '../achievements/schemas/achievement.schema';
 
 @Injectable()
 export class GamificationService {
@@ -17,6 +14,8 @@ export class GamificationService {
   constructor(
     @InjectModel(Gamification.name)
     private gamificationModel: Model<GamificationDocument>,
+    @InjectModel(Achievement.name)
+    private achievementModel: Model<any>,
   ) {}
 
   /**
@@ -199,68 +198,80 @@ export class GamificationService {
   ): Promise<Achievement[]> {
     const newAchievements: Achievement[] = [];
 
-    // Mission-based achievements
-    const missionAchievements = [
-      { id: 'first_mission', threshold: 1 },
-      { id: 'five_missions', threshold: 5 },
-      { id: 'ten_missions', threshold: 10 },
-      { id: 'twenty_missions', threshold: 20 },
-      { id: 'fifty_missions', threshold: 50 },
-      { id: 'hundred_missions', threshold: 100 },
-    ];
-
-    for (const achievement of missionAchievements) {
-      if (gamification.totalMissionsCompleted >= achievement.threshold) {
-        const unlocked = await this.unlockAchievement(userId, achievement.id);
-        if (unlocked) newAchievements.push(unlocked);
+    // Mission-based thresholds. We expect canonical achievement documents
+    // in the achievements collection to include a `category: 'mission'` and
+    // a numeric `target` field (e.g., target: 5 for 5 missions).
+    const missionThresholds = [1, 5, 10, 20, 50, 100];
+    for (const threshold of missionThresholds) {
+      if (gamification.totalMissionsCompleted >= threshold) {
+        const def = await this.achievementModel.findOne({ category: 'mission', target: threshold }).exec();
+        if (def) {
+          const unlocked = await this.unlockAchievement(userId, String(def._id));
+          if (unlocked) newAchievements.push(unlocked);
+        }
       }
     }
 
-    // XP-based achievements
-    const xpAchievements = [
-      { id: 'xp_100', threshold: 100 },
-      { id: 'xp_500', threshold: 500 },
-      { id: 'xp_1000', threshold: 1000 },
-      { id: 'xp_2500', threshold: 2500 },
-      { id: 'xp_5000', threshold: 5000 },
-    ];
-
-    for (const achievement of xpAchievements) {
-      if (gamification.xp >= achievement.threshold) {
-        const unlocked = await this.unlockAchievement(userId, achievement.id);
-        if (unlocked) newAchievements.push(unlocked);
+    // XP-based thresholds
+    const xpThresholds = [100, 500, 1000, 2500, 5000];
+    for (const threshold of xpThresholds) {
+      if (gamification.xp >= threshold) {
+        const def = await this.achievementModel.findOne({ category: 'xp', target: threshold }).exec();
+        if (def) {
+          const unlocked = await this.unlockAchievement(userId, String(def._id));
+          if (unlocked) newAchievements.push(unlocked);
+        }
       }
     }
 
-    // Context-based achievements
+    // Context-based and special achievements: Look them up by category and specific criteria.
+    // These achievements must exist in the DB with proper category tags.
     if (context?.isFirstTry) {
-      const unlocked = await this.unlockAchievement(userId, 'first_try');
-      if (unlocked) newAchievements.push(unlocked);
+      const def = await this.achievementModel.findOne({ category: 'mastery', name: /One Shot Wonder/i }).exec();
+      if (def) {
+        const unlocked = await this.unlockAchievement(userId, String(def._id));
+        if (unlocked) newAchievements.push(unlocked);
+      }
     }
 
     if (context?.isPerfectScore && gamification.perfectScoreCount >= 10) {
-      const unlocked = await this.unlockAchievement(userId, 'perfect_ten');
-      if (unlocked) newAchievements.push(unlocked);
+      const def = await this.achievementModel.findOne({ category: 'mastery', name: /Perfect Ten/i }).exec();
+      if (def) {
+        const unlocked = await this.unlockAchievement(userId, String(def._id));
+        if (unlocked) newAchievements.push(unlocked);
+      }
     }
 
     if (context?.isHardDifficulty && context?.hintsUsed === 0) {
-      const unlocked = await this.unlockAchievement(userId, 'no_hints');
-      if (unlocked) newAchievements.push(unlocked);
+      const def = await this.achievementModel.findOne({ category: 'mastery', name: /Brain Power/i }).exec();
+      if (def) {
+        const unlocked = await this.unlockAchievement(userId, String(def._id));
+        if (unlocked) newAchievements.push(unlocked);
+      }
     }
 
     if (context?.timeSpentMinutes && context.timeSpentMinutes < 2) {
-      const unlocked = await this.unlockAchievement(userId, 'speed_demon');
-      if (unlocked) newAchievements.push(unlocked);
+      const def = await this.achievementModel.findOne({ category: 'speed', name: /Speed Demon/i }).exec();
+      if (def) {
+        const unlocked = await this.unlockAchievement(userId, String(def._id));
+        if (unlocked) newAchievements.push(unlocked);
+      }
     }
 
     // Time-based achievements
     const currentHour = new Date().getHours();
     if (currentHour >= 21 || currentHour < 6) {
-      const unlocked = await this.unlockAchievement(userId, 'night_owl');
-      if (unlocked) newAchievements.push(unlocked);
+      const def = await this.achievementModel.findOne({ category: 'special', name: /Night Owl/i }).exec();
+      if (def) {
+        const unlocked = await this.unlockAchievement(userId, String(def._id));
+        if (unlocked) newAchievements.push(unlocked);
+      }
     } else if (currentHour < 7) {
-      const unlocked = await this.unlockAchievement(userId, 'early_bird');
-      if (unlocked) newAchievements.push(unlocked);
+      const def = await this.achievementModel.findOne({ category: 'special', name: /Early Bird/i }).exec();
+      if (def) {
+        const unlocked = await this.unlockAchievement(userId, String(def._id));
+        if (unlocked) newAchievements.push(unlocked);
+      }
     }
 
     return newAchievements;
@@ -274,18 +285,14 @@ export class GamificationService {
     streak: number,
   ): Promise<Achievement[]> {
     const newAchievements: Achievement[] = [];
-    const streakAchievements = [
-      { id: 'streak_3', threshold: 3 },
-      { id: 'streak_7', threshold: 7 },
-      { id: 'streak_14', threshold: 14 },
-      { id: 'streak_30', threshold: 30 },
-      { id: 'streak_100', threshold: 100 },
-    ];
-
-    for (const achievement of streakAchievements) {
-      if (streak >= achievement.threshold) {
-        const unlocked = await this.unlockAchievement(userId, achievement.id);
-        if (unlocked) newAchievements.push(unlocked);
+    const streakThresholds = [3, 7, 14, 30, 100];
+    for (const threshold of streakThresholds) {
+      if (streak >= threshold) {
+        const def = await this.achievementModel.findOne({ category: 'streak', target: threshold }).exec();
+        if (def) {
+          const unlocked = await this.unlockAchievement(userId, String(def._id));
+          if (unlocked) newAchievements.push(unlocked);
+        }
       }
     }
 
@@ -301,28 +308,36 @@ export class GamificationService {
   ): Promise<Achievement | null> {
     const gamification = await this.getOrCreateGamification(userId);
 
-    // Check if already unlocked
+    // Locate the canonical achievement by MongoDB _id
+    if (!Types.ObjectId.isValid(achievementId)) {
+      this.logger.warn(`Invalid achievement ID: ${achievementId}`);
+      return null;
+    }
+
+    const definition = await this.achievementModel.findById(achievementId).exec();
+    if (!definition) {
+      this.logger.warn(`Achievement not found: ${achievementId}`);
+      return null;
+    }
+
+    // Check if already unlocked by achievementId reference
+    const achievementObjectId = new Types.ObjectId(achievementId);
     const alreadyUnlocked = gamification.achievements.some(
-      (a) => a.id === achievementId,
+      (a: any) => a.achievementId && a.achievementId.toString() === achievementObjectId.toString(),
     );
     if (alreadyUnlocked) return null;
 
-    // Find achievement definition
-    const definition = ACHIEVEMENT_DEFINITIONS.find(
-      (a) => a.id === achievementId,
-    );
-    if (!definition) return null;
-
-    // Unlock achievement
-    const achievement = {
-      ...definition,
+    // Create UserAchievement subdocument with achievementId reference and unlockedAt
+    const userAchievement = {
+      achievementId: achievementObjectId,
       unlockedAt: new Date(),
     };
 
-    gamification.achievements.push(achievement);
+    gamification.achievements.push(userAchievement as any);
     await gamification.save();
 
-    return achievement;
+    // Return the full canonical achievement data for response
+    return definition;
   }
 
   /**
