@@ -6,6 +6,7 @@ import { submitCode, type SubmissionResponse } from '../services/submissionsApi'
 import { useChatbot } from './KidSidebar';
 import { useBehaviorTracker } from '../hooks/useBehaviorTracker';
 import FunConsoleModal from './FunConsoleModal';
+import ChatInterface from './ChatInterface';
 import '../styles/kid-sidebar.css';
 
 // Type definitions (move to top)
@@ -37,6 +38,31 @@ export type MissionAnalytics = {
   completionRate?: number;
 };
 
+export enum ToolboxCategoryName {
+  VARIABLES = 'VARIABLES',
+  DECISIONS = 'DECISIONS',
+  ITERATION = 'ITERATION',
+  FUNCTIONS = 'FUNCTIONS',
+  CALCULATIONS = 'CALCULATIONS',
+  OUTPUT_WITH_PLOTTING = 'OUTPUT_WITH_PLOTTING',
+  INPUT = 'INPUT',
+  TURTLES = 'TURTLES',
+  VALUES = 'VALUES',
+  CONVERSIONS = 'CONVERSIONS',
+  LISTS = 'LISTS',
+  DICTIONARIES = 'DICTIONARIES',
+}
+
+export type ToolboxCategoryFilter = {
+  name: ToolboxCategoryName;
+  allowedBlocks?: string[]; // specific block code strings to allow; if empty/undefined, all blocks in category are allowed
+};
+
+export type ToolboxConfig = {
+  mode: 'full' | 'restrict' | 'hide'; // 'full': all blocks, 'restrict': only specified categories, 'hide': empty toolbox
+  categories?: ToolboxCategoryFilter[]; // only used if mode is 'restrict'
+};
+
 export type Mission = {
   _id: string;
   title: string;
@@ -52,12 +78,13 @@ export type Mission = {
   estimatedTime?: number;
   testCases?: { input: string; expectedOutput: string }[];
   concepts?: string[];
-  
+
   // NEW: Step-based mission structure
   steps?: MissionStep[];
   validationRules?: ValidationRules;
   config?: MissionConfig;
   analytics?: MissionAnalytics;
+  toolboxConfig?: ToolboxConfig; // NEW: Toolbox filtering configuration
 };
 export type UserData = {
   id: string;  // MongoDB _id
@@ -124,11 +151,11 @@ export default function BlocklyWorkspace({
   const [showFeedback, setShowFeedback] = useState(false);
   const [attempts, setAttempts] = useState(1);
   const startTimeRef = useRef<number>(Date.now());
-  
+
   // Console Modal State
   const [showConsoleModal, setShowConsoleModal] = useState(false);
   const [consoleCode, setConsoleCode] = useState('');
-  
+
   // 🧠 NEW: Live AI Observation System
   const [blockActivity, setBlockActivity] = useState<any[]>([]);
   const [idleTime, setIdleTime] = useState(0);
@@ -142,6 +169,228 @@ export default function BlocklyWorkspace({
   // 🤖 Chatbot integration
   const chatbot = useChatbot();
 
+  // 🧰 Helper function: Map category display name to enum key
+  const getCategoryKeyFromName = (displayName: string): ToolboxCategoryName | null => {
+    const nameMap: Record<string, ToolboxCategoryName> = {
+      'Variables': ToolboxCategoryName.VARIABLES,
+      'Decisions': ToolboxCategoryName.DECISIONS,
+      'Iteration': ToolboxCategoryName.ITERATION,
+      'Functions': ToolboxCategoryName.FUNCTIONS,
+      'Calculations': ToolboxCategoryName.CALCULATIONS,
+      'Output and Plotting': ToolboxCategoryName.OUTPUT_WITH_PLOTTING,
+      'Input': ToolboxCategoryName.INPUT,
+      'Turtles': ToolboxCategoryName.TURTLES,
+      'Values': ToolboxCategoryName.VALUES,
+      'Conversions': ToolboxCategoryName.CONVERSIONS,
+      'Lists': ToolboxCategoryName.LISTS,
+      'Dictionaries': ToolboxCategoryName.DICTIONARIES,
+    };
+    return nameMap[displayName] || null;
+  };
+
+  // 🧰 Helper function: Apply toolbox filtering based on mission config
+  const applyToolboxFiltering = (mission: Mission) => {
+    console.log('[🧰 Toolbox] === STARTING FILTER PROCESS ===');
+    console.log('[🧰 Toolbox] Mission:', mission?.title);
+    console.log('[🧰 Toolbox] ToolboxConfig:', mission?.toolboxConfig);
+
+    if (!mission?.toolboxConfig) {
+      console.warn('[🧰 Toolbox] ❌ No toolboxConfig found, skipping');
+      return;
+    }
+
+    try {
+      // Get the BlockPy instance
+      const blockPy = editorRef.current;
+      console.log('[🧰 Toolbox] blockPy instance:', !!blockPy);
+
+      // Navigate to blockEditor
+      let blockEditor = null;
+      const pythonEditor = blockPy?.components?.pythonEditor;
+      console.log('[🧰 Toolbox] components.pythonEditor found:', !!pythonEditor);
+
+      if (pythonEditor?.bm?.blockEditor) {
+        blockEditor = pythonEditor.bm.blockEditor;
+        console.log('[🧰 Toolbox] ✅ Found blockEditor via pythonEditor.bm');
+      }
+
+      if (!blockEditor) {
+        console.error('[🧰 Toolbox] ❌ Could not find blockEditor');
+        return;
+      }
+
+      const { mode, categories } = mission.toolboxConfig;
+      console.log('[🧰 Toolbox] Mode:', mode);
+      console.log('[🧰 Toolbox] Categories to restrict:', categories?.map(c => c.name));
+
+      // Get TOOLBOXES object
+      let TOOLBOXES = blockEditor.TOOLBOXES;
+      console.log('[🧰 Toolbox] TOOLBOXES found:', !!TOOLBOXES);
+
+      if (!TOOLBOXES) {
+        console.error('[🧰 Toolbox] ❌ TOOLBOXES not found');
+        return;
+      }
+
+      // Handle modes
+      if (mode === 'full') {
+        console.log('[🧰 Toolbox] Mode FULL: Showing all blocks');
+        if (typeof blockEditor.remakeToolbox === 'function') {
+          blockEditor.remakeToolbox('normal');
+          console.log('[🧰 Toolbox] ✅ Called remakeToolbox("normal")');
+        }
+        return;
+      }
+
+      if (mode === 'hide') {
+        console.log('[🧰 Toolbox] Mode HIDE: Hiding all blocks');
+        if (typeof blockEditor.remakeToolbox === 'function') {
+          blockEditor.remakeToolbox('empty');
+          console.log('[🧰 Toolbox] ✅ Called remakeToolbox("empty")');
+        }
+        return;
+      }
+
+      // RESTRICT mode
+      if (mode === 'restrict' && Array.isArray(categories)) {
+        console.log('[🧰 Toolbox] Mode RESTRICT: Filtering categories');
+
+        const sourceToolbox = TOOLBOXES['normal'];
+        console.log('[🧰 Toolbox] Source toolbox is array:', Array.isArray(sourceToolbox));
+
+        if (!Array.isArray(sourceToolbox)) {
+          console.error('[🧰 Toolbox] ❌ normal toolbox is not an array');
+          return;
+        }
+
+        // ========================================
+        // 📋 COMPLETE TOOLBOX STRUCTURE LOG
+        // ========================================
+        console.log('\n' + '='.repeat(80));
+        console.log('📋 COMPLETE TOOLBOX STRUCTURE - ALL CATEGORIES AND BLOCKS');
+        console.log('='.repeat(80));
+
+        sourceToolbox.forEach((category: any, index: number) => {
+          if (typeof category === 'string') {
+            console.log(`\n[${index}] SEPARATOR: "${category}"`);
+            return;
+          }
+
+          console.log(`\n[${index}] CATEGORY: "${category.name}"`);
+          console.log(`   Color: ${category.colour || 'N/A'}`);
+          console.log(`   Total Blocks: ${category.blocks ? category.blocks.length : 0}`);
+
+          if (category.blocks && Array.isArray(category.blocks)) {
+            console.log(`   Blocks:`);
+            category.blocks.forEach((block: string, blockIndex: number) => {
+              console.log(`      ${blockIndex + 1}. "${block}"`);
+            });
+          }
+        });
+
+        console.log('\n' + '='.repeat(80) + '\n');
+        // ========================================
+
+        // Build filtered toolbox (keep BlockMirror format, not Blockly JSON)
+        const filteredToolbox: any[] = [];
+
+
+        for (const categoryFilter of categories) {
+          const displayName = categoryFilter.name as any;
+          console.log(`[🧰 Toolbox] Looking for category: "${displayName}"`);
+
+          // Find matching category in source (skip separators)
+          const sourceCategory = sourceToolbox.find((cat: any) => {
+            if (typeof cat === 'string') return false;
+            return cat.name === displayName;
+          });
+
+          if (!sourceCategory) {
+            console.warn(`[🧰 Toolbox] ⚠️ Category "${displayName}" not found in source`);
+            continue;
+          }
+
+          console.log(`[🧰 Toolbox] ✅ Found category:`, sourceCategory.name);
+
+          // Clone the category
+          let filteredCategory = { ...sourceCategory };
+
+          // Log available blocks for this category
+          console.log(`[🧰 Toolbox] Available blocks in "${displayName}":`, sourceCategory.blocks);
+
+          // Filter blocks if specified
+          if (categoryFilter.allowedBlocks && categoryFilter.allowedBlocks.length > 0 && sourceCategory.blocks) {
+            const before = sourceCategory.blocks.length;
+
+            // Normalize allowed blocks (unescape JSON escaping)
+            const normalizedAllowed = categoryFilter.allowedBlocks.map((block: string) => {
+              let normalized = block;
+
+              // Handle multiple levels of escaping
+              // First pass: replace \\\" with "
+              normalized = normalized.replace(/\\\\"/g, '"');
+              // Second pass: replace \" with "
+              normalized = normalized.replace(/\\"/g, '"');
+              // Third pass: handle \\ with single \
+              normalized = normalized.replace(/\\\\/g, '\\');
+
+              return normalized;
+            });
+
+            console.log(`[🧰 Toolbox] Allowed blocks from config (raw):`, categoryFilter.allowedBlocks);
+            console.log(`[🧰 Toolbox] Allowed blocks normalized:`, normalizedAllowed);
+
+            filteredCategory.blocks = sourceCategory.blocks.filter((block: string) => {
+              const isAllowed = normalizedAllowed.includes(block);
+              if (!isAllowed) {
+                console.log(`[🧰 Toolbox] ❌ Block NOT matched: "${block}"`);
+              } else {
+                console.log(`[🧰 Toolbox] ✅ Block matched: "${block}"`);
+              }
+              return isAllowed;
+            });
+            console.log(`[🧰 Toolbox] Blocks: ${before} → ${filteredCategory.blocks.length}`);
+          }
+
+          filteredToolbox.push(filteredCategory);
+        }
+
+        console.log('[🧰 Toolbox] Filtered toolbox categories:', filteredToolbox.length);
+        console.log('[🧰 Toolbox] Filtered toolbox:', filteredToolbox);
+
+        // Update TOOLBOXES object
+        TOOLBOXES['__mission__'] = filteredToolbox;
+        console.log('[🧰 Toolbox] ✅ Assigned to TOOLBOXES["__mission__"]');
+
+        // Change BlockMirror configuration to use our filtered toolbox
+        const bm = pythonEditor?.bm;
+        if (bm && bm.configuration) {
+          console.log('[🧰 Toolbox] Current toolbox config:', bm.configuration.toolbox);
+          bm.configuration.toolbox = '__mission__';
+          console.log('[🧰 Toolbox] ✅ Changed configuration.toolbox to "__mission__"');
+        }
+
+        // Force BlockMirror to rebuild the toolbox
+        if (typeof blockEditor.remakeToolbox === 'function') {
+          console.log('[🧰 Toolbox] Calling blockEditor.remakeToolbox()...');
+          try {
+            blockEditor.remakeToolbox();
+            console.log('[🧰 Toolbox] ✅✅✅ TOOLBOX FILTERED SUCCESSFULLY! ✅✅✅');
+          } catch (remakeErr) {
+            console.error('[🧰 Toolbox] remakeToolbox failed:', remakeErr);
+          }
+        } else {
+          console.error('[🧰 Toolbox] ❌ remakeToolbox not available');
+        }
+      }
+    } catch (err) {
+      console.error('[🧰 Toolbox] ❌ EXCEPTION:', err);
+      console.error('[🧰 Toolbox] Stack:', (err as any).stack);
+    }
+
+    console.log('[🧰 Toolbox] === FILTER PROCESS COMPLETE ===');
+  };
+
   // 🧠 Behavior Tracking for Proactive Hints
   const behaviorTracker = useBehaviorTracker({
     userId: user?.id || 'anonymous',  // Fixed: use user.id instead of user.username
@@ -152,24 +401,24 @@ export default function BlocklyWorkspace({
     enabled: true, // Always enabled for testing - change back to !!user && !!mission in production
   });
 
-    // Reset editor to starter code when mission changes
-    useEffect(() => {
-      if (editorRef.current?.components?.editor?.python?.bm?.textEditor && mission?.starterCode !== undefined) {
-        editorRef.current.components.editor.python.bm.textEditor.setValue(mission.starterCode || '');
-      }
-      // Reset tracking variables when mission changes
-      setAttempts(1);
-      startTimeRef.current = Date.now();
-      setShowFeedback(false);
-      // Reset behavioral tracking
-      setBlockActivity([]);
-      setIdleTime(0);
-      setLastEditTime(Date.now());
-      setLiveHint(null);
-      setErrorCount(0);
-      setLastError(null);
-    }, [mission?.starterCode, mission?._id]);
-  
+  // Reset editor to starter code when mission changes
+  useEffect(() => {
+    if (editorRef.current?.components?.editor?.python?.bm?.textEditor && mission?.starterCode !== undefined) {
+      editorRef.current.components.editor.python.bm.textEditor.setValue(mission.starterCode || '');
+    }
+    // Reset tracking variables when mission changes
+    setAttempts(1);
+    startTimeRef.current = Date.now();
+    setShowFeedback(false);
+    // Reset behavioral tracking
+    setBlockActivity([]);
+    setIdleTime(0);
+    setLastEditTime(Date.now());
+    setLiveHint(null);
+    setErrorCount(0);
+    setLastError(null);
+  }, [mission?.starterCode, mission?._id]);
+
   /**
    * Handle code execution when Run button is clicked
    * Now executes code directly and shows real console output
@@ -182,11 +431,11 @@ export default function BlocklyWorkspace({
     // Force BlockPy to sync BEFORE extraction
     try {
       const pythonEditor = editorRef.current.components?.pythonEditor;
-      
+
       if (pythonEditor?.bm?.textEditor) {
         const textEditor = pythonEditor.bm.textEditor;
         let currentText = '';
-        
+
         // Try BlockMirror's getCode() method (BlockMirror-specific)
         if (pythonEditor.bm && typeof pythonEditor.bm.getCode === 'function') {
           try {
@@ -195,7 +444,7 @@ export default function BlocklyWorkspace({
             // Silent fail, try next method
           }
         }
-        
+
         // Try textEditor.getCode() if it exists
         if (!currentText && typeof textEditor.getCode === 'function') {
           try {
@@ -204,7 +453,7 @@ export default function BlocklyWorkspace({
             // Silent fail, try next method
           }
         }
-        
+
         // Check if it's a CodeMirror instance with doc
         if (!currentText && textEditor.doc && typeof textEditor.doc.getValue === 'function') {
           try {
@@ -213,7 +462,7 @@ export default function BlocklyWorkspace({
             // Silent fail, try next method
           }
         }
-        
+
         // Try getDoc() then getValue()
         if (!currentText && typeof textEditor.getDoc === 'function') {
           try {
@@ -225,7 +474,7 @@ export default function BlocklyWorkspace({
             // Silent fail, try next method
           }
         }
-        
+
         // Try direct getValue() 
         if (!currentText && typeof textEditor.getValue === 'function') {
           try {
@@ -234,12 +483,12 @@ export default function BlocklyWorkspace({
             // Silent fail, try next method
           }
         }
-        
+
         // Try accessing the value property directly
         if (!currentText && textEditor.value) {
           currentText = textEditor.value;
         }
-        
+
         // Try CodeMirror instance stored in textEditor
         if (!currentText && textEditor.cm && typeof textEditor.cm.getValue === 'function') {
           try {
@@ -248,7 +497,7 @@ export default function BlocklyWorkspace({
             // Silent fail
           }
         }
-        
+
         // Now force update the file with the extracted text
         if (currentText && pythonEditor.file) {
           if (typeof pythonEditor.file.set === 'function') {
@@ -257,13 +506,13 @@ export default function BlocklyWorkspace({
             pythonEditor.file.contents = currentText;
           }
         }
-        
+
         // Also try to force model update
         if (pythonEditor.bm && typeof pythonEditor.bm.updateModel === 'function') {
           pythonEditor.bm.updateModel();
         }
       }
-      
+
       // Wait for sync to complete
       await new Promise(resolve => setTimeout(resolve, 200));
     } catch (e) {
@@ -272,20 +521,20 @@ export default function BlocklyWorkspace({
 
     // Get the current code from the editor - try multiple methods
     let code = '';
-    
+
     // Method 1: Try to get directly from textEditor using multiple approaches
     try {
       const pythonEditor = editorRef.current.components?.pythonEditor;
       const textEditor = pythonEditor?.bm?.textEditor;
       const bm = pythonEditor?.bm;
-      
+
       if (bm) {
         // Try BlockMirror's getCode() first (BlockMirror-specific)
         if (typeof bm.getCode === 'function') {
           code = bm.getCode();
         }
       }
-      
+
       if (!code && textEditor) {
         // Try textEditor.getCode()
         if (typeof textEditor.getCode === 'function') {
@@ -314,7 +563,7 @@ export default function BlocklyWorkspace({
     } catch (e) {
       // Silent fail, try next method
     }
-    
+
     // Method 2: Try the file model as fallback
     if (!code) {
       try {
@@ -326,7 +575,7 @@ export default function BlocklyWorkspace({
         // Silent fail, try next method
       }
     }
-    
+
     // Method 3: Try the model's program main code
     if (!code) {
       try {
@@ -338,7 +587,7 @@ export default function BlocklyWorkspace({
         // Silent fail, try next method
       }
     }
-    
+
     // Method 4: Try accessing through main property
     if (!code) {
       try {
@@ -351,7 +600,7 @@ export default function BlocklyWorkspace({
       }
     }
 
-    
+
     // Check if we got actual code (not just default/empty)
     const defaultPatterns = [
       '# Write your code here',
@@ -359,15 +608,15 @@ export default function BlocklyWorkspace({
       '# Your code goes here',
       '# TODO',
     ];
-    
+
     const codeToCheck = code.trim();
     const isDefaultCode = defaultPatterns.some(pattern => codeToCheck === pattern || codeToCheck === pattern + '\n');
-    
+
     if (!code || !code.trim()) {
       alert('Please write some code before running!');
       return;
     }
-    
+
     if (isDefaultCode) {
       alert('It looks like you haven\'t modified the code yet. Please write your solution first!');
       return;
@@ -401,10 +650,10 @@ export default function BlocklyWorkspace({
    */
   const trackCodeEdit = (changeType: 'create' | 'delete' | 'modify', details?: any) => {
     const now = Date.now();
-    
+
     // 🔍 LOG: Track edit
     console.log(`✏️ [Edit Tracked] Type: ${changeType}`, details || '');
-    
+
     setBlockActivity(prev => [...prev, {
       type: changeType,
       timestamp: now,
@@ -412,11 +661,11 @@ export default function BlocklyWorkspace({
     }]);
     setLastEditTime(now);
     setIdleTime(0); // Reset idle timer
-    
+
     // Track edit in behavior tracker
     const currentCode = editorRef.current?.components?.editor?.python?.bm?.textEditor?.getValue() || '';
     behaviorTracker.trackEdit(currentCode);
-    
+
     // 🔍 LOG: Current activity count
     setBlockActivity(prev => {
       console.log(`📊 [Activity Count] Total edits: ${prev.length + 1}`);
@@ -497,14 +746,14 @@ export default function BlocklyWorkspace({
 
       if (response.ok) {
         const result = await response.json();
-        
+
         // 🔍 LOG: AI response
         console.log('🧠 [AI Behavior] AI Response:', result);
-        
+
         if (result.hint) {
           console.log(`💡 [AI Hint] Displaying hint: "${result.hint}"`);
           console.log(`   Type: ${result.type}, Priority: ${result.priority}`);
-          
+
           setLiveHint(result.hint);
           // Auto-dismiss hint after 15 seconds
           setTimeout(() => setLiveHint(null), 15000);
@@ -580,28 +829,28 @@ export default function BlocklyWorkspace({
     mainTheme.rel = 'stylesheet';
     mainTheme.href = '/css/kid-friendly-theme.css';
     document.head.appendChild(mainTheme);
-    
+
     // Load Blockly-specific theme
     const blocklyTheme = document.createElement('link');
     blocklyTheme.rel = 'stylesheet';
     blocklyTheme.href = '/css/blockly-kid-theme.css';
     document.head.appendChild(blocklyTheme);
-    
+
     // Load helper UI (tooltips, encouragements, etc.)
     const helperUI = document.createElement('link');
     helperUI.rel = 'stylesheet';
     helperUI.href = '/css/kid-helper-ui.css';
     document.head.appendChild(helperUI);
-    
+
     // Sidebar styles are now imported at the top of the file
-    
+
     // Load Font Awesome for icons
     const fontAwesome = document.createElement('link');
     fontAwesome.rel = 'stylesheet';
     fontAwesome.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css';
     fontAwesome.crossOrigin = 'anonymous';
     document.head.appendChild(fontAwesome);
-    
+
     return () => {
       document.head.removeChild(mainTheme);
       document.head.removeChild(blocklyTheme);
@@ -669,7 +918,7 @@ export default function BlocklyWorkspace({
           }
         };
         trySetStarterCode();
-        
+
         // Hook into BlockPy's run button to trigger our submission handler
         setTimeout(() => {
           const runButton = document.querySelector('.blockpy-run');
@@ -678,7 +927,7 @@ export default function BlocklyWorkspace({
               // Prevent BlockPy from running (we'll handle it ourselves)
               e.preventDefault();
               e.stopPropagation();
-              
+
               // But first, force BlockPy to sync the editor content to its model
               try {
                 const pythonEditor = editorRef.current?.components?.pythonEditor;
@@ -691,7 +940,7 @@ export default function BlocklyWorkspace({
               } catch (err) {
                 // Silent fail
               }
-              
+
               // Now run our handler with a tiny delay to ensure sync is complete
               setTimeout(() => {
                 handleRunCode();
@@ -699,7 +948,7 @@ export default function BlocklyWorkspace({
             });
           }
         }, 1500);
-        
+
         // Set split mode in the model after initialization
         setTimeout(() => {
           if (editorRef.current?.model) {
@@ -709,32 +958,38 @@ export default function BlocklyWorkspace({
             }
           }
         }, 500);
-        
+
         // Function to calculate and set dynamic height
         const updateEditorHeight = () => {
           // Check if all components are initialized
-          if (!editorRef.current || 
-              !editorRef.current.components || 
-              !editorRef.current.components.editor ||
-              !editorRef.current.components.editor.python ||
-              !editorRef.current.components.editor.python.bm) {
+          if (!editorRef.current ||
+            !editorRef.current.components ||
+            !editorRef.current.components.editor ||
+            !editorRef.current.components.editor.python ||
+            !editorRef.current.components.editor.python.bm) {
             return; // Not ready yet, skip
           }
-          
+
+          // Get the container element
+          const container = document.getElementById('blockpy-editor');
+          if (!container) return;
+
           // Get the toolbar height (the buttons row)
           const toolbar = document.querySelector('.blockpy-python-toolbar');
-          const toolbarHeight = toolbar ? toolbar.getBoundingClientRect().height : 60;
-          
-          // Calculate available height: window height - toolbar - some padding
-          const availableHeight = window.innerHeight - toolbarHeight - 20;
-          
+          const toolbarHeight = toolbar ? toolbar.getBoundingClientRect().height : 50;
+
+          // Calculate available height based on the container's parent
+          // We want to fill the parent container, minus the toolbar
+          const parentHeight = container.parentElement?.getBoundingClientRect().height || window.innerHeight;
+          const availableHeight = parentHeight - toolbarHeight;
+
           // Update BlockMirror configuration
           editorRef.current.components.editor.python.bm.configuration.height = availableHeight;
-          
+
           // Trigger resize to apply new height
           const textEditor = editorRef.current.components.editor.python.bm.textEditor;
           const blockEditor = editorRef.current.components.editor.python.bm.blockEditor;
-          
+
           if (textEditor) {
             textEditor.resizeResponsively();
           }
@@ -742,7 +997,7 @@ export default function BlocklyWorkspace({
             blockEditor.resizeResponsively();
           }
         };
-        
+
         // Set initial height after BlockPy is fully loaded
         let retryCount = 0;
         const maxRetries = 10;
@@ -753,15 +1008,32 @@ export default function BlocklyWorkspace({
             setTimeout(tryUpdateHeight, 500);
             return;
           }
-          
+
           updateEditorHeight();
-          
-          // Update height on window resize
+
+          // Use ResizeObserver for more robust resizing (handles zoom and container changes)
+          const resizeObserver = new ResizeObserver(() => {
+            updateEditorHeight();
+          });
+
+          const container = document.getElementById('blockpy-editor');
+          if (container) {
+            resizeObserver.observe(container);
+            // Also observe parent to catch layout changes
+            if (container.parentElement) {
+              resizeObserver.observe(container.parentElement);
+            }
+          }
+
+          // Also keep window resize as fallback
           window.addEventListener('resize', updateEditorHeight);
+
+          // Store observer to disconnect later if needed (though this is inside initBlockPy closure)
+          // Ideally we would return a cleanup function but initBlockPy is called inside useEffect
         };
-        
+
         setTimeout(tryUpdateHeight, 1000);
-        
+
         // Inject CSS to hide header and second row (console/feedback)
         setTimeout(() => {
           const style = document.createElement('style');
@@ -784,21 +1056,24 @@ export default function BlocklyWorkspace({
             .blockpy-header,
             .blockpy-quick-menu {
               display: none !important;
-              height: 0 !important;
-              overflow: hidden !important;
-            }
-            
-            /* Hide status panel at the bottom */
-            .blockpy-status {
-              display: none !important;
-              height: 0 !important;
-              overflow: hidden !important;
-            }
-            
-            /* Make editor area expand to fill space */
-            .blockpy-editor-area {
               flex: 1 !important;
               height: 100% !important;
+              min-height: 100% !important;
+              overflow: hidden !important;
+            }
+
+            /* Force the main BlockPy container to fill height */
+            .blockpy-content {
+              height: 100% !important;
+              display: flex !important;
+              flex-direction: column !important;
+            }
+
+            /* Ensure the editor row takes full remaining height */
+            div[data-bind*="ui.editorRow.width"] {
+              flex: 1 !important;
+              height: 100% !important;
+              display: flex !important;
             }
             
             /* Hide all button groups except the first one (Run button) */
@@ -814,79 +1089,51 @@ export default function BlocklyWorkspace({
               display: none !important;
             }
             
-            /* Ensure Run button and its group are always visible */
-            .blockpy-python-toolbar .btn-group:first-of-type,
+            /* Hide the entire BlockPy toolbar (blue header with Run button) */
+            .blockpy-python-toolbar,
+            .blockpy-toolbar {
+              display: none !important;
+              height: 0 !important;
+              overflow: hidden !important;
+              visibility: hidden !important;
+            }
+
+            /* Hide all BlockPy buttons including Run */
+            .blockpy-run,
             .btn-success,
             button.btn-success,
-            .blockpy-run {
-              display: inline-block !important;
-              visibility: visible !important;
+            .blockpy-python-toolbar .btn-group {
+              display: none !important;
+              visibility: hidden !important;
             }
-            
-            /* Make sure the toolbar doesn't collapse */
-            .blockpy-python-toolbar {
-              display: flex !important;
-            }
-            
-            /* Make toolbar smaller in height */
-            .blockpy-python-toolbar {
-              padding: 8px 15px !important;
-              min-height: auto !important;
-            }
-            
-            /* Make buttons smaller */
-            .blockpy-python-toolbar .btn {
-              padding: 6px 16px !important;
-              font-size: 14px !important;
+
+            /* Hide BlockPy status bar/footer at the bottom */
+            .blockpy-status,
+            .blockpy-footer,
+            .blockpy-status-bar,
+            div[data-bind*="status"],
+            .blockpy-presentation-status {
+              display: none !important;
+              height: 0 !important;
+              overflow: hidden !important;
+              visibility: hidden !important;
             }
           `;
           document.head.appendChild(style);
-          
-          // Hide all buttons except Run button after toolbar is created
-          setTimeout(() => {
-            const toolbar = document.querySelector('.blockpy-python-toolbar');
-            if (toolbar) {
-              // Hide all button groups except the first one (Run button group)
-              const btnGroups = toolbar.querySelectorAll('.btn-group');
-              btnGroups.forEach((group: any, index: number) => {
-                if (index > 0) { // Keep first group (Run), hide all others
-                  group.style.display = 'none';
-                }
-              });
-              
-              // Also hide any standalone buttons that aren't Run
-              const allButtons = toolbar.querySelectorAll('button');
-              allButtons.forEach((button: any) => {
-                const parent = button.parentElement;
-                const text = button.textContent?.toLowerCase() || '';
-                const classList = button.className || '';
-                
-                // Check if this is the Run button
-                const isRunButton = classList.includes('blockpy-run') || 
-                                   text.includes('run') || 
-                                   classList.includes('btn-success');
-                
-                // If it's not the Run button and not in the first btn-group, hide it
-                if (!isRunButton && !parent?.classList.contains('btn-group')) {
-                  button.style.display = 'none';
-                }
-              });
-            }
-          }, 1000);
-        }, 500);
-        
+        }, 1000);
+
         // Add Blockly event listeners for live behavioral tracking
         setTimeout(() => {
           try {
             const blockEditor = editorRef.current?.components?.editor?.python?.bm?.blockEditor;
             const textEditor = editorRef.current?.components?.editor?.python?.bm?.textEditor;
-            
+
             // Track Blockly block changes
             if (blockEditor?.workspace) {
               blockEditor.workspace.addChangeListener((event: any) => {
                 // Only track user-initiated changes (not programmatic changes)
                 if (event.isUiEvent) return;
-                
+
                 // Track different types of block events
                 if (event.type === 'create') {
                   trackCodeEdit('create', { eventType: event.type });
@@ -897,13 +1144,13 @@ export default function BlocklyWorkspace({
                 }
               });
             }
-            
+
             // Track text editor changes (CodeMirror)
             if (textEditor?.on) {
               textEditor.on('change', (cm: any, change: any) => {
                 // Only track user-initiated changes
                 if (change.origin === 'setValue') return;
-                
+
                 trackCodeEdit('modify', { source: 'text-editor' });
               });
             }
@@ -911,7 +1158,38 @@ export default function BlocklyWorkspace({
             console.warn('Could not attach event listeners for behavioral tracking:', err);
           }
         }, 2000); // Wait 2s for editor to be fully ready
-        
+
+        // 🧰 Apply mission-specific toolbox filtering (NEW)
+        // Try at 2.5s
+        setTimeout(() => {
+          try {
+            console.log('[🧰 Toolbox] Attempt 1: Applying filtering after 2.5s...');
+            applyToolboxFiltering(mission);
+          } catch (err) {
+            console.error('[🧰 Toolbox] Attempt 1 failed:', err);
+          }
+        }, 2500);
+
+        // Try again at 3.5s (in case blockEditor wasn't ready yet)
+        setTimeout(() => {
+          try {
+            console.log('[🧰 Toolbox] Attempt 2: Retry filtering after 3.5s...');
+            applyToolboxFiltering(mission);
+          } catch (err) {
+            console.error('[🧰 Toolbox] Attempt 2 failed:', err);
+          }
+        }, 3500);
+
+        // Try one more time at 5s
+        setTimeout(() => {
+          try {
+            console.log('[🧰 Toolbox] Attempt 3: Final retry filtering after 5s...');
+            applyToolboxFiltering(mission);
+          } catch (err) {
+            console.error('[🧰 Toolbox] Attempt 3 failed:', err);
+          }
+        }, 5000);
+
         initializedRef.current = true;
         setIsLoading(false);
       } catch (err) {
@@ -933,223 +1211,256 @@ export default function BlocklyWorkspace({
   // }, [mission, user]);
 
   return (
-    <div className="h-full w-full flex" style={{ margin: 0, padding: 0 }}>
-      {/* Left side: Blockly Editor */}
-      <div className="flex-1 flex flex-col" style={{ margin: 0, padding: 0 }}>
-        <div id="blockpy-editor" className="flex-1" style={{ margin: 0, padding: 0 }} />
-        
-        {/* Loading state */}
-        {isLoading && (
-          <div className="absolute inset-0 bg-white flex items-center justify-center">
-            <p>Loading BlockPy...</p>
-          </div>
-        )}
-      </div>
+    <div className="h-screen w-full flex flex-col bg-white overflow-hidden">
+      {/* 🚀 Custom Header */}
+      <header className="flex-shrink-0 h-20 bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 border-b-2 border-indigo-200 shadow-md z-50 px-6 flex items-center justify-between">
+        {/* Left: Navigation */}
+        <div className="flex items-center gap-3 min-w-[120px]">
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="group relative p-3 rounded-xl bg-white hover:bg-gradient-to-br hover:from-indigo-500 hover:to-purple-600 text-gray-600 hover:text-white transition-all duration-300 shadow-sm hover:shadow-lg hover:scale-110 active:scale-95"
+            title="Back to Dashboard"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform duration-300">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-indigo-400 to-purple-500 opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-300"></div>
+          </button>
+        </div>
 
-      {/* 🧠 Live AI Hint - Floating companion */}
-      {liveHint && (
-        <div className="fixed bottom-24 right-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl shadow-2xl p-5 max-w-sm z-50 animate-bounce-in">
-          <div className="flex items-start gap-3">
-            <div className="text-3xl flex-shrink-0">🤖</div>
-            <div className="flex-1">
-              <p className="text-sm font-medium leading-relaxed">{liveHint}</p>
+        {/* Center: Run Button */}
+        <div className="flex-1 flex items-center justify-center px-4">
+          <button
+            onClick={handleRunCode}
+            disabled={isSubmitting}
+            className={`
+              group relative flex items-center gap-3 px-8 py-3 rounded-full font-bold text-white shadow-xl transition-all duration-300 overflow-hidden
+              ${isSubmitting
+                ? 'bg-gradient-to-r from-gray-400 to-gray-500 cursor-not-allowed scale-95 shadow-gray-400/30'
+                : 'bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-600 hover:via-teal-600 hover:to-cyan-600 hover:scale-110 hover:shadow-2xl hover:shadow-emerald-500/50 active:scale-95'
+              }
+            `}
+          >
+            {/* Animated background gradient */}
+            {!isSubmitting && (
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
+            )}
+
+            <div className="relative z-10 flex items-center gap-3">
+              {isSubmitting ? (
+                <>
+                  <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span className="text-base tracking-wide">Running...</span>
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="group-hover:scale-110 transition-transform duration-300">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  <span className="text-base tracking-wide font-extrabold">Run Code</span>
+                  <div className="w-2 h-2 rounded-full bg-white animate-ping"></div>
+                </>
+              )}
             </div>
-            <button 
-              onClick={() => setLiveHint(null)}
-              className="text-white hover:text-gray-200 text-xl leading-none"
-            >
-              ×
-            </button>
+          </button>
+        </div>
+
+        {/* Right: User Stats */}
+        <div className="flex items-center gap-3 min-w-[280px] justify-end">
+          {/* XP */}
+          <div className="group hidden md:flex items-center gap-2 bg-gradient-to-br from-amber-100 to-yellow-100 px-4 py-2 rounded-full border-2 border-amber-200 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer">
+            <span className="text-xl group-hover:scale-110 transition-transform duration-300">⚡</span>
+            <div className="flex flex-col leading-none">
+              <span className="text-[9px] text-amber-600 font-bold uppercase tracking-wider">XP</span>
+              <span className="font-black text-amber-700 text-sm">{gamification?.xp || 0}</span>
+            </div>
           </div>
-          {/* Idle time indicator */}
-          {idleTime > 20 && (
-            <div className="mt-3 pt-3 border-t border-white/30 text-xs opacity-75">
-              💭 Thinking time: {idleTime}s
+
+          {/* Streak */}
+          <div className="group hidden md:flex items-center gap-2 bg-gradient-to-br from-orange-100 to-red-100 px-4 py-2 rounded-full border-2 border-orange-200 shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer">
+            <span className="text-xl group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">🔥</span>
+            <div className="flex flex-col leading-none">
+              <span className="text-[9px] text-orange-600 font-bold uppercase tracking-wider">Streak</span>
+              <span className="font-black text-orange-700 text-sm">{gamification?.streak || 0}</span>
+            </div>
+          </div>
+
+          {/* Level Badge */}
+          <div className="group flex items-center gap-2 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 px-4 py-2 rounded-full border-2 border-indigo-200 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-pointer">
+            <span className="text-xl group-hover:scale-110 group-hover:-rotate-12 transition-all duration-300">👑</span>
+            <div className="flex flex-col leading-none">
+              <span className="text-[9px] text-indigo-600 font-bold uppercase tracking-wider">Level</span>
+              <span className="text-sm font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{gamification?.level || 1}</span>
+            </div>
+          </div>
+
+          {/* Avatar */}
+          <div className="group relative">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-0.5 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 cursor-pointer animate-pulse">
+              <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-2xl group-hover:scale-110 transition-transform duration-300">
+                {user?.avatar || '👤'}
+              </div>
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex w-full overflow-hidden relative">
+        {/* Left side: Blockly Editor */}
+        <div className="flex-1 flex flex-col relative h-full">
+          <div id="blockpy-editor" className="flex-1 w-full h-full" style={{ margin: 0, padding: 0 }} />
+
+          {/* Loading state */}
+          {isLoading && (
+            <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center z-50">
+              <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+              <p className="text-indigo-900 font-bold text-lg animate-pulse">Loading your workspace...</p>
             </div>
           )}
         </div>
-      )}
-      
-      {/* 🧠 Activity indicator (shows when AI is observing) */}
-      {blockActivity.length > 0 && (
-        <div className="fixed bottom-4 left-4 bg-blue-50 border border-blue-200 rounded-full px-4 py-2 shadow-lg z-40 flex items-center gap-2">
-          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-          <span className="text-xs text-blue-700 font-medium">
-            AI is watching... {blockActivity.length} edit{blockActivity.length > 1 ? 's' : ''}
-          </span>
-        </div>
-      )}
 
-      {/* 💡 Proactive Hint Dialog */}
-      {behaviorTracker.proactiveHint && (
-        <div className="proactive-hint-dialog">
-          <div className="proactive-hint-content">
-            <p className="proactive-hint-message">
-              {behaviorTracker.proactiveHint.message}
-            </p>
-            <div className="proactive-hint-actions">
-              <button 
-                className="proactive-hint-button proactive-hint-dismiss"
-                onClick={behaviorTracker.dismissHint}
+        {/* 🧠 Live AI Hint - Floating companion */}
+        {liveHint && (
+          <div className="fixed bottom-24 right-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl shadow-2xl p-5 max-w-sm z-50 animate-bounce-in">
+            <div className="flex items-start gap-3">
+              <div className="text-3xl flex-shrink-0">🤖</div>
+              <div className="flex-1">
+                <p className="text-sm font-medium leading-relaxed">{liveHint}</p>
+              </div>
+              <button
+                onClick={() => setLiveHint(null)}
+                className="text-white hover:text-gray-200 text-xl leading-none"
               >
-                No thanks
-              </button>
-              <button 
-                className="proactive-hint-button proactive-hint-accept"
-                onClick={() => {
-                  console.log('[BlocklyWorkspace] Yes please clicked!');
-                  behaviorTracker.acceptHint();
-                  chatbot.setIsChatOpen(true);
-                  
-                  // Trigger proactive help with full context
-                  if (behaviorTracker.chatbotContext) {
-                    console.log('[BlocklyWorkspace] Triggering proactive help with context:', behaviorTracker.chatbotContext);
-                    // Small delay to ensure chatbot is open and ready
-                    setTimeout(() => {
-                      chatbot.handleProactiveHelp(behaviorTracker.chatbotContext);
-                    }, 100);
-                  } else {
-                    console.warn('[BlocklyWorkspace] No chatbot context available!');
-                  }
-                }}
-              >
-                Yes please! 💡
+                ×
               </button>
             </div>
+            {/* Idle time indicator */}
+            {idleTime > 20 && (
+              <div className="mt-3 pt-3 border-t border-white/30 text-xs opacity-75">
+                💭 Thinking time: {idleTime}s
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* 🤖 Floating Chatbot Button */}
-      <button
-        className={`chatbot-float-button ${behaviorTracker.proactiveHint ? 'has-notification' : ''}`}
-        onClick={() => chatbot.setIsChatOpen(true)}
-        title="Ask me anything!"
-      >
-        <span className="chatbot-icon-large">🤖</span>
-        <span className="chatbot-pulse"></span>
-      </button>
+        {/* 🧠 Activity indicator (shows when AI is observing) */}
+        {blockActivity.length > 0 && (
+          <div className="fixed bottom-6 left-6 bg-white/90 backdrop-blur border border-indigo-100 rounded-full px-4 py-2 shadow-lg z-40 flex items-center gap-2 animate-fade-in">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-xs text-indigo-600 font-bold">
+              AI Companion Active • {blockActivity.length} updates
+            </span>
+          </div>
+        )}
 
-      {/* 🤖 Chatbot Modal/Popup */}
-      {chatbot.isChatOpen && (
-        <div className="chatbot-modal-overlay" onClick={() => chatbot.setIsChatOpen(false)}>
-          <div className="chatbot-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="chatbot-modal-header">
-              <div className="chatbot-header-content">
-                <span className="chatbot-header-icon">🤖</span>
-                <h2 className="chatbot-header-title">Ask Me Anything!</h2>
+        {/* 💡 Proactive Hint Dialog */}
+        {/* 💡 Proactive Hint Dialog */}
+        {behaviorTracker.proactiveHint && (
+          <div className="fixed bottom-28 right-6 max-w-sm bg-white/95 backdrop-blur-md p-5 rounded-2xl shadow-2xl border border-indigo-100 z-50 animate-in slide-in-from-bottom-5 fade-in duration-500">
+            <div className="flex flex-col gap-3">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 text-xl">
+                  💡
+                </div>
+                <p className="text-gray-700 text-sm leading-relaxed font-medium pt-1">
+                  {behaviorTracker.proactiveHint.message}
+                </p>
               </div>
-              <button 
-                className="chatbot-close-button"
-                onClick={() => chatbot.setIsChatOpen(false)}
-              >
-                ✕
-              </button>
-            </div>
+              <div className="flex gap-2 justify-end mt-1">
+                <button
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-500 hover:bg-gray-100 transition-colors"
+                  onClick={behaviorTracker.dismissHint}
+                >
+                  No thanks
+                </button>
+                <button
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-indigo-500/30"
+                  onClick={() => {
+                    console.log('[BlocklyWorkspace] Yes please clicked!');
+                    behaviorTracker.acceptHint();
+                    chatbot.setIsChatOpen(true);
 
-            <div className="chatbot-modal-body">
-              {/* Quick Prompt Buttons */}
-              <div className="chatbot-quick-prompts">
-                {chatbot.quickPrompts.map((prompt, index) => (
-                  <button
-                    key={index}
-                    className="chatbot-prompt-button"
-                    onClick={() => chatbot.handlePromptClick(prompt.text)}
-                  >
-                    <span className="chatbot-prompt-emoji">{prompt.emoji}</span>
-                    <span className="chatbot-prompt-text">{prompt.text}</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Chat Messages */}
-              <div className="chatbot-messages">
-                {chatbot.messages.map((message, index) => (
-                  <div
-                    key={index}
-                    className={`chatbot-message ${message.isUser ? 'chatbot-message-user' : 'chatbot-message-bot'}`}
-                  >
-                    <div className="chatbot-message-avatar">
-                      {message.isUser ? '😊' : '🤖'}
-                    </div>
-                    <div className="chatbot-message-bubble">
-                      {message.text}
-                    </div>
-                  </div>
-                ))}
-                {chatbot.isTyping && (
-                  <div className="chatbot-message chatbot-message-bot">
-                    <div className="chatbot-message-avatar">🤖</div>
-                    <div className="chatbot-message-bubble">
-                      <div className="chatbot-typing-indicator">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div ref={chatbot.messagesEndRef} />
-              </div>
-
-              {/* Chat Input */}
-              <div className="chatbot-input-container">
-                <input
-                  type="text"
-                  className="chatbot-input"
-                  placeholder="Type your question here... ✨"
-                  value={chatbot.inputValue}
-                  onChange={(e) => chatbot.setInputValue(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && chatbot.handleSendMessage()}
-                />
-                <button className="chatbot-send-button" onClick={chatbot.handleSendMessage}>
-                  <span className="chatbot-send-icon">📤</span>
+                    // Trigger proactive help with full context
+                    if (behaviorTracker.chatbotContext) {
+                      console.log('[BlocklyWorkspace] Triggering proactive help with context:', behaviorTracker.chatbotContext);
+                      // Small delay to ensure chatbot is open and ready
+                      setTimeout(() => {
+                        chatbot.handleProactiveHelp(behaviorTracker.chatbotContext);
+                      }, 100);
+                    } else {
+                      console.warn('[BlocklyWorkspace] No chatbot context available!');
+                    }
+                  }}
+                >
+                  Yes please! ✨
                 </button>
               </div>
             </div>
+            {/* Arrow pointing down */}
+            <div className="absolute -bottom-2 right-8 w-4 h-4 bg-white border-b border-r border-indigo-100 transform rotate-45"></div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* CSS for animations */}
-      <style dangerouslySetInnerHTML={{__html: `
-        @keyframes bounce-in {
-          0% {
-            transform: translateY(100px);
-            opacity: 0;
-          }
-          60% {
-            transform: translateY(-10px);
-            opacity: 1;
-          }
-          80% {
-            transform: translateY(5px);
-          }
-          100% {
-            transform: translateY(0);
-          }
-        }
-        
-        .animate-bounce-in {
-          animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-      `}} />
+        {/* 🤖 Floating Chatbot Button */}
+        <button
+          className={`fixed bottom-6 right-6 w-16 h-16 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/40 hover:scale-110 hover:rotate-6 transition-all duration-300 z-50 flex items-center justify-center group ${behaviorTracker.proactiveHint ? 'animate-bounce' : ''
+            }`}
+          onClick={() => chatbot.setIsChatOpen(!chatbot.isChatOpen)}
+          title="Ask me anything!"
+        >
+          <span className="text-3xl group-hover:animate-wiggle">🤖</span>
+          {behaviorTracker.proactiveHint && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white animate-ping"></span>
+          )}
+          <div className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+        </button>
 
-      {/* Fun Console Modal */}
-      <FunConsoleModal
-        visible={showConsoleModal}
-        pythonCode={consoleCode}
-        expectedOutput={mission?.expectedOutput}
-        missionId={mission?._id}
-        userId={user?.username}
-        onClose={() => setShowConsoleModal(false)}
-        onMissionComplete={() => {
-          // Mission completed! Return to dashboard
-          setTimeout(() => {
-            router.push('/dashboard');
-          }, 500);
-        }}
-      />
+        {/* 🤖 Chatbot Modal/Popup */}
+        <ChatInterface chatbot={chatbot} />
+
+        {/* CSS for animations */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+          @keyframes bounce-in {
+            0% {
+              transform: translateY(100px);
+              opacity: 0;
+            }
+            60% {
+              transform: translateY(-10px);
+              opacity: 1;
+            }
+            80% {
+              transform: translateY(5px);
+            }
+            100% {
+              transform: translateY(0);
+            }
+          }
+
+          .animate-bounce-in {
+            animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+          }
+        `}} />
+
+        {/* Fun Console Modal */}
+        <FunConsoleModal
+          visible={showConsoleModal}
+          pythonCode={consoleCode}
+          expectedOutput={mission?.expectedOutput}
+          missionId={mission?._id}
+          userId={user?.username}
+          onClose={() => setShowConsoleModal(false)}
+          onMissionComplete={() => {
+            // Mission completed! Return to dashboard
+            setTimeout(() => {
+              router.push('/dashboard');
+            }, 500);
+          }}
+        />
+      </div>
     </div>
   );
 }

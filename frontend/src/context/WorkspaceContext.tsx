@@ -1,6 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import type { Mission, UserData, ProfileData, GamificationData } from '../components/BlocklyWorkspace';
+import type { Mission, UserData, ProfileData, GamificationData } from '../components/BlocklyWorkspace.tsx';
 import type { AdaptiveInsights } from '../types/adaptivity';
 
 interface WorkspaceContextType {

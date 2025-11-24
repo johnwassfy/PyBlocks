@@ -74,6 +74,7 @@ export async function sendChatMessage(request: ChatRequest): Promise<ChatRespons
       body: JSON.stringify({
         userId: request.userId || 'anonymous',
         missionId: request.missionId || 'free-play',
+        mission: request.context?.mission, // NEW: Extract mission from context and send directly
         question: request.question,
         promptId: request.promptId,
         code: request.code || '',
@@ -85,6 +86,7 @@ export async function sendChatMessage(request: ChatRequest): Promise<ChatRespons
         masterySnapshot: request.masterySnapshot || undefined,
         streak: request.streak,
         level: request.level,
+        context: request.context, // Keep context for backward compatibility
       }),
     });
 

@@ -85,26 +85,26 @@ export default function AchievementsSidebar({ gamification }: Props) {
     }
 
     if (category === 'mission') {
-        const rawCurrent = gamification?.totalMissionsCompleted ?? (gamification?.completedMissions?.length ?? 0);
-        const current = Math.min(rawCurrent, target);
-        result.hasProgress = true;
-        result.current = current;
-        result.target = target;
-        result.label = `${current}/${target} missions`;
+      const rawCurrent = gamification?.totalMissionsCompleted ?? (gamification?.completedMissions?.length ?? 0);
+      const current = Math.min(rawCurrent, target);
+      result.hasProgress = true;
+      result.current = current;
+      result.target = target;
+      result.label = `${current}/${target} missions`;
     } else if (category === 'xp') {
-        const rawCurrent = gamification?.xp ?? 0;
-        const current = Math.min(rawCurrent, target);
-        result.hasProgress = true;
-        result.current = current;
-        result.target = target;
-        result.label = `${current}/${target} XP`;
+      const rawCurrent = gamification?.xp ?? 0;
+      const current = Math.min(rawCurrent, target);
+      result.hasProgress = true;
+      result.current = current;
+      result.target = target;
+      result.label = `${current}/${target} XP`;
     } else if (category === 'streak') {
-        const rawCurrent = gamification?.streak ?? 0;
-        const current = Math.min(rawCurrent, target);
-        result.hasProgress = true;
-        result.current = current;
-        result.target = target;
-        result.label = `${current}/${target} days`;
+      const rawCurrent = gamification?.streak ?? 0;
+      const current = Math.min(rawCurrent, target);
+      result.hasProgress = true;
+      result.current = current;
+      result.target = target;
+      result.label = `${current}/${target} days`;
     }
 
     return result;
@@ -174,11 +174,10 @@ export default function AchievementsSidebar({ gamification }: Props) {
             <button
               key={r.key}
               onClick={() => setRarityFilter(r.key as any)}
-              className={`flex-shrink-0 px-2 py-1 rounded-full text-[11px] font-medium transition-all duration-200 ${
-                rarityFilter === r.key 
-                  ? 'bg-indigo-600 text-white shadow-md scale-105' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
-              }`}
+              className={`flex-shrink-0 px-2 py-1 rounded-full text-[11px] font-medium transition-all duration-200 ${rarityFilter === r.key
+                ? 'bg-indigo-600 text-white shadow-md scale-105'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:scale-105'
+                }`}
             >
               {r.label}
             </button>
@@ -188,35 +187,31 @@ export default function AchievementsSidebar({ gamification }: Props) {
         <div className="flex items-center gap-1 flex-nowrap overflow-x-auto">
           <button
             onClick={() => setStatusFilter('all')}
-            className={`flex-shrink-0 px-2 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${
-              statusFilter === 'all' 
-                ? 'bg-indigo-600 text-white shadow-md' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className={`flex-shrink-0 px-2 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${statusFilter === 'all'
+              ? 'bg-indigo-600 text-white shadow-md'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
           >All</button>
           <button
             onClick={() => setStatusFilter('achieved')}
-            className={`flex-shrink-0 px-2 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${
-              statusFilter === 'achieved' 
-                ? 'bg-emerald-600 text-white shadow-md' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className={`flex-shrink-0 px-2 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${statusFilter === 'achieved'
+              ? 'bg-emerald-600 text-white shadow-md'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
           >Achieved</button>
           <button
             onClick={() => setStatusFilter('locked')}
-            className={`flex-shrink-0 px-2 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${
-              statusFilter === 'locked' 
-                ? 'bg-gray-700 text-white shadow-md' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className={`flex-shrink-0 px-2 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${statusFilter === 'locked'
+              ? 'bg-gray-700 text-white shadow-md'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
           >Locked</button>
           <button
             onClick={() => setStatusFilter('inprogress')}
-            className={`flex-shrink-0 px-2 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${
-              statusFilter === 'inprogress' 
-                ? 'bg-amber-500 text-white shadow-md' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className={`flex-shrink-0 px-2 py-1 rounded-lg text-xs font-medium transition-all duration-200 ${statusFilter === 'inprogress'
+              ? 'bg-amber-500 text-white shadow-md'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
           >In Progress</button>
         </div>
       </div>
@@ -259,79 +254,75 @@ export default function AchievementsSidebar({ gamification }: Props) {
             className="space-y-2 pb-4"
           >
             <AnimatePresence initial={false}>
-            {filtered.map((a) => {
-              const prog = computeProgress(a as CanonicalAchievement);
-              const percent = prog.hasProgress && prog.target && prog.target > 0 && typeof prog.current === 'number'
-                ? Math.min(100, Math.round((prog.current / prog.target) * 100))
-                : 0;
+              {filtered.map((a) => {
+                const prog = computeProgress(a as CanonicalAchievement);
+                const percent = prog.hasProgress && prog.target && prog.target > 0 && typeof prog.current === 'number'
+                  ? Math.min(100, Math.round((prog.current / prog.target) * 100))
+                  : 0;
 
-              return (
-                <motion.div
-                  key={a._canonicalId}
-                  variants={itemVariants}
-                  exit="exit"
-                  layout
-                  whileHover={{ scale: 1.02, transition: { duration: 0.15 } }}
-                  className={`p-3 rounded-xl border-2 flex items-start gap-3 cursor-pointer transition-all duration-200 ${
-                    a.unlocked 
-                      ? 'bg-gradient-to-br from-white to-emerald-50/50 border-emerald-300 shadow-md hover:shadow-lg' 
+                return (
+                  <motion.div
+                    key={a._canonicalId}
+                    variants={itemVariants}
+                    exit="exit"
+                    layout
+                    whileHover={{ scale: 1.02, transition: { duration: 0.15 } }}
+                    className={`p-3 rounded-xl border-2 flex items-start gap-3 cursor-pointer transition-all duration-200 ${a.unlocked
+                      ? 'bg-gradient-to-br from-white to-emerald-50/50 border-emerald-300 shadow-md hover:shadow-lg'
                       : 'bg-white border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md'
-                  }`}
-                >
-                  <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-sm ${
-                    a.unlocked ? 'bg-gradient-to-br from-emerald-100 to-emerald-50' : 'bg-gray-100'
-                  }`}>
-                    {a.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <h4 className={`font-bold text-sm leading-tight ${a.unlocked ? 'text-gray-900' : 'text-gray-600'}`}>
-                        {a.name}
-                      </h4>
-                      <Badge className={`flex-shrink-0 font-semibold uppercase tracking-wider ${
-                        a.rarity === 'legendary' 
-                          ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-white shadow-md' 
-                          : a.rarity === 'epic' 
-                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md' 
-                          : a.rarity === 'rare' 
-                          ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md' 
-                          : 'bg-gray-500 text-white shadow-sm'
-                      } text-[10px] px-2 py-0.5`}>
-                        {a.rarity}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-gray-600 mb-2.5 leading-relaxed">{a.description}</p>
-
-                    {prog.hasProgress && (
-                      <div className="mb-2.5 space-y-1">
-                        <div className="relative w-full rounded-full border border-gray-200 bg-white p-0.5">
-                          <Progress value={percent} className="h-2 rounded-full" />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-gray-700">{prog.label}</span>
-                          <span className="text-xs font-bold text-indigo-600">{percent}%</span>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide ${
-                        a.unlocked 
-                          ? 'bg-emerald-600 text-white shadow-sm' 
-                          : 'bg-gray-400 text-white'
+                      }`}
+                  >
+                    <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-sm ${a.unlocked ? 'bg-gradient-to-br from-emerald-100 to-emerald-50' : 'bg-gray-100'
                       }`}>
-                        {a.unlocked ? '✓ Unlocked' : '🔒 Locked'}
-                      </span>
-                      {a.unlocked && a.unlockedAt && (
-                        <span className="text-[10px] text-gray-500 font-medium">
-                          {new Date(a.unlockedAt).toLocaleDateString()}
-                        </span>
-                      )}
+                      {a.icon}
                     </div>
-                  </div>
-                </motion.div>
-              );
-            })}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <h4 className={`font-bold text-sm leading-tight ${a.unlocked ? 'text-gray-900' : 'text-gray-600'}`}>
+                          {a.name}
+                        </h4>
+                        <Badge className={`flex-shrink-0 font-semibold uppercase tracking-wider ${a.rarity === 'legendary'
+                          ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-white shadow-md'
+                          : a.rarity === 'epic'
+                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md'
+                            : a.rarity === 'rare'
+                              ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md'
+                              : 'bg-gray-500 text-white shadow-sm'
+                          } text-[10px] px-2 py-0.5`}>
+                          {a.rarity}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-gray-600 mb-2.5 leading-relaxed">{a.description}</p>
+
+                      {prog.hasProgress && (
+                        <div className="mb-2.5 space-y-1">
+                          <div className="relative w-full rounded-full border border-gray-200 bg-white p-0.5">
+                            <Progress value={percent} className="h-2 rounded-full" />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-gray-700">{prog.label}</span>
+                            <span className="text-xs font-bold text-indigo-600">{percent}%</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide ${a.unlocked
+                          ? 'bg-emerald-600 text-white shadow-sm'
+                          : 'bg-gray-400 text-white'
+                          }`}>
+                          {a.unlocked ? '✓ Unlocked' : '🔒 Locked'}
+                        </span>
+                        {a.unlocked && a.unlockedAt && (
+                          <span className="text-[10px] text-gray-500 font-medium">
+                            {new Date(a.unlockedAt).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
           </motion.div>
         )}

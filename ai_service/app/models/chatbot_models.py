@@ -173,6 +173,12 @@ class ChatbotRequest(BaseModel):
     mission_id: str = Field(..., alias="missionId", description="Current mission ID")
     submission_id: Optional[str] = Field(None, alias="submissionId", description="Current submission ID")
     
+    # Mission data - FULL MISSION OBJECT
+    mission: Optional[Dict] = Field(
+        default=None,
+        description="Complete mission data including title, description, objectives, expectedOutput, starterCode, toolboxConfig, etc."
+    )
+    
     # Question details
     question: str = Field(..., description="User's question (can be from predefined prompt)")
     prompt_id: Optional[str] = Field(None, alias="promptId", description="ID of predefined prompt used")
@@ -214,12 +220,26 @@ class ChatbotRequest(BaseModel):
     )
     attempt_number: int = Field(default=1, alias="attemptNumber", ge=1, description="Attempt number")
     
+    # Additional context (mission details, proactive help info, etc.)
+    context: Optional[Dict] = Field(
+        default=None,
+        description="Additional context including mission details"
+    )
+    
     class Config:
         populate_by_name = True
         json_schema_extra = {
             "example": {
                 "userId": "user123",
                 "missionId": "mission456",
+                "mission": {
+                    "title": "Hello Python",
+                    "description": "Write your first Python program!",
+                    "objectives": ["Use print() to display text", "Understand strings"],
+                    "expectedOutput": "Hello, World!",
+                    "starterCode": "# Write your code here\n",
+                    "difficulty": "easy"
+                },
                 "question": "I'm not sure how to begin!",
                 "promptId": "stuck_1",
                 "code": "# My code here",

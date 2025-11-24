@@ -2567,8 +2567,8 @@ BlockMirrorBlockEditor.prototype.TOOLBOXES = {
   }],
   //******************************************************
   'minimal': [
-  // TODO: What should live in here?
-  TOOLBOX_CATEGORY.VARIABLES],
+    // TODO: What should live in here?
+    TOOLBOX_CATEGORY.VARIABLES],
   //******************************************************
   'normal': [TOOLBOX_CATEGORY.VARIABLES, TOOLBOX_CATEGORY.DECISIONS, {
     name: "Iteration",

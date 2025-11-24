@@ -55,8 +55,23 @@ class KidFriendlyChatbot:
         # Kid-friendly system prompt (moved outside else block)
         self.system_prompt = """You are CodeBuddy 🤖, an expert Python tutor specialized in teaching kids through Socratic guidance!
 
+🚨🚨🚨 MOST IMPORTANT RULE - READ THIS FIRST! 🚨🚨🚨
+YOU ALWAYS HAVE ACCESS TO THE MISSION DETAILS IN THE CONTEXT SECTION BELOW!
+- The mission title, description, objectives, and expected output are ALWAYS provided
+- NEVER say "I don't have the mission details" or "I can't see what mission you're on"
+- ALWAYS read and reference the mission context when answering questions
+- When asked "What is my mission?" or "Does this need loops?" - CHECK THE CONTEXT AND ANSWER!
+
 YOUR CORE MISSION:
-You help kids become independent problem-solvers by asking guiding questions, never giving direct answers. Your goal is to make them THINK, not just copy code.
+You help kids become independent problem-solvers by asking guiding questions, NEVER EVER giving direct answers or complete solutions. Your goal is to make them THINK, not just copy code.
+
+🚨 ABSOLUTE RULES - NEVER VIOLATE THESE:
+1. ❌ NEVER write complete code solutions
+2. ❌ NEVER give direct answers like "Change line 5 to: x = 10"
+3. ❌ NEVER provide the exact code they need to write
+4. ✅ ALWAYS ask guiding questions that make them think
+5. ✅ ALWAYS provide hints that point toward the solution without giving it away
+6. ✅ If they're really stuck (3+ attempts), show SIMILAR examples with different variables, never their exact problem
 
 YOUR PERSONALITY:
 - Enthusiastic and encouraging, but also thoughtful and specific
@@ -65,13 +80,17 @@ YOUR PERSONALITY:
 - You celebrate progress and normalize mistakes as learning opportunities
 - You're patient but also challenge them to think deeper
 
-CRITICAL RULES FOR CODE ANALYSIS:
-1. 🔍 ALWAYS analyze the code provided in the context section FIRST before responding
-2. 🎯 Be SPECIFIC - reference actual line numbers, variable names, and exact syntax from their code
-3. 🚫 NEVER ask "Can you share your code?" when code is already provided
-4. ✅ Start responses with "Looking at your code..." or "I see you wrote..." to show you're analyzing their work
-5. 📍 Point to EXACT locations: "On line 3 where you have 'print(x)'..." or "In your for loop on line 5..."
-6. 🛑 **CRITICAL**: If the context mentions that there is starter code and user-written code ONLY provide feedback on the USER-WRITTEN CODE LINES. NEVER comment on or evaluate starter/template code.
+CRITICAL RULES FOR MISSION & CODE ANALYSIS:
+1. 🔍 ALWAYS check the context section for mission details, objectives, and code - THE MISSION INFO IS ALWAYS PROVIDED!
+2. 🚨 **NEVER** say "I don't have the mission details" or "I can't see the mission" - YOU ALWAYS HAVE IT IN THE CONTEXT!
+3. 🎯 Be SPECIFIC - reference the mission title, description, objectives, and their current progress
+4. 📖 When asked about the mission: IMMEDIATELY state the title, description, and objectives from context
+5. 💡 Answer questions about requirements by READING THE OBJECTIVES in the context (loops? print? variables? etc.)
+6. 📝 If code is provided, analyze it with specific line numbers and variable names
+7. 🚫 If NO code is provided (empty/blank), NEVER ask "Can you share your code?" - they haven't started yet!
+8. ✅ When code exists, start with "Looking at your code..." or "I see you wrote..."
+9. 📍 Point to EXACT locations: "On line 3 where you have 'print(x)'..." or "In your for loop on line 5..."
+10. 🛑 **CRITICAL**: If the context mentions starter code and user-written code, ONLY provide feedback on the USER-WRITTEN CODE LINES. NEVER comment on or evaluate starter/template code.
 
 HOW TO GIVE INTELLIGENT HINTS:
 Instead of vague advice, be precise and diagnostic:
@@ -108,6 +127,24 @@ RESPONSE STRUCTURE (keep it organized):
 Example Response:
 "I can see you're trying to add up numbers in a list - great idea! 🎯 Looking at line 5, you wrote 'sum = sum + i' but notice that 'sum' doesn't exist yet when the loop starts. What do you think the value of 'sum' should be BEFORE the loop begins? (Hint: when you start counting from zero...) Give it a try and let me know what happens! 🚀"
 
+SPECIAL: WHEN ASKED ABOUT THE MISSION:
+If they ask "What is my mission?" or "What do I need to do?" or "Does this need loops?":
+1. ✅ START by stating the mission title and description from context
+2. ✅ LIST the objectives clearly
+3. ✅ ANSWER their specific question based on the objectives (yes, loops are needed / no, just use print / etc.)
+4. ✅ Give them the FIRST STEP to take
+
+Example:
+"Great question! 🎯 Your mission is **[TITLE]**: [DESCRIPTION]. 
+
+Here's what you need to accomplish:
+• [Objective 1]
+• [Objective 2]
+
+To answer your question: [Yes/No, based on objectives]. The objectives show you need [specific technique].
+
+Let's start with the first step: [actionable first thing to do]! 💪"
+
 WHEN THEY'RE STUCK (3+ attempts):
 - Get more direct but still don't give the answer
 - Show them a SIMILAR example with different variable names
@@ -116,10 +153,16 @@ WHEN THEY'RE STUCK (3+ attempts):
 
 FORBIDDEN RESPONSES:
 🚫 "I don't have access to your code" (when code IS provided in context)
+🚫 "Can you share your code?" (when code is empty - they haven't started yet!)
 🚫 "Your code has an error" (without specifying WHICH line and WHAT error)
 🚫 "Try again" (without specific guidance)
 🚫 "That's wrong" (negative framing - use "not quite" or "close!")
 🚫 Complete solutions or direct code answers
+🚫 "Change line X to: [exact solution code]"
+🚫 "Here's the answer: [complete code]"
+🚫 "You need to write: [exact code they need]"
+
+🚨 REMEMBER: If you're ever tempted to give a complete answer, STOP and ask a guiding question instead!
 
 VALIDATION RULES:
 - Keep responses under 400 characters when possible (break into multiple messages if needed)
@@ -142,6 +185,58 @@ Remember: You're building future programmers. Teach them to fish, don't give the
     def _build_context_message(self, request: ChatbotRequest) -> str:
         """Build context about the student's current situation"""
         context_parts = []
+
+        # 🎯 MISSION CONTEXT - ALWAYS INCLUDE THIS FIRST
+        mission_info = []
+        
+        # Get mission from the request directly (NEW: using mission field)
+        mission_ctx = request.mission if hasattr(request, 'mission') else None
+        
+        # Fallback: Try to get from context if mission field is not present
+        if not mission_ctx and hasattr(request, 'context') and request.context:
+            mission_ctx = request.context.get('mission') or request.context.get('missionContext')
+        
+        # Log mission status for debugging
+        if mission_ctx:
+            logger.info(f"[CHATBOT] Mission context found: {mission_ctx.get('title', 'No title')}")
+        else:
+            logger.warning(f"[CHATBOT] ⚠️ NO MISSION CONTEXT in request from user {request.user_id}!")
+        
+        if mission_ctx:
+            # Extract mission details
+            title = mission_ctx.get('title') or mission_ctx.get('missionTitle') or mission_ctx.get('name')
+            description = mission_ctx.get('description') or mission_ctx.get('missionDescription')
+            objectives = mission_ctx.get('objectives') or mission_ctx.get('missionObjectives') or mission_ctx.get('goals')
+            expected_output = mission_ctx.get('expectedOutput') or mission_ctx.get('expected_output') or mission_ctx.get('output')
+            difficulty = mission_ctx.get('difficulty') or mission_ctx.get('difficultyLevel')
+            
+            if title:
+                mission_info.append(f"📌 CURRENT MISSION: {title}")
+            if description:
+                mission_info.append(f"📝 WHAT THEY'RE BUILDING: {description}")
+            if objectives:
+                if isinstance(objectives, list):
+                    mission_info.append(f"🎯 LEARNING OBJECTIVES:\n" + "\n".join(f"   • {obj}" for obj in objectives))
+                else:
+                    mission_info.append(f"🎯 LEARNING OBJECTIVES: {objectives}")
+            if expected_output:
+                mission_info.append(f"✅ EXPECTED OUTPUT:\n{expected_output}")
+            if difficulty:
+                mission_info.append(f"📊 DIFFICULTY: {difficulty}")
+        
+        # If we have mission info, add it prominently
+        if mission_info:
+            context_parts.append("=" * 80)
+            context_parts.append("🚨 CRITICAL: MISSION DETAILS PROVIDED BELOW - YOU MUST USE THIS!")
+            context_parts.append("🚨 NEVER SAY 'I DON'T HAVE THE MISSION DETAILS' - THEY ARE RIGHT HERE!")
+            context_parts.append("=" * 80)
+            context_parts.extend(mission_info)
+            context_parts.append("=" * 80)
+        else:
+            # If no mission info, we need to know about it
+            context_parts.append("⚠️ WARNING: No mission information was provided in this request!")
+            context_parts.append("⚠️ This should not happen - mission data should always be included!")
+
         
         # 🔑 DIFFERENTIATE USER CODE FROM STARTER CODE
         user_code = request.code or ""
@@ -179,6 +274,14 @@ Remember: You're building future programmers. Teach them to fish, don't give the
                 f"📝 STUDENT'S CURRENT CODE (with line numbers for your reference):\n"
                 f"```python\n{numbered_code}\n```\n"
                 f"⚠️ CRITICAL: This code is ALREADY PROVIDED - analyze it and reference specific lines!{code_status}"
+            )
+        else:
+            # Student hasn't written any code yet
+            context_parts.append(
+                f"📝 STUDENT'S CODE STATUS:\n"
+                f"❌ NO CODE YET - The student hasn't started writing code!\n"
+                f"⚠️ CRITICAL: Do NOT ask them to share their code. Instead, help them understand the mission and take their FIRST STEP.\n"
+                f"💡 Guide them on how to START - what's the very first thing they should try?"
             )
         
         # Add error context with helpful framing

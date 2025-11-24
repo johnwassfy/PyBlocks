@@ -1,12 +1,12 @@
 "use client";
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Star, 
-  Lock, 
-  Trophy, 
-  Zap, 
-  Award, 
+import {
+  Star,
+  Lock,
+  Trophy,
+  Zap,
+  Award,
   ChevronRight,
   Sparkles,
   Target,
@@ -226,74 +226,50 @@ export default function Dashboard() {
     );
   }
 
-  // Debug: Log completed missions and all mission IDs before rendering
-  if (gamification && missions && gamification.completedMissions) {
-    // eslint-disable-next-line no-console
-    console.log('Completed missions:', gamification.completedMissions);
-    // eslint-disable-next-line no-console
-    console.log('All missions:', missions.map(m => m._id));
-    // eslint-disable-next-line no-console
-    console.log('Mission titles:', missions.map(m => ({ id: m._id, title: m.title })));
-    // Check for any matches
-    const matches = gamification.completedMissions.filter(id => missions.some(m => m._id === id));
-    // eslint-disable-next-line no-console
-    console.log('Matching missions found:', matches.length);
-    if (matches.length === 0) {
-      // eslint-disable-next-line no-console
-      console.warn('⚠️ ID MISMATCH: The completed mission IDs do not match any current mission IDs. This likely means missions were recreated in the database.');
-    }
-  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
       {/* Header with Profile */}
-      <div className={`sticky top-0 z-50 transition-all duration-300 ${
-        isScrolled 
-          ? 'bg-white/95 backdrop-blur-md border-b-2 border-indigo-200 shadow-xl' 
-          : 'bg-white border-b-4 border-indigo-200 shadow-lg'
-      }`}>
-        <div className={`container mx-auto px-4 transition-all duration-300 ${
-          isScrolled ? 'py-2' : 'py-4'
+      <div className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled
+        ? 'bg-white/95 backdrop-blur-md border-b-2 border-indigo-200 shadow-xl'
+        : 'bg-white border-b-4 border-indigo-200 shadow-lg'
         }`}>
+        <div className={`container mx-auto px-4 transition-all duration-300 ${isScrolled ? 'py-2' : 'py-4'
+          }`}>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             {/* Profile Section */}
             <div className="flex items-center gap-4">
               <motion.div
                 whileHover={{ scale: 1.05, rotate: 5 }}
-                className={`bg-gradient-to-br from-yellow-400 to-orange-500 rounded-3xl flex items-center justify-center shadow-lg border-4 border-white cursor-pointer transition-all duration-300 ${
-                  isScrolled 
-                    ? 'w-12 h-12 sm:w-14 sm:h-14' 
-                    : 'w-16 h-16 sm:w-20 sm:h-20'
-                }`}
+                className={`bg-gradient-to-br from-yellow-400 to-orange-500 rounded-3xl flex items-center justify-center shadow-lg border-4 border-white cursor-pointer transition-all duration-300 ${isScrolled
+                  ? 'w-12 h-12 sm:w-14 sm:h-14'
+                  : 'w-16 h-16 sm:w-20 sm:h-20'
+                  }`}
               >
-                <span className={`transition-all duration-300 ${
-                  isScrolled ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'
-                }`}>{user.avatar}</span>
+                <span className={`transition-all duration-300 ${isScrolled ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'
+                  }`}>{user.avatar}</span>
               </motion.div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <h2 className={`text-gray-900 transition-all duration-300 ${
-                    isScrolled ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'
-                  }`}>{user.username}</h2>
-                  <Badge className={`bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 transition-all duration-300 ${
-                    isScrolled ? 'text-xs' : ''
-                  }`}>
-                    <Crown className={`mr-1 transition-all duration-300 ${
-                      isScrolled ? 'w-2.5 h-2.5' : 'w-3 h-3'
-                    }`} />
+                  <h2 className={`text-gray-900 transition-all duration-300 ${isScrolled ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'
+                    }`}>{user.username}</h2>
+                  <Badge className={`bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 transition-all duration-300 ${isScrolled ? 'text-xs' : ''
+                    }`}>
+                    <Crown className={`mr-1 transition-all duration-300 ${isScrolled ? 'w-2.5 h-2.5' : 'w-3 h-3'
+                      }`} />
                     Level {gamification?.level || 1}
                   </Badge>
                 </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    {/* Streak is not in profile schema; remove or add if implemented */}
-                    <div className="flex items-center gap-1 text-orange-600">
-                      <Flame className="w-4 h-4" />
-                      <span>Keep coding every day!</span>
-                    </div>
-                    <div className="hidden sm:flex items-center gap-1 text-yellow-600">
-                      <Zap className="w-4 h-4" />
-                      <span>{gamification?.xp || 0} XP</span>
-                    </div>
+                <div className="flex items-center gap-3 text-sm">
+                  {/* Streak is not in profile schema; remove or add if implemented */}
+                  <div className="flex items-center gap-1 text-orange-600">
+                    <Flame className="w-4 h-4" />
+                    <span>Keep coding every day!</span>
                   </div>
+                  <div className="hidden sm:flex items-center gap-1 text-yellow-600">
+                    <Zap className="w-4 h-4" />
+                    <span>{gamification?.xp || 0} XP</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -301,7 +277,7 @@ export default function Dashboard() {
             <div className="flex items-center gap-3">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button 
+                  <Button
                     className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg rounded-2xl px-4 py-2"
                   >
                     <Trophy className="w-5 h-5 mr-2" />
@@ -317,7 +293,7 @@ export default function Dashboard() {
               {/* Settings Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button 
+                  <Button
                     className="rounded-2xl border-2 p-2"
                   >
                     <Menu className="w-5 h-5" />
@@ -328,7 +304,7 @@ export default function Dashboard() {
                     <Settings className="w-4 h-4 mr-2" />
                     Settings
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/')}> 
+                  <DropdownMenuItem onClick={() => navigate('/')}>
                     <LogOut className="w-4 h-4 mr-2" />
                     Sign Out
                   </DropdownMenuItem>
@@ -338,188 +314,183 @@ export default function Dashboard() {
           </div>
 
           {/* XP Progress Bar */}
-          <div className={`bg-gray-100 rounded-2xl border-2 border-indigo-100 transition-all duration-300 overflow-hidden ${
-            isScrolled ? 'mt-2 p-2 max-h-16 opacity-90' : 'mt-4 p-4 max-h-32'
-          }`}>
+          <div className={`bg-gray-100 rounded-2xl border-2 border-indigo-100 transition-all duration-300 overflow-hidden ${isScrolled ? 'mt-2 p-2 max-h-16 opacity-90' : 'mt-4 p-4 max-h-32'
+            }`}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Target className={`text-indigo-600 transition-all duration-300 ${
-                  isScrolled ? 'w-4 h-4' : 'w-5 h-5'
-                }`} />
-                <span className={`text-gray-700 transition-all duration-300 ${
-                  isScrolled ? 'text-xs' : 'text-sm'
-                }`}>Progress to Level {gamification?.level || 1}</span>
+                <Target className={`text-indigo-600 transition-all duration-300 ${isScrolled ? 'w-4 h-4' : 'w-5 h-5'
+                  }`} />
+                <span className={`text-gray-700 transition-all duration-300 ${isScrolled ? 'text-xs' : 'text-sm'
+                  }`}>Progress to Level {gamification?.level || 1}</span>
               </div>
-              <span className={`text-gray-600 transition-all duration-300 ${
-                isScrolled ? 'text-xs' : 'text-sm'
-              }`}>
+              <span className={`text-gray-600 transition-all duration-300 ${isScrolled ? 'text-xs' : 'text-sm'
+                }`}>
                 {gamification?.xp || 0} / {(gamification?.level || 1) * 100} XP
               </span>
             </div>
-            <Progress value={xpPercentage} className={`bg-gray-200 transition-all duration-300 ${
-              isScrolled ? 'h-2' : 'h-4'
-            }`} />
+            <Progress value={xpPercentage} className={`bg-gray-200 transition-all duration-300 ${isScrolled ? 'h-2' : 'h-4'
+              }`} />
           </div>
         </div>
       </div>
 
-    {insights && (
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid gap-6 lg:grid-cols-3">
-          <motion.div
-            whileHover={{ y: -4 }}
-            className="rounded-3xl border-2 border-indigo-100 bg-white/90 p-6 shadow-xl"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-indigo-700">Today's Focus</h3>
-              <Sparkles className="w-5 h-5 text-indigo-500" />
-            </div>
-            <p className="text-sm text-gray-600">Give extra love to these concepts:</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {focusConcepts.length > 0 ? (
-                focusConcepts.map((concept) => (
-                  <span
-                    key={concept}
-                    className="px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-medium"
-                  >
-                    {concept}
-                  </span>
-                ))
-              ) : (
-                <span className="text-xs text-gray-500">No focus areas right now — keep exploring! 🚀</span>
-              )}
-            </div>
-            {insights.strongConcepts.length > 0 && (
-              <div className="mt-6">
-                <p className="text-sm text-gray-600 mb-2">Super strengths:</p>
-                <div className="flex flex-wrap gap-2">
-                  {insights.strongConcepts.slice(0, 4).map((concept) => (
+      {insights && (
+        <div className="container mx-auto px-4 py-6">
+          <div className="grid gap-6 lg:grid-cols-3">
+            <motion.div
+              whileHover={{ y: -4 }}
+              className="rounded-3xl border-2 border-indigo-100 bg-white/90 p-6 shadow-xl"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-indigo-700">Today's Focus</h3>
+                <Sparkles className="w-5 h-5 text-indigo-500" />
+              </div>
+              <p className="text-sm text-gray-600">Give extra love to these concepts:</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {focusConcepts.length > 0 ? (
+                  focusConcepts.map((concept) => (
                     <span
                       key={concept}
-                      className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium"
+                      className="px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-medium"
                     >
                       {concept}
                     </span>
-                  ))}
-                </div>
+                  ))
+                ) : (
+                  <span className="text-xs text-gray-500">No focus areas right now — keep exploring! 🚀</span>
+                )}
               </div>
-            )}
-          </motion.div>
-
-          <motion.div
-            whileHover={{ y: -4 }}
-            className="rounded-3xl border-2 border-purple-100 bg-white/90 p-6 shadow-xl"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-purple-700">Recommended Missions</h3>
-              <Trophy className="w-5 h-5 text-purple-500" />
-            </div>
-            {insights.recommendations.length > 0 ? (
-              <ul className="space-y-3">
-                {insights.recommendations.map((mission) => (
-                  <li
-                    key={mission.id}
-                    className="rounded-2xl border border-purple-100 bg-purple-50/50 p-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-purple-700">{mission.title}</p>
-                        <p className="text-xs text-gray-500">
-                          {mission.difficulty ? mission.difficulty.toUpperCase() : 'Mission'}
-                        </p>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-xs"
-                        onClick={() => {
-                          const nextMission = missions.find((m) => m._id === mission.id);
-                          if (nextMission) {
-                            handleMissionClick(nextMission);
-                          }
-                        }}
+              {insights.strongConcepts.length > 0 && (
+                <div className="mt-6">
+                  <p className="text-sm text-gray-600 mb-2">Super strengths:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {insights.strongConcepts.slice(0, 4).map((concept) => (
+                      <span
+                        key={concept}
+                        className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium"
                       >
-                        Start
-                      </Button>
-                    </div>
-                    {mission.tags && mission.tags.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {mission.tags.slice(0, 3).map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-2 py-0.5 rounded-full bg-white text-[10px] text-purple-500 border border-purple-100"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-purple-200 bg-purple-50/40 p-4 text-sm text-purple-700">
-                We’re preparing new adventures for you. Keep coding to unlock more quests!
-              </div>
-            )}
-            {insights.fallbackMission && (
-              <div className="mt-4 rounded-2xl bg-indigo-50 border border-indigo-100 p-3 text-xs text-indigo-600">
-                Next in path: {insights.fallbackMission.title}
-              </div>
-            )}
-          </motion.div>
+                        {concept}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </motion.div>
 
-          <motion.div
-            whileHover={{ y: -4 }}
-            className="rounded-3xl border-2 border-pink-100 bg-white/90 p-6 shadow-xl"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-pink-700">Progress Pulse</h3>
-              <Target className="w-5 h-5 text-pink-500" />
-            </div>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Improvement boost</span>
-                <span className="font-semibold text-pink-600">
-                  {Math.round((insights.improvementFactor || 0) * 100)}%
-                </span>
+            <motion.div
+              whileHover={{ y: -4 }}
+              className="rounded-3xl border-2 border-purple-100 bg-white/90 p-6 shadow-xl"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-purple-700">Recommended Missions</h3>
+                <Trophy className="w-5 h-5 text-purple-500" />
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Missions completed</span>
-                <span className="font-semibold text-gray-700">
-                  {insights.gamification.totalMissionsCompleted}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Average score</span>
-                <span className="font-semibold text-gray-700">
-                  {Math.round(insights.totals.averageScore)}%
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Daily streak</span>
-                <span className="font-semibold text-orange-500">
-                  {insights.gamification.streak}🔥
-                </span>
-              </div>
-            </div>
-            {topMastery.length > 0 && (
-              <div className="mt-4">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Mastery Snapshot</p>
-                <ul className="mt-2 space-y-1 text-xs text-gray-600">
-                  {topMastery.map(([concept, score]) => (
-                    <li key={concept} className="flex items-center justify-between">
-                      <span>{concept}</span>
-                      <span className="font-semibold text-gray-700">{score}</span>
+              {insights.recommendations.length > 0 ? (
+                <ul className="space-y-3">
+                  {insights.recommendations.map((mission) => (
+                    <li
+                      key={mission.id}
+                      className="rounded-2xl border border-purple-100 bg-purple-50/50 p-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-purple-700">{mission.title}</p>
+                          <p className="text-xs text-gray-500">
+                            {mission.difficulty ? mission.difficulty.toUpperCase() : 'Mission'}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs"
+                          onClick={() => {
+                            const nextMission = missions.find((m) => m._id === mission.id);
+                            if (nextMission) {
+                              handleMissionClick(nextMission);
+                            }
+                          }}
+                        >
+                          Start
+                        </Button>
+                      </div>
+                      {mission.tags && mission.tags.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {mission.tags.slice(0, 3).map((tag) => (
+                            <span
+                              key={tag}
+                              className="px-2 py-0.5 rounded-full bg-white text-[10px] text-purple-500 border border-purple-100"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </li>
                   ))}
                 </ul>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-purple-200 bg-purple-50/40 p-4 text-sm text-purple-700">
+                  We’re preparing new adventures for you. Keep coding to unlock more quests!
+                </div>
+              )}
+              {insights.fallbackMission && (
+                <div className="mt-4 rounded-2xl bg-indigo-50 border border-indigo-100 p-3 text-xs text-indigo-600">
+                  Next in path: {insights.fallbackMission.title}
+                </div>
+              )}
+            </motion.div>
+
+            <motion.div
+              whileHover={{ y: -4 }}
+              className="rounded-3xl border-2 border-pink-100 bg-white/90 p-6 shadow-xl"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-pink-700">Progress Pulse</h3>
+                <Target className="w-5 h-5 text-pink-500" />
               </div>
-            )}
-          </motion.div>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Improvement boost</span>
+                  <span className="font-semibold text-pink-600">
+                    {Math.round((insights.improvementFactor || 0) * 100)}%
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Missions completed</span>
+                  <span className="font-semibold text-gray-700">
+                    {insights.gamification.totalMissionsCompleted}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Average score</span>
+                  <span className="font-semibold text-gray-700">
+                    {Math.round(insights.totals.averageScore)}%
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Daily streak</span>
+                  <span className="font-semibold text-orange-500">
+                    {insights.gamification.streak}🔥
+                  </span>
+                </div>
+              </div>
+              {topMastery.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">Mastery Snapshot</p>
+                  <ul className="mt-2 space-y-1 text-xs text-gray-600">
+                    {topMastery.map(([concept, score]) => (
+                      <li key={concept} className="flex items-center justify-between">
+                        <span>{concept}</span>
+                        <span className="font-semibold text-gray-700">{score}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </motion.div>
+          </div>
         </div>
-      </div>
-    )}
+      )}
 
       {/* Main Content - Mission Map */}
       <div className="px-4 py-8">
@@ -541,7 +512,7 @@ export default function Dashboard() {
         <div className="overflow-x-auto overflow-y-hidden pb-8 scrollbar-hide">
           <div className="relative mx-auto" style={{ width: `${missions.length * 220}px`, height: '450px' }}>
             {/* Winding Path Background */}
-            <svg 
+            <svg
               className="absolute inset-0 w-full h-full pointer-events-none"
               preserveAspectRatio="none"
             >
@@ -612,7 +583,7 @@ export default function Dashboard() {
                   {/* Circular Mission Block */}
                   <div className="relative">
                     {/* Main Circle */}
-                    <div 
+                    <div
                       className={`w-36 h-36 rounded-full border-4 shadow-2xl transition-all ${ringClasses} ${isSolved ? 'opacity-80' : ''}`}
                     >
                       {/* Gradient Background */}
@@ -636,7 +607,7 @@ export default function Dashboard() {
                     </div>
                     {/* Mission Title Below Circle */}
                     <div className="absolute top-full mt-4 left-1/2 transform -translate-x-1/2 w-36 text-center">
-                      <p className={`text-sm mb-1 ${isSolved ? 'text-emerald-700 font-bold' : 'text-gray-800'}`}> 
+                      <p className={`text-sm mb-1 ${isSolved ? 'text-emerald-700 font-bold' : 'text-gray-800'}`}>
                         {mission.title}
                       </p>
                       {isSolved && (

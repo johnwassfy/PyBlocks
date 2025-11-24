@@ -3,6 +3,32 @@ import { Document } from 'mongoose';
 
 export type MissionDocument = Mission & Document;
 
+// ⚙️ Toolbox filtering configuration
+export enum ToolboxCategoryName {
+  VARIABLES = 'VARIABLES',
+  DECISIONS = 'DECISIONS',
+  ITERATION = 'ITERATION',
+  FUNCTIONS = 'FUNCTIONS',
+  CALCULATIONS = 'CALCULATIONS',
+  OUTPUT_WITH_PLOTTING = 'OUTPUT_WITH_PLOTTING',
+  INPUT = 'INPUT',
+  TURTLES = 'TURTLES',
+  VALUES = 'VALUES',
+  CONVERSIONS = 'CONVERSIONS',
+  LISTS = 'LISTS',
+  DICTIONARIES = 'DICTIONARIES',
+}
+
+export interface ToolboxCategoryFilter {
+  name: ToolboxCategoryName;
+  allowedBlocks?: string[]; // specific block code strings to allow; if empty/undefined, all blocks in category are allowed
+}
+
+export interface ToolboxConfig {
+  mode: 'full' | 'restrict' | 'hide'; // 'full': all blocks, 'restrict': only specified categories, 'hide': empty toolbox
+  categories?: ToolboxCategoryFilter[]; // only used if mode is 'restrict'
+}
+
 @Schema({ timestamps: true })
 export class Mission {
   /** 🎯 General mission info */
@@ -124,6 +150,28 @@ export class Mission {
     forbiddenPatterns?: string[];
     requireExactOutput?: boolean;
   };
+
+  /** 🧰 Toolbox visibility and block filtering per mission */
+  @Prop({
+    type: {
+      mode: {
+        type: String,
+        enum: ['full', 'restrict', 'hide'],
+        default: 'full',
+      },
+      categories: [
+        {
+          name: {
+            type: String,
+            enum: Object.values(ToolboxCategoryName),
+          },
+          allowedBlocks: [String], // block code strings to allow (optional; if empty, all blocks in category are allowed)
+        },
+      ],
+    },
+    default: { mode: 'full' },
+  })
+  toolboxConfig?: ToolboxConfig;
 }
 
 export const MissionSchema = SchemaFactory.createForClass(Mission);

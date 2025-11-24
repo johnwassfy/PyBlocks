@@ -239,15 +239,23 @@ You are a supportive Python tutor detecting when a student needs help. Generate 
 **YOUR TASK:**
 Write ONE SHORT message (max 2 sentences, ~100 chars) that:
 1. Shows you understand their SPECIFIC problem (mention the concept/error/code pattern)
-2. Offers concrete help (not generic encouragement)
+2. Either gives a SMALL HINT or offers help - vary the approach!
 3. Uses a relevant emoji
-4. Makes them want to click for help
+4. Is helpful even if they don't click
 
-**GOOD EXAMPLES:**
+**VARY YOUR APPROACH - Use one of these styles:**
+A) DIRECT SMALL HINT (40% of the time):
+✅ "Check line 3 - Python needs a colon after 'if' statements! 🎯"
+✅ "Hint: That variable name doesn't match what you're using on line 5! 🔍"
+✅ "Your loop is close! Try using 'range(10)' instead of 'rang(10)' 🔄"
+
+B) OFFER TO HELP (40% of the time):
 ✅ "I see you keep getting 'NameError' with that variable! Want help making sure it's defined first? 🔧"
 ✅ "Your loop looks close but line 3 needs a small fix! Should I show you what's missing? 🔄"
-✅ "You've been staring at this for a while! Want me to break it into smaller steps? 🧩"
-✅ "That 'range' spelling is tricky - want to see what's wrong? 🎯"
+
+C) GUIDING QUESTION (20% of the time):
+✅ "You've been staring at this for a while! What if we broke it into smaller steps? 🧩"
+✅ "That error keeps coming back - have you checked if all your variable names match? 🤔"
 
 **BAD EXAMPLES (too vague):**
 ❌ "Need some help?" (doesn't show understanding)
@@ -282,23 +290,64 @@ Generate the message now (ONLY the message, no explanation):
     except Exception as e:
         print(f"Error generating proactive message: {e}")
         
-        # Contextual fallback messages based on analysis
+        # Contextual fallback messages based on analysis - VARY the approach!
+        import random
+        style = random.choice(['hint', 'help', 'question'])
+        
         if analysis.is_idle and metrics.idleTime > 90:
-            return "You've been thinking for a while! Want me to break down this problem into smaller steps? 🧩"
+            if style == 'hint':
+                return "Hint: Start with the first objective - read it carefully! 📖"
+            elif style == 'help':
+                return "You've been thinking for a while! Want me to break down this problem into smaller steps? 🧩"
+            else:
+                return "Taking your time is good! What part feels confusing right now? 🤔"
+                
         elif analysis.is_repeating and metrics.sameErrorCount >= 3:
-            return f"I see you keep getting the same '{metrics.lastErrorType}' error! Want help fixing it? 🔧"
+            if style == 'hint':
+                return f"Hint: That '{metrics.lastErrorType}' keeps appearing on the same line! Check your spelling 🔍"
+            elif style == 'help':
+                return f"I see you keep getting the same '{metrics.lastErrorType}' error! Want help fixing it? 🔧"
+            else:
+                return f"Same error three times? What if we looked at line {metrics.lastErrorMessage.split('line')[-1] if 'line' in str(metrics.lastErrorMessage) else '?'} together? 👀"
+                
         elif struggle_type == "syntax":
-            return "Syntax can be tricky! Want me to show you the correct way to write this? ✏️"
+            if style == 'hint':
+                return "Hint: Check if you're missing a colon (:) or closing bracket! ✏️"
+            else:
+                return "Syntax can be tricky! Want me to show you the correct way to write this? ✏️"
+                
         elif struggle_type == "loops" or "loops" in concept_struggles:
-            return "Loops are confusing you a bit! Want a hint about how to make them work? 🔄"
+            if style == 'hint':
+                return "Hint: Loops need proper indentation - is your code inside the loop indented? 🔄"
+            elif style == 'help':
+                return "Loops are confusing you a bit! Want a hint about how to make them work? 🔄"
+            else:
+                return "Having trouble with loops? What do you want the loop to do? 🤔"
+                
         elif struggle_type == "math" or "math" in concept_struggles:
-            return "Math operations are tricky! Should I explain how these numbers work? ➕"
+            if style == 'hint':
+                return "Hint: Remember + for adding, - for subtracting, * for multiplying! ➕"
+            else:
+                return "Math operations are tricky! Should I explain how these numbers work? ➕"
+                
         elif struggle_type == "logic" or "conditionals" in concept_struggles:
-            return "Conditions (if/else) can be tough! Want me to explain when to use them? 🤔"
+            if style == 'hint':
+                return "Hint: 'if' checks a condition, 'else' handles what happens when it's False! 🤔"
+            elif style == 'help':
+                return "Conditions (if/else) can be tough! Want me to explain when to use them? 🤔"
+            else:
+                return "Think about it: What should happen when the condition is True? What about False? 💭"
+                
         elif analysis.is_frustrated:
-            return "This is challenging! Want to try a different approach together? 🌟"
+            if style == 'hint':
+                return "Deep breath! Hint: Try testing just ONE line at a time to find what works 🌟"
+            else:
+                return "This is challenging! Want to try a different approach together? 🌟"
         else:
-            return "Looks like you might be stuck! Want a helpful hint? 💡"
+            if style == 'hint':
+                return "Hint: Re-read the mission objectives - they show exactly what to build! 💡"
+            else:
+                return "Looks like you might be stuck! Want a helpful hint? 💡"
 
 
 @router.post("/observe", response_model=ObservationResponse)

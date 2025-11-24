@@ -64,7 +64,7 @@
 }
 
 /* Add bright border to hovered blocks in workspace */
-.blocklyDraggable:hover > .blocklyPath {
+.blocklyDraggable:hover>.blocklyPath {
   stroke: #FFD700 !important;
   stroke-width: 4px !important;
 }
@@ -92,7 +92,7 @@
 }
 
 /* Add bright border to hovered blocks without scaling */
-.blocklyFlyout .blocklyDraggable:hover > .blocklyPath {
+.blocklyFlyout .blocklyDraggable:hover>.blocklyPath {
   stroke: #FFD700 !important;
   stroke-width: 4px !important;
   filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.6));
@@ -106,7 +106,7 @@
 }
 
 /* === BLOCK INPUTS === */
-.blocklyEditableText > text {
+.blocklyEditableText>text {
   font-family: 'Comic Sans MS', monospace !important;
   font-size: 13px !important;
   font-weight: bold !important;
@@ -120,7 +120,7 @@
 }
 
 /* === INSERTION MARKER === */
-.blocklyInsertionMarker > .blocklyPath {
+.blocklyInsertionMarker>.blocklyPath {
   fill: #667eea !important;
   fill-opacity: 0.3 !important;
   stroke: #667eea !important;
@@ -185,14 +185,14 @@
 }
 
 /* === SELECTED BLOCK HIGHLIGHT === */
-.blocklySelected > .blocklyPath {
+.blocklySelected>.blocklyPath {
   stroke: #FFD700 !important;
   stroke-width: 4px !important;
   filter: drop-shadow(0 0 15px #FFD700);
 }
 
 /* === DISABLED BLOCKS === */
-.blocklyDisabled > .blocklyPath {
+.blocklyDisabled>.blocklyPath {
   fill-opacity: 0.5 !important;
   stroke-opacity: 0.5 !important;
   filter: grayscale(50%);
@@ -243,6 +243,7 @@
     transform: scale(1.2);
     opacity: 0.8;
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
@@ -271,12 +272,12 @@
 }
 
 /* === ZOOM BUTTON STYLING === */
-.blocklyZoom > image {
+.blocklyZoom>image {
   opacity: 0.8;
   transition: opacity 0.2s ease;
 }
 
-.blocklyZoom > image:hover {
+.blocklyZoom>image:hover {
   opacity: 1;
 }
 
@@ -331,7 +332,7 @@
 
 /* === BLOCK FIELD COLORS === */
 /* Make input field backgrounds slightly colored */
-.blocklyEditableText > rect {
+.blocklyEditableText>rect {
   fill: rgba(255, 255, 255, 0.9) !important;
   stroke: rgba(0, 0, 0, 0.2) !important;
   stroke-width: 1px !important;
@@ -341,4 +342,237 @@
 /* === PROCEDURE BLOCKS SPECIAL STYLING === */
 .blocklyTreeRow:contains("Functions") {
   font-size: 18px !important;
+}
+
+.blocklyWidgetDiv .goog-menuitem-content {
+  font-weight: bold !important;
+}
+
+/* === BLOCK INPUT FIELDS === */
+.blocklyWidgetDiv .blocklyHtmlInput {
+  font-family: 'Comic Sans MS', monospace !important;
+  font-size: 14px !important;
+  font-weight: bold !important;
+  border-radius: 10px !important;
+  background: white !important;
+  box-shadow: 0 4px 10px rgba(57, 106, 252, 0.2) !important;
+}
+
+.blocklyWidgetDiv .blocklyHtmlInput:focus {
+  border-color: #667eea !important;
+  box-shadow: 0 0 15px rgba(102, 126, 234, 0.5) !important;
+  outline: none !important;
+}
+
+/* === BLOCK CHECKBOXES === */
+.blocklyWidgetDiv input[type="checkbox"] {
+  width: 24px !important;
+  height: 24px !important;
+  cursor: pointer !important;
+  border-radius: 6px !important;
+}
+
+/* === BLOCK NUMBER INPUTS === */
+.blocklyWidgetDiv input[type="number"] {
+  font-size: 16px !important;
+}
+
+/* === SELECTED BLOCK HIGHLIGHT === */
+.blocklySelected>.blocklyPath {
+  stroke: #FFD700 !important;
+  stroke-width: 4px !important;
+  filter: drop-shadow(0 0 15px #FFD700);
+}
+
+/* === DISABLED BLOCKS === */
+.blocklyDisabled>.blocklyPath {
+  fill-opacity: 0.5 !important;
+  stroke-opacity: 0.5 !important;
+  filter: grayscale(50%);
+}
+
+/* === COMMENT ICON === */
+.blocklyIconGroup {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* === MUTATOR ICON === */
+.scratchMutatorIcon {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* === WORKSPACE GRID === */
+.blocklyMainBackground {
+  stroke: rgba(102, 126, 234, 0.1) !important;
+  stroke-width: 1px !important;
+}
+
+/* === SCROLLBARS IN WORKSPACE === */
+.blocklyScrollbarHandle {
+  fill: #667eea !important;
+  fill-opacity: 0.6 !important;
+  rx: 8px !important;
+}
+
+.blocklyScrollbarHandle:hover {
+  fill-opacity: 0.8 !important;
+}
+
+.blocklyScrollbarBackground {
+  fill: #f0f4ff !important;
+  fill-opacity: 0.8 !important;
+  rx: 8px !important;
+}
+
+/* === TOOLBOX SEPARATOR === */
+.blocklyTreeSeparator {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  margin: 10px 5px !important;
+}
+
+/* === BLOCK ANIMATION ON DROP === */
+@keyframes blockDrop {
+  0% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.blocklyDraggable.blocklyDragging {
+  animation: none;
+}
+
+/* === TRASH CAN ANIMATION === */
+.blocklyTrashBody {
+  fill: #ef4444 !important;
+}
+
+.blocklyTrashLid {
+  fill: #dc2626 !important;
+}
+
+.blocklyTrash:hover .blocklyTrashBody {
+  fill: #f87171 !important;
+}
+
+.blocklyTrash:hover .blocklyTrashLid {
+  fill: #ef4444 !important;
+}
+
+/* === ZOOM BUTTON STYLING === */
+.blocklyZoom>image {
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.blocklyZoom>image:hover {
+  opacity: 1;
+}
+
+/* === WORKSPACE BACKGROUND PATTERN === */
+.blocklyMainBackground {
+  fill: #f5f7ff !important;
+}
+
+/* === COMMENT BUBBLES === */
+.scratchCommentRect {
+  fill: #fef3c7 !important;
+  stroke: #f59e0b !important;
+  stroke-width: 2px !important;
+  rx: 10px !important;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.15));
+}
+
+.scratchCommentText {
+  font-family: 'Comic Sans MS', sans-serif !important;
+  font-size: 13px !important;
+  fill: #78350f !important;
+}
+
+.scratchCommentForeignObject {
+  border-radius: 10px !important;
+}
+
+/* === BLOCK WARNING INDICATORS === */
+.blocklyIconSymbol {
+  fill: #f59e0b !important;
+}
+
+.blocklyIconSymbol:hover {
+  fill: #f97316 !important;
+}
+
+/* === CONTEXT MENU IN WORKSPACE === */
+.blocklyContextMenu {
+  border: 3px solid #396afc !important;
+}
+
+.blocklyMenuItem {
+  font-family: 'Comic Sans MS', sans-serif !important;
+}
+
+/* === MINI-MAP (if enabled) === */
+.blocklyMinimap {
+  border-radius: 15px !important;
+  border: 3px solid #396afc !important;
+  box-shadow: 0 4px 15px rgba(57, 106, 252, 0.3) !important;
+}
+
+/* === BLOCK FIELD COLORS === */
+/* Make input field backgrounds slightly colored */
+.blocklyEditableText>rect {
+  fill: rgba(255, 255, 255, 0.9) !important;
+  stroke: rgba(0, 0, 0, 0.2) !important;
+  stroke-width: 1px !important;
+  rx: 6px !important;
+}
+
+/* === PROCEDURE BLOCKS SPECIAL STYLING === */
+.blocklyTreeRow:contains("Functions") {
+  font-size: 18px !important;
+}
+
+/* ====================================
+   🔧 DROPDOWN MENU POSITIONING FIX
+   ==================================== */
+
+/* Fix dropdown menu positioning - override the transform that shifts it down */
+.blocklyDropDownDiv {
+  transform: translate(0px, -70px) !important;
+}
+
+/* ====================================
+   🔧 HIDE ALL SCROLLBARS
+   ==================================== */
+
+/* Hide all Blockly SVG scrollbars */
+.blocklyScrollbarVertical,
+.blocklyScrollbarHorizontal {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Hide scrollbar background and handle */
+.blocklyScrollbarBackground,
+.blocklyScrollbarHandle {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Hide main workspace scrollbar */
+.blocklyMainWorkspaceScrollbar {
+  display: none !important;
+}
+
+/* Hide flyout scrollbars */
+.blocklyFlyout .blocklyScrollbarVertical,
+.blocklyFlyout .blocklyScrollbarHorizontal {
+  display: none !important;
+  visibility: hidden !important;
 }

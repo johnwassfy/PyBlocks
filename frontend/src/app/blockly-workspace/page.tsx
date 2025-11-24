@@ -23,15 +23,15 @@ export default function WorkspacePage() {
   };
 
   return (
-    <div className="h-screen w-screen flex overflow-hidden" style={{ 
-      margin: 0, 
-      padding: 0, 
+    <div className="h-screen w-screen flex overflow-hidden" style={{
+      margin: 0,
+      padding: 0,
       gap: 0,
       alignItems: 'stretch'
     }}>
       {/* Main Editor Area - 70% width */}
-      <div className="flex-1 min-w-0 overflow-hidden" style={{ 
-        margin: 0, 
+      <div className="flex-1 min-w-0 overflow-hidden" style={{
+        margin: 0,
         padding: 0,
         height: '100vh',
         display: 'flex',
@@ -39,10 +39,10 @@ export default function WorkspacePage() {
       }}>
         <BlocklyWorkspace {...workspaceProps} />
       </div>
-      
+
       {/* Right Sidebar - 30% width */}
-      <div className="w-[30%] min-w-[320px] max-w-[400px] overflow-hidden" style={{ 
-        margin: 0, 
+      <div className="w-[30%] min-w-[320px] max-w-[400px] overflow-hidden" style={{
+        margin: 0,
         padding: 0,
         height: '100vh',
         display: 'flex',
