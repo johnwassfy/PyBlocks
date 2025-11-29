@@ -16,6 +16,7 @@ interface WorkspaceContextType {
     gamification?: GamificationData | null;
     insights?: AdaptiveInsights | null;
   }) => void;
+  clearWorkspace: () => void;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
@@ -41,8 +42,16 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setInsights(data.insights ?? null);
   };
 
+  const clearWorkspace = () => {
+    setMission(null);
+    setUser(null);
+    setProfile(null);
+    setGamification(null);
+    setInsights(null);
+  };
+
   return (
-    <WorkspaceContext.Provider value={{ mission, user, profile, gamification, insights, setWorkspace }}>
+    <WorkspaceContext.Provider value={{ mission, user, profile, gamification, insights, setWorkspace, clearWorkspace }}>
       {children}
     </WorkspaceContext.Provider>
   );

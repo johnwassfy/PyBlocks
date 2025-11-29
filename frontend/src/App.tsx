@@ -6,6 +6,8 @@ import LoginPage from './components/LoginPage';
 import RegisterPage from './components/RegisterPage';
 import OnboardingFlow from './components/onboarding/OnboardingFlow';
 import Dashboard from './components/Dashboard';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Client-side router for Figma Make preview
 // In production, use Next.js App Router (see /app directory)
@@ -28,7 +30,7 @@ export default function App() {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       const link = target.closest('a');
-      
+
       if (link && link.href && link.href.startsWith(window.location.origin)) {
         e.preventDefault();
         const path = link.href.replace(window.location.origin, '');
@@ -41,22 +43,22 @@ export default function App() {
     return () => document.removeEventListener('click', handleClick);
   }, []);
 
-  // Render current page
-  if (currentPath === '/login') {
-    return <LoginPage />;
-  }
-
-  if (currentPath === '/register') {
-    return <RegisterPage />;
-  }
-
-  if (currentPath === '/onboarding') {
-    return <OnboardingFlow />;
-  }
-
-    if (currentPath === '/dashboard') {
-    return <Dashboard />;
-  }
-
-  return <Homepage />;
+  // Render current page wrapped with AuthProvider
+  return (
+    <AuthProvider>
+      {currentPath === '/login' && <LoginPage />}
+      {currentPath === '/register' && <RegisterPage />}
+      {currentPath === '/onboarding' && (
+        <ProtectedRoute>
+          <OnboardingFlow />
+        </ProtectedRoute>
+      )}
+      {currentPath === '/dashboard' && (
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      )}
+      {currentPath === '/' && <Homepage />}
+    </AuthProvider>
+  );
 }

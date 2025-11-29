@@ -1,4 +1,5 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Patch, Delete, Body } from '@nestjs/common';
+import { UpdateUserDto } from './dto/update-user.dto';
 import {
   ApiTags,
   ApiOperation,
@@ -15,7 +16,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Get('profile')
   @ApiOperation({ summary: 'Get current user profile' })
@@ -57,5 +58,24 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async getUserById(@Param('id') id: string) {
     return this.usersService.getUserProfile(id);
+  }
+
+  @Patch('profile')
+  @ApiOperation({ summary: 'Update user profile' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateProfile(
+    @CurrentUser() user: { userId: string },
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return this.usersService.update(user.userId, updateUserDto);
+  }
+
+  @Delete('profile')
+  @ApiOperation({ summary: 'Delete user account' })
+  @ApiResponse({ status: 200, description: 'Account deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async deleteAccount(@CurrentUser() user: { userId: string }) {
+    return this.usersService.delete(user.userId);
   }
 }

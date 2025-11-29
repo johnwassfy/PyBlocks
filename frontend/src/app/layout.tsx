@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
 import "../styles/globals.css";
+import { AuthProvider } from '../context/AuthContext';
 import { WorkspaceProvider } from '../context/WorkspaceContext';
 
 const inter = Inter({
@@ -49,9 +50,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Script src="/blockpy/blockpy.js" strategy="beforeInteractive" />
       </head>
       <body className={`${inter.variable} antialiased`}>
-        <WorkspaceProvider>
-          {children}
-        </WorkspaceProvider>
+        <AuthProvider>
+          <WorkspaceProvider>
+            {children}
+          </WorkspaceProvider>
+        </AuthProvider>
       </body>
     </html>
   );

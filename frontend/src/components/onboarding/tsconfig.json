@@ -1,0 +1,8 @@
+// TypeScript configuration for onboarding components
+// Suppresses overly strict Framer Motion variant type checking
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "skipLibCheck": true
+    }
+}

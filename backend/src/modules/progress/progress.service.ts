@@ -11,7 +11,7 @@ export class ProgressService {
   constructor(
     @InjectModel(Progress.name) private progressModel: Model<ProgressDocument>,
     private learningProfileService: LearningProfileService,
-  ) {}
+  ) { }
 
   async updateProgress(
     userId: string,
@@ -249,5 +249,12 @@ export class ProgressService {
       progress: savedProgress,
       masterySnapshot: new Map(savedProgress.conceptMastery),
     };
+  }
+
+  /**
+   * 🗑️ Delete progress data (for account deletion)
+   */
+  async delete(userId: string): Promise<void> {
+    await this.progressModel.deleteOne({ userId }).exec();
   }
 }

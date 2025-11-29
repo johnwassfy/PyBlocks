@@ -6,14 +6,21 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const { login, isAuthenticated } = useAuth();
+
+  // Note: Automatic redirect removed to prevent race condition with profile fetch
+  // The redirect is now handled manually after checking the learning profile
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,38 +28,14 @@ export default function LoginPage() {
     setError('');
     setSuccess(false);
 
-    console.log('Logging in with:', { email, password });
-
     try {
-      const response = await fetch('http://localhost:5000/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
-
-      const data = await response.json();
-      console.log('Login response:', data);
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
-
-      // Store JWT token
-      if (data.access_token) {
-        localStorage.setItem('token', data.access_token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-      }
-
-      setSuccess(true);
+      const data = await login(email, password);
       console.log('Login successful!', data);
 
       // Check backend learning profile for onboarding status
       try {
+        console.log('Login response data:', data);
+        console.log('Access Token:', data.access_token);
         const profileRes = await fetch('http://localhost:5000/learning-profile', {
           method: 'GET',
           headers: {
@@ -60,19 +43,38 @@ export default function LoginPage() {
             Authorization: `Bearer ${data.access_token}`,
           },
         });
-        const profile = await profileRes.json();
-        // Onboarding is complete only if both fields are not null/undefined
-        const onboardingCompleted = profile.codingExperience != "none" && profile.pythonFamiliarity != "none";
-        setTimeout(() => {
-          if (!onboardingCompleted) {
+        console.log('Profile fetch status:', profileRes.status);
+        if (profileRes.ok) {
+          const profile = await profileRes.json();
+          console.log('Profile data:', profile);
+          // Onboarding is complete only if both fields are not "none"
+          const onboardingCompleted = profile.codingExperience !== "none" && profile.pythonFamiliarity !== "none";
+
+          // Show success message briefly before redirect
+          setSuccess(true);
+          setTimeout(() => {
+            if (!onboardingCompleted) {
+              window.location.href = '/onboarding';
+            } else {
+              window.location.href = '/dashboard';
+            }
+          }, 500); // Reduced to 500ms to minimize race condition
+        } else {
+          // If profile not found (404) or other error, redirect to onboarding to create one
+          const errorText = await profileRes.text();
+          console.warn('Profile fetch failed:', profileRes.status, errorText);
+          setSuccess(true);
+          setTimeout(() => {
             window.location.href = '/onboarding';
-          } else {
-            window.location.href = '/dashboard';
-          }
-        }, 1000);
+          }, 500);
+        }
       } catch (err) {
+        console.error('Error checking profile:', err);
         // Fallback: if error, go to onboarding
-        window.location.href = '/onboarding';
+        setSuccess(true);
+        setTimeout(() => {
+          window.location.href = '/onboarding';
+        }, 500);
       }
 
     } catch (err) {
@@ -97,16 +99,15 @@ export default function LoginPage() {
               <div className="text-xs text-gray-500">Learn Python, Have Fun!</div>
             </div>
           </Link>
-          
-          <Link href="/">
-            <Button 
-              variant="ghost" 
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Home
-            </Button>
-          </Link>
+
+          <Button
+            variant="ghost"
+            className="flex items-center gap-2"
+            onClick={() => router.push('/')} // Use router.push
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Home
+          </Button>
         </div>
       </div>
 
@@ -122,43 +123,69 @@ export default function LoginPage() {
               Sign in to continue your coding adventure 🚀
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent className="pt-6">
             <form onSubmit={handleLogin} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-base">Email or Nickname</Label>
+              <div className="space-y-0">
+                {/* Block header/label */}
+                <div className="bg-indigo-600 text-white px-4 py-2 rounded-t-lg text-sm font-medium">
+                  Username
+                </div>
+                {/* Block body with input */}
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <Input
-                    id="email"
-                    type="text"
-                    placeholder="Enter your email or nickname"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-11 h-12 text-base border-2 rounded-xl"
-                    required
-                  />
+                  <div className="flex items-stretch rounded-b-lg shadow-[0_4px_0_0_rgba(79,70,229,0.4)] hover:shadow-[0_6px_0_0_rgba(79,70,229,0.4)] transition-all overflow-visible">
+                    {/* Icon Block with puzzle notch */}
+                    <div className="relative flex items-center justify-center w-16 bg-indigo-500 rounded-bl-lg overflow-visible">
+                      <Mail className="w-6 h-6 text-white relative z-10" />
+                      {/* Puzzle notch on right side */}
+                      <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-6 bg-indigo-500 rounded-r-md z-20"></div>
+                    </div>
+                    {/* Input area with inset */}
+                    <div className="flex-1 bg-white rounded-br-lg flex items-center border-2 border-l-0 border-t-0 border-indigo-400 relative">
+                      <Input
+                        id="email"
+                        type="text"
+                        placeholder="Enter your Username"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="flex-1 h-12 text-base border-0 focus:ring-0 focus:outline-none bg-transparent"
+                        required
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-base">Password</Label>
-                  <a href="#" className="text-sm text-indigo-600 hover:text-indigo-700 hover:underline">
-                    Forgot password?
+              <div className="space-y-0">
+                {/* Block header/label with forgot password link */}
+                <div className="bg-purple-600 text-white px-4 py-2 rounded-t-lg flex items-center justify-between">
+                  <span className="text-sm font-medium">Password</span>
+                  <a href="#" className="text-xs text-purple-100 hover:text-white hover:underline">
+                    Forgot?
                   </a>
                 </div>
+                {/* Block body with input */}
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-11 h-12 text-base border-2 rounded-xl"
-                    required
-                  />
+                  <div className="flex items-stretch rounded-b-lg shadow-[0_4px_0_0_rgba(147,51,234,0.4)] hover:shadow-[0_6px_0_0_rgba(147,51,234,0.4)] transition-all">
+                    {/* Icon Block with puzzle notch */}
+                    <div className="relative flex items-center justify-center w-16 bg-purple-500 rounded-bl-lg">
+                      <Lock className="w-6 h-6 text-white relative z-10" />
+                      {/* Puzzle notch on right side */}
+                      <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-6 bg-purple-500 rounded-r-md"></div>
+                    </div>
+                    {/* Input area with inset */}
+                    <div className="flex-1 bg-white rounded-br-lg flex items-center border-2 border-l-0 border-t-0 border-purple-400">
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="flex-1 h-12 text-base border-0 focus:ring-0 focus:outline-none bg-transparent"
+                        required
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -178,13 +205,13 @@ export default function LoginPage() {
                 </div>
               )}
 
-              <Button
+              <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-13 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-lg rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-lg rounded-lg shadow-[0_6px_0_0_rgba(79,70,229,0.5)] hover:shadow-[0_8px_0_0_rgba(79,70,229,0.5)] active:shadow-[0_2px_0_0_rgba(79,70,229,0.5)] active:translate-y-1 transition-all py-4 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? 'Signing In...' : 'Sign In'}
-              </Button>
+                {isLoading ? 'Signing In...' : '🚀 Sign In'}
+              </button>
 
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
@@ -199,15 +226,14 @@ export default function LoginPage() {
                 <p className="text-gray-700 mb-3">
                   Don't have an account yet?
                 </p>
-                <Link href="/register" className="block">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-11 border-2 border-indigo-300 text-indigo-700 hover:bg-indigo-50 rounded-xl"
-                  >
-                    Create Free Account
-                  </Button>
-                </Link>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-11 border-2 border-indigo-300 text-indigo-700 hover:bg-indigo-50 rounded-xl"
+                  onClick={() => router.push('/register')}
+                >
+                  Create Free Account
+                </Button>
               </div>
             </form>
 

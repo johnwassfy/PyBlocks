@@ -16,7 +16,7 @@ export class GamificationService {
     private gamificationModel: Model<GamificationDocument>,
     @InjectModel(Achievement.name)
     private achievementModel: Model<any>,
-  ) {}
+  ) { }
 
   /**
    * 🎯 Award XP for completing a mission (only once per mission)
@@ -376,5 +376,12 @@ export class GamificationService {
         totalTimeSpentMinutes: gamification.totalTimeSpentMinutes,
       },
     };
+  }
+
+  /**
+   * 🗑️ Delete gamification data (for account deletion)
+   */
+  async delete(userId: string): Promise<void> {
+    await this.gamificationModel.deleteOne({ userId }).exec();
   }
 }

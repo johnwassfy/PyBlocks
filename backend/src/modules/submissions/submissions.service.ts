@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -40,12 +40,14 @@ export class SubmissionsService {
     private submissionModel: Model<SubmissionDocument>,
     @InjectModel(SubmissionLog.name)
     private submissionLogModel: Model<SubmissionLogDocument>,
+    @Inject(forwardRef(() => UsersService))
     private usersService: UsersService,
+    @Inject(forwardRef(() => MissionsService))
     private missionsService: MissionsService,
     private aiService: AiService,
     private eventEmitter: EventEmitter2,
     private adaptivityService: AdaptivityService,
-  ) {}
+  ) { }
 
   async create(
     userId: string,
@@ -579,5 +581,13 @@ export class SubmissionsService {
     const hash = crypto.createHash('md5').update(userId).digest('hex');
     const numericId = parseInt(hash.substring(0, 8), 16) % 10000;
     return `STUDENT_${String(numericId).padStart(4, '0')}`;
+  }
+
+  /**
+   * 🗑️ Delete all submissions for a user (for account deletion)
+   */
+  async delete(userId: string): Promise<void> {
+    await this.submissionModel.deleteMany({ userId }).exec();
+    await this.submissionLogModel.deleteMany({ userId }).exec();
   }
 }

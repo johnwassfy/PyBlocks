@@ -147,6 +147,7 @@ export default function BlocklyWorkspace({
   const editorRef = useRef<any>(null);
   const initializedRef = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isToolboxReady, setIsToolboxReady] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [attempts, setAttempts] = useState(1);
@@ -196,6 +197,7 @@ export default function BlocklyWorkspace({
 
     if (!mission?.toolboxConfig) {
       console.warn('[🧰 Toolbox] ❌ No toolboxConfig found, skipping');
+      setIsToolboxReady(true);
       return;
     }
 
@@ -239,6 +241,7 @@ export default function BlocklyWorkspace({
           blockEditor.remakeToolbox('normal');
           console.log('[🧰 Toolbox] ✅ Called remakeToolbox("normal")');
         }
+        setIsToolboxReady(true);
         return;
       }
 
@@ -248,6 +251,7 @@ export default function BlocklyWorkspace({
           blockEditor.remakeToolbox('empty');
           console.log('[🧰 Toolbox] ✅ Called remakeToolbox("empty")');
         }
+        setIsToolboxReady(true);
         return;
       }
 
@@ -376,11 +380,14 @@ export default function BlocklyWorkspace({
           try {
             blockEditor.remakeToolbox();
             console.log('[🧰 Toolbox] ✅✅✅ TOOLBOX FILTERED SUCCESSFULLY! ✅✅✅');
+            setIsToolboxReady(true);
           } catch (remakeErr) {
             console.error('[🧰 Toolbox] remakeToolbox failed:', remakeErr);
+            setIsToolboxReady(true); // Set ready even on error to prevent infinite loading
           }
         } else {
           console.error('[🧰 Toolbox] ❌ remakeToolbox not available');
+          setIsToolboxReady(true); // Set ready even if method not available
         }
       }
     } catch (err) {
@@ -1313,10 +1320,12 @@ export default function BlocklyWorkspace({
           <div id="blockpy-editor" className="flex-1 w-full h-full" style={{ margin: 0, padding: 0 }} />
 
           {/* Loading state */}
-          {isLoading && (
-            <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center z-50">
+          {(isLoading || !isToolboxReady) && (
+            <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center" style={{ zIndex: 9999 }}>
               <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-              <p className="text-indigo-900 font-bold text-lg animate-pulse">Loading your workspace...</p>
+              <p className="text-indigo-900 font-bold text-lg animate-pulse">
+                {isLoading ? 'Loading workspace...' : 'Preparing blocks...'}
+              </p>
             </div>
           )}
         </div>
@@ -1347,6 +1356,7 @@ export default function BlocklyWorkspace({
 
         {/* 🧠 Activity indicator (shows when AI is observing) */}
         {blockActivity.length > 0 && (
+
           <div className="fixed bottom-6 left-6 bg-white/90 backdrop-blur border border-indigo-100 rounded-full px-4 py-2 shadow-lg z-40 flex items-center gap-2 animate-fade-in">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             <span className="text-xs text-indigo-600 font-bold">
@@ -1461,6 +1471,6 @@ export default function BlocklyWorkspace({
           }}
         />
       </div>
-    </div>
+    </div >
   );
 }

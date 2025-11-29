@@ -7,6 +7,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { useState, useEffect } from 'react';
+import { authService } from '../services/authService';
 
 const avatars = [
   { id: '1', emoji: '🐱', name: 'Cool Cat' },
@@ -29,7 +30,10 @@ const ageRanges = [
   { id: '14+', label: '14+ years old' },
 ];
 
+import { useRouter } from 'next/navigation';
+
 export default function RegisterPage() {
+  const router = useRouter();
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -64,7 +68,7 @@ export default function RegisterPage() {
       } finally {
         setIsCheckingUsername(false);
       }
-    }, 500); // Wait 500ms after user stops typing
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [nickname]);
@@ -87,7 +91,7 @@ export default function RegisterPage() {
       } finally {
         setIsCheckingEmail(false);
       }
-    }, 500); // Wait 500ms after user stops typing
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [email]);
@@ -100,43 +104,30 @@ export default function RegisterPage() {
     setSuccess(false);
 
     const avatar = avatars.find(a => a.id === selectedAvatar);
-    
-    console.log('Registering with:', { 
-      nickname, 
-      email, 
-      password, 
-      avatar, 
-      ageRange 
+
+    console.log('Registering with:', {
+      nickname,
+      email,
+      password,
+      avatar,
+      ageRange
     });
 
     try {
-      const response = await fetch('http://localhost:5000/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          nickname,
-          email,
-          password,
-          avatar,
-          ageRange,
-        }),
+      const data = await authService.register({
+        nickname,
+        email,
+        password,
+        avatar: avatar || null,
+        ageRange,
       });
 
-      const data = await response.json();
       console.log('Registration response:', data);
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
-      }
-
-      // Check for email warning (non-blocking)
       if (data.warning) {
         setWarning(data.warning);
       }
 
-      // Store JWT token
       if (data.access_token) {
         localStorage.setItem('token', data.access_token);
         localStorage.setItem('user', JSON.stringify(data.user));
@@ -145,9 +136,8 @@ export default function RegisterPage() {
       setSuccess(true);
       console.log('Registration successful!', data);
 
-      // Redirect to login page after 2 seconds
       setTimeout(() => {
-        window.location.href = '/login';
+        router.push('/onboarding');
       }, 2000);
 
     } catch (err) {
@@ -172,16 +162,15 @@ export default function RegisterPage() {
               <div className="text-xs text-gray-500">Learn Python, Have Fun!</div>
             </div>
           </Link>
-          
-          <Link href="/">
-            <Button 
-              variant="ghost" 
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Home
-            </Button>
-          </Link>
+
+          <Button
+            variant="ghost"
+            className="flex items-center gap-2"
+            onClick={() => router.push('/')}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Home
+          </Button>
         </div>
       </div>
 
@@ -198,148 +187,194 @@ export default function RegisterPage() {
               Pick your avatar, choose a cool nickname, and start your coding adventure! 🚀
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent className="pt-6">
             <form onSubmit={handleRegister} className="space-y-6">
               {/* Avatar Selection */}
-              <div className="space-y-3">
-                <Label className="text-lg">Choose Your Avatar</Label>
-                <p className="text-sm text-gray-500">Pick a character that represents you!</p>
-                <div className="grid grid-cols-4 md:grid-cols-6 gap-3">
-                  {avatars.map((avatar) => (
-                    <button
-                      key={avatar.id}
-                      type="button"
-                      onClick={() => setSelectedAvatar(avatar.id)}
-                      className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-3 transition-all ${
-                        selectedAvatar === avatar.id
-                          ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg scale-105 border-4 border-indigo-300'
-                          : 'bg-gray-50 hover:bg-gray-100 border-2 border-gray-200'
-                      }`}
-                    >
-                      <span className="text-3xl mb-1">{avatar.emoji}</span>
-                      <span className={`text-xs text-center leading-tight ${
-                        selectedAvatar === avatar.id ? 'text-white' : 'text-gray-600'
-                      }`}>
-                        {avatar.name}
-                      </span>
-                    </button>
-                  ))}
+              <div className="space-y-0">
+                {/* Block header/label */}
+                <div className="bg-cyan-600 text-white px-4 py-2 rounded-t-lg">
+                  <span className="text-sm font-medium">Choose Your Avatar</span>
+                  <p className="text-xs text-cyan-100">Pick a character that represents you!</p>
+                </div>
+                {/* Block body with avatars */}
+                <div className="bg-white border-2 border-t-0 border-cyan-400 rounded-b-lg shadow-[0_4px_0_0_rgba(8,145,178,0.4)] p-4">
+                  <div className="grid grid-cols-4 md:grid-cols-6 gap-3">
+                    {avatars.map((avatar) => (
+                      <button
+                        key={avatar.id}
+                        type="button"
+                        onClick={() => setSelectedAvatar(avatar.id)}
+                        className={`aspect-square rounded-xl flex flex-col items-center justify-center p-3 transition-all ${selectedAvatar === avatar.id
+                          ? 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-[0_4px_0_0_rgba(8,145,178,0.5)] scale-105'
+                          : 'bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 shadow-[0_2px_0_0_rgba(0,0,0,0.1)]'
+                          }`}
+                      >
+                        <span className="text-3xl mb-1">{avatar.emoji}</span>
+                        <span className={`text-xs text-center leading-tight ${selectedAvatar === avatar.id ? 'text-white' : 'text-gray-600'
+                          }`}>
+                          {avatar.name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
               {/* Nickname Input */}
-              <div className="space-y-2">
-                <Label htmlFor="nickname" className="text-lg">Your Coder Nickname</Label>
-                <p className="text-sm text-gray-500">Choose something fun! (No real names)</p>
+              <div className="space-y-0">
+                {/* Block header/label */}
+                <div className="bg-emerald-600 text-white px-4 py-2 rounded-t-lg">
+                  <span className="text-sm font-medium">Your Coder Nickname</span>
+                  <p className="text-xs text-emerald-100">Choose something fun! (No real names)</p>
+                </div>
+                {/* Block body with input */}
                 <div className="relative">
-                  <Input
-                    id="nickname"
-                    type="text"
-                    placeholder="e.g., CodeNinja123, StarCoder, LunaBlocks"
-                    value={nickname}
-                    onChange={(e) => setNickname(e.target.value)}
-                    className={`h-12 text-base border-2 rounded-xl pr-10 ${
-                      nickname.length >= 3 && usernameAvailable === false
-                        ? 'border-red-400 focus:border-red-500'
-                        : nickname.length >= 3 && usernameAvailable === true
-                        ? 'border-green-400 focus:border-green-500'
-                        : ''
-                    }`}
-                    required
-                  />
-                  {nickname.length >= 3 && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      {isCheckingUsername ? (
-                        <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
-                      ) : usernameAvailable === true ? (
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                      ) : usernameAvailable === false ? (
-                        <XCircle className="w-5 h-5 text-red-500" />
-                      ) : null}
+                  <div className="flex items-stretch rounded-b-lg shadow-[0_4px_0_0_rgba(16,185,129,0.4)] hover:shadow-[0_6px_0_0_rgba(16,185,129,0.4)] transition-all overflow-visible">
+                    {/* Icon Block with puzzle notch */}
+                    <div className="relative flex items-center justify-center w-16 bg-emerald-500 rounded-bl-lg overflow-visible">
+                      <Sparkles className="w-6 h-6 text-white relative z-10" />
+                      {/* Puzzle notch on right side */}
+                      <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-6 bg-emerald-500 rounded-r-md z-20"></div>
                     </div>
-                  )}
+                    {/* Input area with inset */}
+                    <div className="flex-1 bg-white rounded-br-lg flex items-center border-2 border-l-0 border-t-0 border-emerald-400 relative">
+                      <Input
+                        id="nickname"
+                        type="text"
+                        placeholder="e.g., CodeNinja123, StarCoder, LunaBlocks"
+                        value={nickname}
+                        onChange={(e) => setNickname(e.target.value)}
+                        className="flex-1 h-12 text-base border-0 focus:ring-0 focus:outline-none bg-transparent pr-10"
+                        required
+                      />
+                      {nickname.length >= 3 && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          {isCheckingUsername ? (
+                            <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+                          ) : usernameAvailable === true ? (
+                            <CheckCircle className="w-5 h-5 text-green-500" />
+                          ) : usernameAvailable === false ? (
+                            <XCircle className="w-5 h-5 text-red-500" />
+                          ) : null}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
                 {nickname.length >= 3 && usernameAvailable === false && (
-                  <p className="text-sm text-red-600">
+                  <p className="text-sm text-red-600 mt-2 ml-1">
                     ❌ This username is already taken. Try another one!
                   </p>
                 )}
                 {nickname.length >= 3 && usernameAvailable === true && (
-                  <p className="text-sm text-green-600">
+                  <p className="text-sm text-green-600 mt-2 ml-1">
                     ✅ Great! This username is available!
                   </p>
                 )}
               </div>
 
               {/* Age Range Selection */}
-              <div className="space-y-3">
-                <Label className="text-lg">How Old Are You?</Label>
-                <p className="text-sm text-gray-500">This helps us show you the right lessons!</p>
-                <div className="grid grid-cols-3 gap-3">
-                  {ageRanges.map((range) => (
-                    <button
-                      key={range.id}
-                      type="button"
-                      onClick={() => setAgeRange(range.id)}
-                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all text-center ${
-                        ageRange === range.id 
-                          ? 'bg-indigo-50 border-indigo-400 shadow-md' 
-                          : 'bg-white border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="text-base">{range.label}</div>
-                    </button>
-                  ))}
+              <div className="space-y-0">
+                {/* Block header/label */}
+                <div className="bg-orange-600 text-white px-4 py-2 rounded-t-lg">
+                  <span className="text-sm font-medium">How Old Are You?</span>
+                  <p className="text-xs text-orange-100">This helps us show you the right lessons!</p>
+                </div>
+                {/* Block body with age ranges */}
+                <div className="bg-white border-2 border-t-0 border-orange-400 rounded-b-lg shadow-[0_4px_0_0_rgba(249,115,22,0.4)] p-4">
+                  <div className="grid grid-cols-3 gap-3">
+                    {ageRanges.map((range) => (
+                      <button
+                        key={range.id}
+                        type="button"
+                        onClick={() => setAgeRange(range.id)}
+                        className={`p-4 rounded-lg cursor-pointer transition-all text-center ${ageRange === range.id
+                          ? 'bg-gradient-to-br from-orange-500 to-amber-600 text-white shadow-[0_3px_0_0_rgba(249,115,22,0.5)]'
+                          : 'bg-gray-50 border-2 border-gray-200 hover:border-gray-300 shadow-[0_2px_0_0_rgba(0,0,0,0.1)]'
+                          }`}
+                      >
+                        <div className={`text-base ${ageRange === range.id ? 'text-white' : 'text-gray-700'}`}>
+                          {range.label}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
               {/* Parent's Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-lg">Parent's Email</Label>
-                <p className="text-sm text-gray-500">We'll send progress updates here (optional)</p>
+              <div className="space-y-0">
+                {/* Block header/label */}
+                <div className="bg-blue-600 text-white px-4 py-2 rounded-t-lg">
+                  <span className="text-sm font-medium">Parent's Email</span>
+                  <p className="text-xs text-blue-100">We'll send progress updates here (optional)</p>
+                </div>
+                {/* Block body with input */}
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="parent@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className={`pl-11 pr-10 h-12 text-base border-2 rounded-xl ${
-                      emailWarning ? 'border-yellow-400' : ''
-                    }`}
-                  />
-                  {email.includes('@') && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      {isCheckingEmail ? (
-                        <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
-                      ) : null}
+                  <div className="flex items-stretch rounded-b-lg shadow-[0_4px_0_0_rgba(37,99,235,0.4)] hover:shadow-[0_6px_0_0_rgba(37,99,235,0.4)] transition-all overflow-visible">
+                    {/* Icon Block with puzzle notch */}
+                    <div className="relative flex items-center justify-center w-16 bg-blue-500 rounded-bl-lg overflow-visible">
+                      <Mail className="w-6 h-6 text-white relative z-10" />
+                      {/* Puzzle notch on right side */}
+                      <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-6 bg-blue-500 rounded-r-md z-20"></div>
                     </div>
-                  )}
+                    {/* Input area with inset */}
+                    <div className="flex-1 bg-white rounded-br-lg flex items-center border-2 border-l-0 border-t-0 border-blue-400 relative">
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="parent@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="flex-1 h-12 text-base border-0 focus:ring-0 focus:outline-none bg-transparent pr-10"
+                      />
+                      {email.includes('@') && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          {isCheckingEmail ? (
+                            <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+                          ) : null}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
                 {emailWarning && (
-                  <p className="text-sm text-yellow-700">
+                  <p className="text-sm text-yellow-700 mt-2 ml-1">
                     ⚠️ {emailWarning} You can still register.
                   </p>
                 )}
               </div>
 
               {/* Password */}
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-lg">Create a Password</Label>
-                <p className="text-sm text-gray-500">Make it strong and easy to remember!</p>
+              <div className="space-y-0">
+                {/* Block header/label */}
+                <div className="bg-purple-600 text-white px-4 py-2 rounded-t-lg">
+                  <span className="text-sm font-medium">Create a Password</span>
+                  <p className="text-xs text-purple-100">Make it strong and easy to remember!</p>
+                </div>
+                {/* Block body with input */}
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="At least 8 characters"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-11 h-12 text-base border-2 rounded-xl"
-                    required
-                  />
+                  <div className="flex items-stretch rounded-b-lg shadow-[0_4px_0_0_rgba(147,51,234,0.4)] hover:shadow-[0_6px_0_0_rgba(147,51,234,0.4)] transition-all overflow-visible">
+                    {/* Icon Block with puzzle notch */}
+                    <div className="relative flex items-center justify-center w-16 bg-purple-500 rounded-bl-lg overflow-visible">
+                      <Lock className="w-6 h-6 text-white relative z-10" />
+                      {/* Puzzle notch on right side */}
+                      <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-6 bg-purple-500 rounded-r-md z-20"></div>
+                    </div>
+                    {/* Input area with inset */}
+                    <div className="flex-1 bg-white rounded-br-lg flex items-center border-2 border-l-0 border-t-0 border-purple-400">
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="At least 8 characters"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="flex-1 h-12 text-base border-0 focus:ring-0 focus:outline-none bg-transparent"
+                        required
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -374,24 +409,24 @@ export default function RegisterPage() {
               {success && (
                 <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4">
                   <p className="text-sm text-green-800">
-                    🎉 Account created successfully! Redirecting to login...
+                    🎉 Account created successfully! Redirecting to onboarding...
                   </p>
                 </div>
               )}
 
-              <Button
+              <button
                 type="submit"
                 disabled={isLoading || usernameAvailable === false || isCheckingUsername}
-                className="w-full h-14 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-lg rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-lg rounded-lg shadow-[0_6px_0_0_rgba(79,70,229,0.5)] hover:shadow-[0_8px_0_0_rgba(79,70,229,0.5)] active:shadow-[0_2px_0_0_rgba(79,70,229,0.5)] active:translate-y-1 transition-all py-4 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Creating Account...' : 'Start My Coding Journey! 🚀'}
-              </Button>
+              </button>
 
               <div className="text-center pt-2">
                 <span className="text-gray-600">Already have an account? </span>
                 <Link
                   href="/login"
-                  className="text-indigo-600 hover:text-indigo-700"
+                  className="text-indigo-600 hover:text-indigo-700 hover:underline"
                 >
                   Sign in here
                 </Link>

@@ -4,10 +4,25 @@ import { Model } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
+import { forwardRef, Inject } from '@nestjs/common';
+import { GamificationService } from '../gamification/gamification.service';
+import { SubmissionsService } from '../submissions/submissions.service';
+import { ProgressService } from '../progress/progress.service';
+import { LearningProfileService } from '../learning-profile/learning-profile.service';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @Inject(forwardRef(() => GamificationService))
+    private gamificationService: GamificationService,
+    @Inject(forwardRef(() => SubmissionsService))
+    private submissionsService: SubmissionsService,
+    @Inject(forwardRef(() => ProgressService))
+    private progressService: ProgressService,
+    private learningProfileService: LearningProfileService,
+  ) { }
 
   async create(createUserDto: CreateUserDto): Promise<UserDocument> {
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
@@ -58,5 +73,42 @@ export class UsersService {
       ...profile,
       id: user._id.toString(),
     };
+  }
+
+  /**
+   * ✏️ Update user profile
+   */
+  async update(
+    userId: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserDocument> {
+    const user = await this.userModel
+      .findByIdAndUpdate(userId, updateUserDto, { new: true })
+      .exec();
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
+  /**
+   * 🗑️ Delete user account and all related data (Cascade)
+   */
+  async delete(userId: string): Promise<void> {
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Cascade delete
+    await this.gamificationService.delete(userId);
+    await this.submissionsService.delete(userId);
+    await this.progressService.delete(userId);
+    await this.learningProfileService.delete(user._id); // LearningProfile uses ObjectId
+
+    // Finally delete the user
+    await this.userModel.findByIdAndDelete(userId).exec();
   }
 }

@@ -35,10 +35,12 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import BlocklyWorkspace, { type UserData, type ProfileData, type GamificationData, type Achievement } from './BlocklyWorkspace';
+import DashboardWalkthrough from './DashboardWalkthrough';
 import { sendChatMessage, getPredefinedPrompts, checkAIServiceHealth } from '../services/chatbotApi';
 import { useRouter } from 'next/navigation';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type { AdaptiveInsights } from '../types/adaptivity';
+import { useAuth } from '../context/AuthContext';
 
 // Mission data
 type Mission = {
@@ -80,6 +82,7 @@ const missionColors = [
 export default function Dashboard() {
   const router = useRouter();
   const { setWorkspace } = useWorkspace();
+  const { logout } = useAuth();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [isScrolled, setIsScrolled] = useState(false);
   const [user, setUser] = useState<UserData | null>(null);
@@ -178,7 +181,16 @@ export default function Dashboard() {
   // Clicking a mission sets workspace data and navigates
   const handleMissionClick = (mission: Mission) => {
     if (!user || !profile) return;
-    setWorkspace({ mission, user, profile, insights, gamification });
+    console.log('Setting workspace data:', { mission, user, profile, insights, gamification });
+
+    // Store in both context AND sessionStorage for reliability
+    const workspaceData = { mission, user, profile, insights, gamification };
+    setWorkspace(workspaceData);
+
+    // Store in sessionStorage as backup (survives navigation)
+    sessionStorage.setItem('workspaceData', JSON.stringify(workspaceData));
+
+    console.log('Navigating to workspace...');
     router.push('/blockly-workspace');
   };
 
@@ -232,12 +244,13 @@ export default function Dashboard() {
       <div className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled
         ? 'bg-white/95 backdrop-blur-md border-b-2 border-indigo-200 shadow-xl'
         : 'bg-white border-b-4 border-indigo-200 shadow-lg'
-        }`}>
+        }`}
+        id="dashboard-header">
         <div className={`container mx-auto px-4 transition-all duration-300 ${isScrolled ? 'py-2' : 'py-4'
           }`}>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             {/* Profile Section */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4" id="dashboard-profile">
               <motion.div
                 whileHover={{ scale: 1.05, rotate: 5 }}
                 className={`bg-gradient-to-br from-yellow-400 to-orange-500 rounded-3xl flex items-center justify-center shadow-lg border-4 border-white cursor-pointer transition-all duration-300 ${isScrolled
@@ -300,11 +313,14 @@ export default function Dashboard() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/profile')}>
                     <Settings className="w-4 h-4 mr-2" />
-                    Settings
+                    Profile Settings
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/')}>
+                  <DropdownMenuItem onClick={async () => {
+                    await logout();
+                    navigate('/');
+                  }}>
                     <LogOut className="w-4 h-4 mr-2" />
                     Sign Out
                   </DropdownMenuItem>
@@ -315,7 +331,7 @@ export default function Dashboard() {
 
           {/* XP Progress Bar */}
           <div className={`bg-gray-100 rounded-2xl border-2 border-indigo-100 transition-all duration-300 overflow-hidden ${isScrolled ? 'mt-2 p-2 max-h-16 opacity-90' : 'mt-4 p-4 max-h-32'
-            }`}>
+            }`} id="dashboard-stats">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Target className={`text-indigo-600 transition-all duration-300 ${isScrolled ? 'w-4 h-4' : 'w-5 h-5'
@@ -335,7 +351,7 @@ export default function Dashboard() {
       </div>
 
       {insights && (
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-4 py-6" id="dashboard-insights">
           <div className="grid gap-6 lg:grid-cols-3">
             <motion.div
               whileHover={{ y: -4 }}
@@ -493,7 +509,7 @@ export default function Dashboard() {
       )}
 
       {/* Main Content - Mission Map */}
-      <div className="px-4 py-8">
+      <div className="px-4 py-8" id="dashboard-mission-map">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -628,6 +644,7 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      <DashboardWalkthrough />
     </div>
   );
 }
