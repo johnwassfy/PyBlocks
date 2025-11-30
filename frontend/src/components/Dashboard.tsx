@@ -2,12 +2,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Star,
-  Lock,
   Trophy,
   Zap,
-  Award,
-  ChevronRight,
   Sparkles,
   Target,
   Flame,
@@ -22,9 +18,6 @@ import { Badge } from './ui/badge';
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
   SheetTrigger,
 } from './ui/sheet';
 import AchievementsSidebar from './AchievementsSidebar';
@@ -82,7 +75,14 @@ const missionColors = [
 export default function Dashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const showWalkthrough = searchParams.get('showWalkthrough') === 'true';
+
+  // Check both URL param and sessionStorage for walkthrough flag
+  const showWalkthroughParam = searchParams.get('showWalkthrough') === 'true';
+  const isFirstTimeFromSession = typeof window !== 'undefined'
+    ? sessionStorage.getItem('isFirstTimeUser') === 'true'
+    : false;
+  const showWalkthrough = showWalkthroughParam || isFirstTimeFromSession;
+
   const { setWorkspace } = useWorkspace();
   const { logout } = useAuth();
   const [missions, setMissions] = useState<Mission[]>([]);
@@ -110,11 +110,6 @@ export default function Dashboard() {
       .slice(0, 5);
   }, [insights]);
 
-  const focusConcepts = useMemo(
-    () => insights?.weakConcepts.slice(0, 5) ?? [],
-    [insights],
-  );
-
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -122,6 +117,13 @@ export default function Dashboard() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Clear sessionStorage flag after reading to prevent showing walkthrough on subsequent visits
+  useEffect(() => {
+    if (showWalkthrough && typeof window !== 'undefined') {
+      sessionStorage.removeItem('isFirstTimeUser');
+    }
+  }, [showWalkthrough]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -174,11 +176,6 @@ export default function Dashboard() {
     };
     fetchData();
   }, []);
-
-  const navigate = (path: string) => {
-    window.history.pushState({}, '', path);
-    window.dispatchEvent(new PopStateEvent('popstate'));
-  };
 
   // Clicking a mission sets workspace data and navigates
   const handleMissionClick = (mission: Mission) => {
@@ -409,7 +406,7 @@ export default function Dashboard() {
                 </ul>
               ) : (
                 <div className="rounded-2xl border border-dashed border-purple-200 bg-purple-50/40 p-4 text-sm text-purple-700">
-                  We’re preparing new adventures for you. Keep coding to unlock more quests!
+                  We&apos;re preparing new adventures for you. Keep coding to unlock more quests!
                 </div>
               )}
               {insights.fallbackMission && (
@@ -607,7 +604,7 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-      <DashboardWalkthrough userId={user.id} showWalkthrough={showWalkthrough} />
+      <DashboardWalkthrough show={showWalkthrough} userId={user?.id} />
     </div>
   );
-}
+};

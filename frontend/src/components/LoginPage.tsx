@@ -4,9 +4,8 @@ import { Mail, Lock, ArrowLeft, Code2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
 
@@ -17,7 +16,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const { login, isAuthenticated } = useAuth();
+  const { login } = useAuth();
 
   // Note: Automatic redirect removed to prevent race condition with profile fetch
   // The redirect is now handled manually after checking the learning profile
@@ -51,29 +50,33 @@ export default function LoginPage() {
             profile.pythonFamiliarity === null &&
             (!profile.totalSubmissions || profile.totalSubmissions === 0)
           );
+
+          // Store flag in sessionStorage for reliable propagation through onboarding
+          sessionStorage.setItem('isFirstTimeUser', hasNeverOnboarded ? 'true' : 'false');
+
           // Show success message briefly before redirect
           setSuccess(true);
           setTimeout(() => {
             if (hasNeverOnboarded) {
-              window.location.href = '/onboarding';
+              // Pass flag via URL query parameter to onboarding
+              router.push('/onboarding?firstTime=true');
             } else {
-              window.location.href = '/dashboard';
+              router.push('/dashboard');
             }
           }, 500); // Reduced to 500ms to minimize race condition
         } else {
           // If profile not found (404) or other error, redirect to onboarding to create one
-          const errorText = await profileRes.text();
-          setSuccess(true);
+          setSuccess(false);
           setTimeout(() => {
-            window.location.href = '/onboarding';
+            router.push('/register');
           }, 500);
         }
       } catch (err) {
         console.error('Error checking profile:', err);
         // Fallback: if error, go to onboarding
-        setSuccess(true);
+        setSuccess(false);
         setTimeout(() => {
-          window.location.href = '/onboarding';
+          router.push('/login');
         }, 500);
       }
 
@@ -224,7 +227,7 @@ export default function LoginPage() {
 
               <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-indigo-200 rounded-xl p-4 text-center">
                 <p className="text-gray-700 mb-3">
-                  Don't have an account yet?
+                  Don&apos;t have an account yet?
                 </p>
                 <Button
                   type="button"

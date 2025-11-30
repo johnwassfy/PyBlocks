@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './ui/button';
-import { ChevronRight, ChevronLeft, X, Sparkles } from 'lucide-react';
+import { ChevronRight, ChevronLeft, X } from 'lucide-react';
 
 interface WalkthroughStep {
     targetId: string;
@@ -43,19 +44,25 @@ const steps: WalkthroughStep[] = [
     },
 ];
 
-export default function DashboardWalkthrough() {
+interface DashboardWalkthroughProps {
+    show: boolean;
+    userId?: string;
+    onComplete?: () => void;
+}
+
+export default function DashboardWalkthrough({ show, userId, onComplete }: DashboardWalkthroughProps) {
     const [currentStep, setCurrentStep] = useState(0);
     const [isVisible, setIsVisible] = useState(false);
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
     useEffect(() => {
-        // Check if user has seen the walkthrough
-        const hasSeen = localStorage.getItem('hasSeenDashboardWalkthrough');
-        if (!hasSeen) {
-            // Small delay to ensure dashboard renders
+        const storageKey = userId ? `hasSeenDashboardWalkthrough_${userId}` : 'hasSeenDashboardWalkthrough';
+        const hasSeen = localStorage.getItem(storageKey);
+
+        if (show && !hasSeen) {
             setTimeout(() => setIsVisible(true), 1000);
         }
-    }, []);
+    }, [show, userId]);
 
     useEffect(() => {
         if (!isVisible) return;
@@ -69,14 +76,13 @@ export default function DashboardWalkthrough() {
             }
         };
 
-        // Update immediately and after scroll/resize
         updateTarget();
         window.addEventListener('resize', updateTarget);
-        window.addEventListener('scroll', updateTarget);
+        window.addEventListener('scroll', updateTarget, true);
 
         return () => {
             window.removeEventListener('resize', updateTarget);
-            window.removeEventListener('scroll', updateTarget);
+            window.removeEventListener('scroll', updateTarget, true);
         };
     }, [currentStep, isVisible]);
 
@@ -96,18 +102,19 @@ export default function DashboardWalkthrough() {
 
     const handleClose = () => {
         setIsVisible(false);
-        localStorage.setItem('hasSeenDashboardWalkthrough', 'true');
+        const storageKey = userId ? `hasSeenDashboardWalkthrough_${userId}` : 'hasSeenDashboardWalkthrough';
+        localStorage.setItem(storageKey, 'true');
+        onComplete?.();
     };
 
     if (!isVisible) return null;
 
     const step = steps[currentStep];
 
-    return (
+    const walkthroughContent = (
         <AnimatePresence>
             {isVisible && (
-                <div className="fixed inset-0 z-[100] pointer-events-none">
-                    {/* Backdrop with spotlight effect */}
+                <div className="fixed inset-0 z-[9999] pointer-events-none">
                     <div className="absolute inset-0 bg-black/60 transition-colors duration-500">
                         {targetRect && (
                             <div
@@ -125,7 +132,6 @@ export default function DashboardWalkthrough() {
                         )}
                     </div>
 
-                    {/* Character and Popover */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-auto">
                         <motion.div
                             key={currentStep}
@@ -136,24 +142,62 @@ export default function DashboardWalkthrough() {
                             className="relative max-w-md w-full mx-4"
                             style={{
                                 position: 'absolute',
-                                ...(step.position === 'top' && targetRect ? { top: targetRect.top - 280, left: '50%', transform: 'translateX(-50%)' } : {}),
-                                ...(step.position === 'bottom' && targetRect ? { top: targetRect.bottom + 40, left: '50%', transform: 'translateX(-50%)' } : {}),
-                                ...(step.position === 'center' ? { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' } : {}),
+                                ...(() => {
+                                    if (!targetRect) return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
+
+                                    const dialogHeight = 350;
+                                    const dialogWidth = Math.min(448, window.innerWidth - 40);
+                                    const padding = 20;
+
+                                    let top = 0;
+                                    let left = '50%';
+                                    let transform = 'translateX(-50%)';
+
+                                    if (step.position === 'bottom') {
+                                        const spaceBelow = window.innerHeight - targetRect.bottom - 40;
+                                        if (spaceBelow >= dialogHeight) {
+                                            top = targetRect.bottom + 40;
+                                        } else {
+                                            const spaceAbove = targetRect.top - 280;
+                                            if (spaceAbove >= padding) {
+                                                top = targetRect.top - 280;
+                                            } else {
+                                                top = Math.max(padding, (window.innerHeight - dialogHeight) / 2);
+                                            }
+                                        }
+                                    } else if (step.position === 'top') {
+                                        const spaceAbove = targetRect.top - 280;
+                                        if (spaceAbove >= padding) {
+                                            top = targetRect.top - 280;
+                                        } else {
+                                            const spaceBelow = window.innerHeight - targetRect.bottom - 40;
+                                            if (spaceBelow >= dialogHeight) {
+                                                top = targetRect.bottom + 40;
+                                            } else {
+                                                top = Math.max(padding, (window.innerHeight - dialogHeight) / 2);
+                                            }
+                                        }
+                                    } else {
+                                        top = (window.innerHeight - dialogHeight) / 2;
+                                    }
+
+                                    top = Math.min(top, window.innerHeight - dialogHeight - padding);
+                                    top = Math.max(top, padding);
+
+                                    return { top, left, transform };
+                                })(),
                             }}
                         >
                             <div className="bg-white rounded-3xl shadow-2xl p-6 border-4 border-indigo-100 relative overflow-hidden">
-                                {/* Decorative background */}
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-bl-full -z-10 opacity-50" />
 
                                 <div className="flex items-start gap-4">
-                                    {/* Robot Character */}
                                     <div className="flex-shrink-0">
                                         <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg animate-bounce-slow">
                                             <span className="text-4xl">🤖</span>
                                         </div>
                                     </div>
 
-                                    {/* Content */}
                                     <div className="flex-1">
                                         <div className="flex justify-between items-start mb-2">
                                             <h3 className="text-xl font-bold text-gray-900">{step.title}</h3>
@@ -169,7 +213,6 @@ export default function DashboardWalkthrough() {
                                             {step.description}
                                         </p>
 
-                                        {/* Controls */}
                                         <div className="flex items-center justify-between">
                                             <div className="flex gap-1">
                                                 {steps.map((_, idx) => (
@@ -212,4 +255,8 @@ export default function DashboardWalkthrough() {
             )}
         </AnimatePresence>
     );
+
+    return typeof window !== 'undefined'
+        ? createPortal(walkthroughContent, document.body)
+        : null;
 }
