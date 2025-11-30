@@ -210,7 +210,6 @@ export default function ProfilePage() {
                                         <SelectValue placeholder="Select age range" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="6-7">6-7 years</SelectItem>
                                         <SelectItem value="8-10">8-10 years</SelectItem>
                                         <SelectItem value="11-13">11-13 years</SelectItem>
                                         <SelectItem value="14+">14+ years</SelectItem>

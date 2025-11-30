@@ -49,6 +49,9 @@ class BehaviorMetrics(BaseModel):
     # Mission context for code differentiation
     missionContext: Optional[Dict] = None  # NEW: For identifying starter vs user code
     
+    # User profile for personalization
+    userProfile: Optional[Dict] = None  # NEW: Full user profile data
+    
     # State
     lastActivity: str  # ISO timestamp
 
@@ -77,6 +80,7 @@ class ObservationResponse(BaseModel):
     
     class Config:
         populate_by_name = True  # Allow both snake_case and camelCase
+        by_alias = True  # Serialize using aliases (camelCase)
 
 
 def calculate_code_similarity(code1: str, code2: str) -> float:
@@ -266,15 +270,16 @@ Generate the message now (ONLY the message, no explanation):
 """
     
     try:
-        # Create ChatbotRequest object
+        # Create ChatbotRequest object with full mission context
         chatbot_request = ChatbotRequest(
             question=context,  # Fixed: use 'question' instead of 'message'
             userId=metrics.userId,
             missionId=metrics.missionId,
+            mission=mission_context,  # CRITICAL: Pass mission context to chatbot
             code=metrics.currentCode,  # Fixed: use 'code' instead of 'userCode'
             weakConcepts=metrics.weakConcepts or [],
             strongConcepts=metrics.strongConcepts or [],
-            # Note: removed 'context' parameter as it's not in the ChatbotRequest model
+            masterySnapshot=metrics.masterySnapshot,
         )
         
         response = await chatbot.generate_response(chatbot_request)
@@ -350,7 +355,7 @@ Generate the message now (ONLY the message, no explanation):
                 return "Looks like you might be stuck! Want a helpful hint? 💡"
 
 
-@router.post("/observe", response_model=ObservationResponse)
+@router.post("/observe", response_model=ObservationResponse, response_model_by_alias=True)
 async def observe_user_behavior(
     metrics: BehaviorMetrics,
     api_key: str = Depends(verify_api_key)

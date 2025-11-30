@@ -137,7 +137,7 @@ export default function RegisterPage() {
       console.log('Registration successful!', data);
 
       setTimeout(() => {
-        router.push('/onboarding');
+        router.push('/login');
       }, 2000);
 
     } catch (err) {
@@ -409,7 +409,7 @@ export default function RegisterPage() {
               {success && (
                 <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4">
                   <p className="text-sm text-green-800">
-                    🎉 Account created successfully! Redirecting to onboarding...
+                    🎉 Account created successfully! Redirecting to login...
                   </p>
                 </div>
               )}

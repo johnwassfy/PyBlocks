@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { submitCode, type SubmissionResponse } from '../services/submissionsApi';
 import { useChatbot } from './KidSidebar';
@@ -166,9 +166,6 @@ export default function BlocklyWorkspace({
   const [lastError, setLastError] = useState<string | null>(null);
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
   const behaviorSyncRef = useRef<NodeJS.Timeout | null>(null);
-
-  // 🤖 Chatbot integration
-  const chatbot = useChatbot();
 
   // 🧰 Helper function: Map category display name to enum key
   const getCategoryKeyFromName = (displayName: string): ToolboxCategoryName | null => {
@@ -398,10 +395,45 @@ export default function BlocklyWorkspace({
     console.log('[🧰 Toolbox] === FILTER PROCESS COMPLETE ===');
   };
 
+  // Helper function to get current code from editor
+  const getCurrentCodeFromEditor = useCallback(() => {
+    try {
+      const pythonEditor = editorRef.current?.components?.pythonEditor;
+      if (!pythonEditor?.bm) return '';
+
+      // Try BlockMirror's getCode() method first
+      if (typeof pythonEditor.bm.getCode === 'function') {
+        return pythonEditor.bm.getCode();
+      }
+
+      // Fallback to textEditor methods
+      const textEditor = pythonEditor.bm.textEditor;
+      if (textEditor) {
+        if (typeof textEditor.getValue === 'function') {
+          return textEditor.getValue();
+        }
+        if (textEditor.doc && typeof textEditor.doc.getValue === 'function') {
+          return textEditor.doc.getValue();
+        }
+      }
+
+      return '';
+    } catch (e) {
+      console.error('[BlocklyWorkspace] Error getting current code:', e);
+      return '';
+    }
+  }, []);
+
+  // 🤖 Chatbot integration
+  const chatbot = useChatbot(getCurrentCodeFromEditor);
+
   // 🧠 Behavior Tracking for Proactive Hints
   const behaviorTracker = useBehaviorTracker({
     userId: user?.id || 'anonymous',  // Fixed: use user.id instead of user.username
     missionId: mission?._id || 'free-play',
+    missionData: mission, // Pass full mission object for context-aware hints
+    userProfile: profile, // Pass full user profile for personalization
+    getCurrentCode: getCurrentCodeFromEditor, // NEW: Callback to get live code
     weakConcepts: profile?.weakSkills || [],
     strongConcepts: profile?.strongSkills || [],
     masterySnapshot: profile?.skillScores,
@@ -1367,7 +1399,8 @@ export default function BlocklyWorkspace({
 
         {/* 💡 Proactive Hint Dialog */}
         {/* 💡 Proactive Hint Dialog */}
-        {behaviorTracker.proactiveHint && (
+        {/* 💡 Proactive Hint Dialog */}
+        {behaviorTracker.proactiveHint && !chatbot.isChatOpen && (
           <div className="fixed bottom-28 right-6 max-w-sm bg-white/95 backdrop-blur-md p-5 rounded-2xl shadow-2xl border border-indigo-100 z-50 animate-in slide-in-from-bottom-5 fade-in duration-500">
             <div className="flex flex-col gap-3">
               <div className="flex items-start gap-3">

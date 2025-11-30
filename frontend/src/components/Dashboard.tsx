@@ -37,7 +37,7 @@ import {
 import BlocklyWorkspace, { type UserData, type ProfileData, type GamificationData, type Achievement } from './BlocklyWorkspace';
 import DashboardWalkthrough from './DashboardWalkthrough';
 import { sendChatMessage, getPredefinedPrompts, checkAIServiceHealth } from '../services/chatbotApi';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useWorkspace } from '../context/WorkspaceContext';
 import type { AdaptiveInsights } from '../types/adaptivity';
 import { useAuth } from '../context/AuthContext';
@@ -81,6 +81,8 @@ const missionColors = [
 
 export default function Dashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const showWalkthrough = searchParams.get('showWalkthrough') === 'true';
   const { setWorkspace } = useWorkspace();
   const { logout } = useAuth();
   const [missions, setMissions] = useState<Mission[]>([]);
@@ -319,7 +321,7 @@ export default function Dashboard() {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={async () => {
                     await logout();
-                    navigate('/');
+                    router.push('/');
                   }}>
                     <LogOut className="w-4 h-4 mr-2" />
                     Sign Out
@@ -352,46 +354,7 @@ export default function Dashboard() {
 
       {insights && (
         <div className="container mx-auto px-4 py-6" id="dashboard-insights">
-          <div className="grid gap-6 lg:grid-cols-3">
-            <motion.div
-              whileHover={{ y: -4 }}
-              className="rounded-3xl border-2 border-indigo-100 bg-white/90 p-6 shadow-xl"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-indigo-700">Today's Focus</h3>
-                <Sparkles className="w-5 h-5 text-indigo-500" />
-              </div>
-              <p className="text-sm text-gray-600">Give extra love to these concepts:</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {focusConcepts.length > 0 ? (
-                  focusConcepts.map((concept) => (
-                    <span
-                      key={concept}
-                      className="px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-medium"
-                    >
-                      {concept}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-xs text-gray-500">No focus areas right now — keep exploring! 🚀</span>
-                )}
-              </div>
-              {insights.strongConcepts.length > 0 && (
-                <div className="mt-6">
-                  <p className="text-sm text-gray-600 mb-2">Super strengths:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {insights.strongConcepts.slice(0, 4).map((concept) => (
-                      <span
-                        key={concept}
-                        className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium"
-                      >
-                        {concept}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </motion.div>
+          <div className="grid gap-6 lg:grid-cols-2">
 
             <motion.div
               whileHover={{ y: -4 }}
@@ -644,7 +607,7 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-      <DashboardWalkthrough />
+      <DashboardWalkthrough userId={user.id} showWalkthrough={showWalkthrough} />
     </div>
   );
 }

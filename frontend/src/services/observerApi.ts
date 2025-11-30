@@ -10,31 +10,53 @@ export interface BehaviorMetrics {
   userId: string;
   missionId: string;
   sessionId?: string;
-  
+
   // Activity metrics
   idleTime: number; // seconds since last edit
   editsPerMinute: number;
   consecutiveFailedRuns: number;
   totalAttempts: number;
-  
+
   // Code quality signals
   codeSimilarity: number; // 0-1, similarity to previous attempt
   sameErrorCount: number; // how many times same error occurred
   lastErrorType?: string;
   lastErrorMessage?: string;
-  
+
   // Behavioral signals
   cursorMovements: number; // edits without running
   hintDismissCount: number;
   timeOnCurrentStep: number; // total seconds on this mission
-  
+
   // Context
   currentCode: string;
   previousCode?: string;
   weakConcepts?: string[];
   strongConcepts?: string[];
   masterySnapshot?: Record<string, number>;
-  
+
+  // Mission context for code differentiation and tailored hints
+  missionContext?: {
+    title?: string;
+    description?: string;
+    objectives?: string[];
+    expectedOutput?: string;
+    starterCode?: string;
+    difficulty?: string;
+    [key: string]: any;
+  };
+
+  // User profile for personalization
+  userProfile?: {
+    codingExperience?: string;
+    pythonFamiliarity?: string;
+    knownConcepts?: string[];
+    weakSkills?: string[];
+    strongSkills?: string[];
+    skillScores?: Record<string, number>;
+    [key: string]: any;
+  };
+
   // State
   lastActivity: string; // ISO timestamp
 }
@@ -64,7 +86,7 @@ export interface ObservationResponse {
 export async function observeBehavior(metrics: BehaviorMetrics): Promise<ObservationResponse> {
   try {
     console.log('[ObserverAPI] Sending behavior metrics:', metrics);
-    
+
     const response = await fetch(`${AI_SERVICE_URL}/api/v1/observe`, {
       method: 'POST',
       headers: {
@@ -84,23 +106,24 @@ export async function observeBehavior(metrics: BehaviorMetrics): Promise<Observa
 
     const data = await response.json();
     console.log('[ObserverAPI] Observation result:', data);
-    
+
     return {
       intervention: data.intervention || false,
-      interventionType: data.intervention_type,
+      interventionType: data.interventionType || data.intervention_type,
       message: data.message,
-      hintTrigger: data.hint_trigger,
+      hintTrigger: data.hintTrigger || data.hint_trigger,
       severity: data.severity || 'low',
-      suggestedAction: data.suggested_action,
-      detailedAnalysis: data.detailed_analysis ? {
-        isStuck: data.detailed_analysis.is_stuck,
-        isIdle: data.detailed_analysis.is_idle,
-        isRepeating: data.detailed_analysis.is_repeating,
-        isFrustrated: data.detailed_analysis.is_frustrated,
-        confidenceLevel: data.detailed_analysis.confidence_level,
-        strugglingConcepts: data.detailed_analysis.struggling_concepts || [],
-        recommendation: data.detailed_analysis.recommendation,
+      suggestedAction: data.suggestedAction || data.suggested_action,
+      detailedAnalysis: data.detailedAnalysis || data.detailed_analysis ? {
+        isStuck: (data.detailedAnalysis || data.detailed_analysis).isStuck ?? (data.detailedAnalysis || data.detailed_analysis).is_stuck,
+        isIdle: (data.detailedAnalysis || data.detailed_analysis).isIdle ?? (data.detailedAnalysis || data.detailed_analysis).is_idle,
+        isRepeating: (data.detailedAnalysis || data.detailed_analysis).isRepeating ?? (data.detailedAnalysis || data.detailed_analysis).is_repeating,
+        isFrustrated: (data.detailedAnalysis || data.detailed_analysis).isFrustrated ?? (data.detailedAnalysis || data.detailed_analysis).is_frustrated,
+        confidenceLevel: (data.detailedAnalysis || data.detailed_analysis).confidenceLevel ?? (data.detailedAnalysis || data.detailed_analysis).confidence_level,
+        strugglingConcepts: (data.detailedAnalysis || data.detailed_analysis).strugglingConcepts || (data.detailedAnalysis || data.detailed_analysis).struggling_concepts || [],
+        recommendation: (data.detailedAnalysis || data.detailed_analysis).recommendation,
       } : undefined,
+      contextForChatbot: data.contextForChatbot || data.context_for_chatbot,
     };
   } catch (error) {
     console.error('[ObserverAPI] Error observing behavior:', error);

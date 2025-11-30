@@ -98,224 +98,102 @@ export default function GreetingScreen({ onNext }: GreetingScreenProps) {
       ))}
 
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
+        initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 100, damping: 15 }}
-        className="w-full max-w-4xl relative z-10 max-h-[95vh] flex flex-col"
+        transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+        className="w-full max-w-3xl relative z-10"
       >
-        <Card className="shadow-2xl border-4 border-white bg-white/95 backdrop-blur-sm overflow-hidden flex flex-col h-full">
-          {/* Decorative header with animated gradient */}
+        <Card className="shadow-2xl border-4 border-white bg-white/95 backdrop-blur-sm overflow-hidden flex flex-col max-h-[90vh]">
+          {/* Slim Header */}
           <motion.div
-            className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 p-4 text-center relative overflow-hidden shrink-0"
+            className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-3 text-center relative overflow-hidden shrink-0 flex items-center justify-center gap-3"
             animate={{
               backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
             }}
             transition={{
-              duration: 5,
+              duration: 8,
               repeat: Infinity,
               ease: 'linear',
             }}
             style={{ backgroundSize: '200% 200%' }}
           >
-            {/* Animated sparkles */}
             <motion.div
-              className="absolute inset-0 opacity-30"
-              initial="hidden"
-              animate="visible"
-              variants={containerVariants}
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
             >
-              {[...Array(8)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute"
-                  style={{
-                    top: `${Math.random() * 100}%`,
-                    left: `${Math.random() * 100}%`,
-                  }}
-                  animate={{
-                    scale: [1, 1.5, 1],
-                    opacity: [0.5, 1, 0.5],
-                  }}
-                  transition={{
-                    duration: 2,
-                    delay: i * 0.2,
-                    repeat: Infinity,
-                  }}
-                >
-                  ✨
-                </motion.div>
-              ))}
+              <Code2 className="w-6 h-6 text-white drop-shadow-md" />
             </motion.div>
-
-            <motion.div
-              className="relative z-10"
-              initial={{ y: -50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.3, type: 'spring', stiffness: 100 }}
-            >
-              <div className="flex items-center justify-center gap-3 mb-2">
-                <motion.div
-                  animate={{ rotate: [0, 10, -10, 0] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <Code2 className="w-10 h-10 text-white drop-shadow-lg" />
-                </motion.div>
-                <h1 className="text-4xl font-bold text-white drop-shadow-lg">PyBlocks</h1>
-              </div>
-              <motion.p
-                className="text-xl text-white/95 font-medium"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-              >
-                Learn Python, Have Fun! 🎉
-              </motion.p>
-            </motion.div>
+            <h1 className="text-xl font-bold text-white tracking-wide drop-shadow-md">PyBlocks</h1>
+            <span className="text-white/80 text-sm font-medium">|</span>
+            <p className="text-sm text-white/90 font-medium">Learn Python, Have Fun! 🎉</p>
           </motion.div>
 
-          {/* Main content */}
-          <motion.div
-            className="p-6 text-center space-y-4 flex-1 flex flex-col justify-center overflow-y-auto"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            {/* Animated AI Character */}
+          {/* Main content - Compact Layout */}
+          <div className="p-6 flex flex-col items-center text-center space-y-4 overflow-y-auto custom-scrollbar">
 
-            <motion.div
-              className="flex justify-center shrink-0"
-              variants={itemVariants}
-            >
-              <div className="relative">
-                <motion.div
-                  className="text-7xl"
-                  animate={{
-                    y: [0, -15, 0],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                  }}
-                >
-                  🤖
-                </motion.div>
-                <motion.div
-                  className="absolute -top-2 -right-2"
-                  animate={{
-                    scale: [1, 1.3, 1],
-                    rotate: [0, 180, 360],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                  }}
-                >
-                  <Sparkles className="w-8 h-8 text-yellow-400" />
-                </motion.div>
-              </div>
-            </motion.div>
-
-            {/* Welcome message */}
-
-            <motion.div className="space-y-4 shrink-0" variants={itemVariants}>
-              <motion.h2
-                className="text-3xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent flex items-center justify-center gap-2"
-                animate={{
-                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: 'linear',
-                }}
-                style={{ backgroundSize: '200% 200%' }}
-              >
-                <Star className="w-8 h-8 text-yellow-400 fill-yellow-400" />
-                Welcome, Future Coder!
-                <Star className="w-8 h-8 text-yellow-400 fill-yellow-400" />
-              </motion.h2>
-
+            {/* Hero Section */}
+            <div className="space-y-2">
               <motion.div
-                className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-6 border-4 border-indigo-200 relative"
-                whileHover={{ scale: 1.01 }}
-                transition={{ type: 'spring', stiffness: 300 }}
+                className="text-6xl mb-2"
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
               >
-                {/* Speech bubble tail */}
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-b-[20px] border-b-indigo-200"></div>
-                  <div className="w-0 h-0 border-l-[16px] border-l-transparent border-r-[16px] border-r-transparent border-b-[16px] border-b-indigo-50 absolute top-1 left-1/2 transform -translate-x-1/2"></div>
-                </div>
-
-                <p className="text-xl text-gray-700 leading-relaxed font-medium">
-                  Hi there! I'm <span className="font-bold text-indigo-600">CodeBot</span>, your friendly coding companion! 🎉
-                </p>
-                <p className="text-lg text-gray-600 mt-2">
-                  I'm here to help you learn Python through fun challenges and awesome projects!
-                </p>
+                🤖
               </motion.div>
 
-              <motion.p
-                className="text-base text-gray-600"
-                variants={itemVariants}
-              >
-                Let's get to know each other! I'll ask you a few quick questions so I can make your learning adventure perfect for you! 🚀
-              </motion.p>
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center justify-center gap-2">
+                <Star className="w-6 h-6 text-yellow-400 fill-yellow-400" />
+                Welcome, Future Coder!
+                <Star className="w-6 h-6 text-yellow-400 fill-yellow-400" />
+              </h2>
+            </div>
+
+            {/* Message Bubble */}
+            <motion.div
+              className="bg-indigo-50 rounded-2xl p-4 border-2 border-indigo-100 max-w-lg w-full relative"
+              whileHover={{ scale: 1.01 }}
+            >
+              <p className="text-lg text-gray-700 font-medium leading-relaxed">
+                Hi! I'm <span className="font-bold text-indigo-600">CodeBot</span>. I'm here to help you learn Python through fun challenges! 🚀
+              </p>
             </motion.div>
 
-            {/* Fun decorative elements with stagger */}
+            <p className="text-gray-600 text-sm max-w-md">
+              Let's customize your adventure with a few quick questions.
+            </p>
 
-            <motion.div
-              className="flex justify-center gap-6 text-4xl shrink-0"
-              variants={containerVariants}
-            >
+            {/* Fun Icons Row */}
+            <div className="flex gap-6 text-3xl py-2 opacity-80">
               {['🎨', '🎮', '🏆', '⚡'].map((emoji, index) => (
                 <motion.span
                   key={index}
-                  variants={itemVariants}
-                  whileHover={{ scale: 1.3, rotate: 15 }}
-                  animate={{
-                    y: [0, -10, 0],
-                  }}
-                  transition={{
-                    y: {
-                      duration: 2,
-                      delay: index * 0.2,
-                      repeat: Infinity,
-                      ease: 'easeInOut',
-                    },
-                  }}
+                  whileHover={{ scale: 1.2, rotate: 10 }}
+                  className="cursor-default"
                 >
                   {emoji}
                 </motion.span>
               ))}
-            </motion.div>
+            </div>
 
-            {/* Start button with enhanced effects */}
-
-            <motion.div className="pt-4 shrink-0" variants={itemVariants}>
+            {/* Action Button */}
+            <div className="pt-2 w-full flex justify-center">
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                className="w-full max-w-xs"
               >
                 <Button
                   onClick={onNext}
-                  className="h-16 px-12 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 text-white text-xl font-bold rounded-2xl shadow-xl relative overflow-hidden group"
+                  className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-lg font-bold rounded-xl shadow-lg group"
                 >
-                  <motion.span
-                    className="absolute inset-0 bg-white/20"
-                    initial={{ x: '-100%' }}
-                    whileHover={{ x: '100%' }}
-                    transition={{ duration: 0.5 }}
-                  />
-                  <span className="relative flex items-center gap-3">
+                  <span className="flex items-center justify-center gap-2">
                     Let's Get Started!
-                    <Rocket className="w-6 h-6" />
+                    <Rocket className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </span>
                 </Button>
               </motion.div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </Card>
       </motion.div>
     </div>

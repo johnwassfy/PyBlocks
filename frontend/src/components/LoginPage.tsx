@@ -30,12 +30,9 @@ export default function LoginPage() {
 
     try {
       const data = await login(email, password);
-      console.log('Login successful!', data);
 
       // Check backend learning profile for onboarding status
       try {
-        console.log('Login response data:', data);
-        console.log('Access Token:', data.access_token);
         const profileRes = await fetch('http://localhost:5000/learning-profile', {
           method: 'GET',
           headers: {
@@ -43,17 +40,21 @@ export default function LoginPage() {
             Authorization: `Bearer ${data.access_token}`,
           },
         });
-        console.log('Profile fetch status:', profileRes.status);
         if (profileRes.ok) {
           const profile = await profileRes.json();
-          console.log('Profile data:', profile);
-          // Onboarding is complete only if both fields are not "none"
-          const onboardingCompleted = profile.codingExperience !== "none" && profile.pythonFamiliarity !== "none";
 
+          // Check if this is a first-time user or returning user
+          // Old users have profiles with 'none' defaults, but they've already onboarded
+          // Only redirect to onboarding if BOTH fields are explicitly 'none' AND user has no progress
+          const hasNeverOnboarded = (
+            profile.codingExperience === null &&
+            profile.pythonFamiliarity === null &&
+            (!profile.totalSubmissions || profile.totalSubmissions === 0)
+          );
           // Show success message briefly before redirect
           setSuccess(true);
           setTimeout(() => {
-            if (!onboardingCompleted) {
+            if (hasNeverOnboarded) {
               window.location.href = '/onboarding';
             } else {
               window.location.href = '/dashboard';
@@ -62,7 +63,6 @@ export default function LoginPage() {
         } else {
           // If profile not found (404) or other error, redirect to onboarding to create one
           const errorText = await profileRes.text();
-          console.warn('Profile fetch failed:', profileRes.status, errorText);
           setSuccess(true);
           setTimeout(() => {
             window.location.href = '/onboarding';

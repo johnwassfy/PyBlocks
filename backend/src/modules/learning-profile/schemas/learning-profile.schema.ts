@@ -10,10 +10,10 @@ export class LearningProfile {
   userId: Types.ObjectId; // One profile per user
 
   // --- 🧩 Learning Behavior ---
-  @Prop({ default: 'none' })
+  @Prop({ default: null })
   codingExperience: 'none' | 'beginner' | 'intermediate';
 
-  @Prop({ default: 'none' })
+  @Prop({ default: null })
   pythonFamiliarity: 'none' | 'some' | 'comfortable';
 
   @Prop({ type: [String], default: [] })

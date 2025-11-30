@@ -3,9 +3,46 @@ Centralized logging configuration for the AI service
 """
 import logging
 import sys
+import os
+import re
 from pathlib import Path
 from datetime import datetime
 from app.core.config import settings
+
+
+def safe_log_message(message: str) -> str:
+    """
+    Sanitize log messages for Windows console encoding issues
+    Removes emojis and non-ASCII characters if stdout doesn't support UTF-8
+    """
+    if sys.platform == 'win32' and sys.stdout.encoding and sys.stdout.encoding.lower() not in ('utf-8', 'utf8'):
+        try:
+            # Test if message can be encoded
+            message.encode(sys.stdout.encoding)
+            return message
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            # Remove emojis and non-ASCII characters
+            return re.sub(r'[^\x00-\x7F]+', '', message)
+    return message
+
+
+class SafeFormatter(logging.Formatter):
+    """Custom formatter that handles Unicode encoding errors on Windows"""
+    
+    def format(self, record):
+        # Format the record normally
+        formatted = super().format(record)
+        
+        # On Windows, if we detect encoding issues, sanitize the message
+        if sys.platform == 'win32' and sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
+            try:
+                # Test if the message can be encoded with the console encoding
+                formatted.encode(sys.stdout.encoding)
+            except (UnicodeEncodeError, UnicodeDecodeError):
+                # Remove emojis and other problematic characters
+                formatted = re.sub(r'[^\x00-\x7F]+', '', formatted)
+        
+        return formatted
 
 
 def setup_logger(name: str = "ai_service") -> logging.Logger:
@@ -25,30 +62,35 @@ def setup_logger(name: str = "ai_service") -> logging.Logger:
     if logger.handlers:
         return logger
     
-    # Console Handler with UTF-8 encoding for emojis
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
-    
-    # Fix UTF-8 encoding on Windows
-    if hasattr(sys.stdout, 'reconfigure'):
+    # Try to force UTF-8 encoding on Windows
+    if sys.platform == 'win32':
         try:
-            sys.stdout.reconfigure(encoding='utf-8')
+            # Set console to UTF-8 mode
+            os.system('chcp 65001 >nul 2>&1')
+            if hasattr(sys.stdout, 'reconfigure'):
+                sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+            if hasattr(sys.stderr, 'reconfigure'):
+                sys.stderr.reconfigure(encoding='utf-8', errors='replace')
         except Exception:
             pass  # Fallback if reconfigure fails
     
-    console_formatter = logging.Formatter(
+    # Console Handler with safe formatting
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
+    
+    console_formatter = SafeFormatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
     console_handler.setFormatter(console_formatter)
     logger.addHandler(console_handler)
     
-    # File Handler (if enabled)
+    # File Handler (if enabled) - always use UTF-8 for files
     if settings.ENABLE_FILE_LOGGING:
         log_file = Path(settings.LOG_FILE)
         log_file.parent.mkdir(parents=True, exist_ok=True)
         
-        file_handler = logging.FileHandler(log_file)
+        file_handler = logging.FileHandler(log_file, encoding='utf-8')
         file_handler.setLevel(logging.DEBUG)
         file_formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s',

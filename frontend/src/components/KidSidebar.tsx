@@ -28,10 +28,10 @@ export default function KidSidebar() {
               {mission?.title || 'Your Mission'}
             </h2>
             <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${(mission?.difficulty || 'easy').toLowerCase() === 'hard'
-                ? 'bg-rose-100 text-rose-600 border-rose-200'
-                : (mission?.difficulty || 'easy').toLowerCase() === 'medium'
-                  ? 'bg-amber-100 text-amber-600 border-amber-200'
-                  : 'bg-emerald-100 text-emerald-600 border-emerald-200'
+              ? 'bg-rose-100 text-rose-600 border-rose-200'
+              : (mission?.difficulty || 'easy').toLowerCase() === 'medium'
+                ? 'bg-amber-100 text-amber-600 border-amber-200'
+                : 'bg-emerald-100 text-emerald-600 border-emerald-200'
               }`}>
               {mission?.difficulty || 'Easy'}
             </span>
@@ -138,7 +138,7 @@ export default function KidSidebar() {
 }
 
 // Export the chatbot state and handlers for use in BlocklyWorkspace
-export function useChatbot() {
+export function useChatbot(getCurrentCode?: () => string) {
   const { mission, user, profile, insights } = useWorkspace();
   const [messages, setMessages] = useState<Array<{ text: string, isUser: boolean }>>([
     { text: "Hi there! 👋 I'm here to help you learn Python! Pick a question below or type your own!", isUser: false }
@@ -196,7 +196,7 @@ export function useChatbot() {
         missionId: mission?._id || 'free-play',
         question: promptText,
         promptId: undefined,
-        code: currentCode,
+        code: getCurrentCode ? getCurrentCode() : currentCode, // Use callback if available
         weakConcepts: insights?.weakConcepts || profile?.weakSkills || [],
         strongConcepts: insights?.strongConcepts || profile?.strongSkills || [],
         attemptNumber: 1,
@@ -259,7 +259,7 @@ export function useChatbot() {
         missionId: mission?._id || 'free-play',
         question: userMessage,
         promptId: undefined,
-        code: currentCode,
+        code: getCurrentCode ? getCurrentCode() : currentCode, // Use callback if available
         weakConcepts: insights?.weakConcepts || profile?.weakSkills || [],
         strongConcepts: insights?.strongConcepts || profile?.strongSkills || [],
         attemptNumber: 1,
@@ -362,7 +362,7 @@ export function useChatbot() {
         missionId: mission?._id || 'free-play',
         question: contextualQuestion,
         promptId: undefined,
-        code: problemContext.codeSnapshot || currentCode,
+        code: problemContext.codeSnapshot || (getCurrentCode ? getCurrentCode() : currentCode), // Use callback if available
         weakConcepts: problemContext.weakConcepts || insights?.weakConcepts || profile?.weakSkills || [],
         strongConcepts: problemContext.strongConcepts || insights?.strongConcepts || profile?.strongSkills || [],
         attemptNumber: 1,

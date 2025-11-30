@@ -70,8 +70,8 @@ export default function OnboardingFlow() {
       // Store onboarding data in localStorage
       localStorage.setItem('onboardingData', JSON.stringify(onboardingData));
       localStorage.setItem('onboardingCompleted', 'true');
-      // Redirect to main dashboard after onboarding
-      router.push('/dashboard');
+      // Redirect to main dashboard after onboarding with walkthrough flag
+      router.push('/dashboard?showWalkthrough=true');
     } catch (err) {
       alert('Error updating learning profile. Please try again.');
       console.error(err);

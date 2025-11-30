@@ -9,6 +9,9 @@ import { observeBehavior, recordInterventionResponse, type BehaviorMetrics, type
 interface UseBehaviorTrackerProps {
   userId: string;
   missionId: string;
+  missionData?: any; // Full mission object for context
+  userProfile?: any; // Full user profile for personalization
+  getCurrentCode?: () => string; // Callback to get current code from editor
   weakConcepts?: string[];
   strongConcepts?: string[];
   masterySnapshot?: Record<string, number>;
@@ -33,6 +36,9 @@ interface BehaviorState {
 export function useBehaviorTracker({
   userId,
   missionId,
+  missionData,
+  userProfile,
+  getCurrentCode,
   weakConcepts = [],
   strongConcepts = [],
   masterySnapshot,
@@ -42,7 +48,7 @@ export function useBehaviorTracker({
   useEffect(() => {
     console.log('[BehaviorTracker] ✅ Initialized with:', { userId, missionId, enabled });
   }, []); // Empty deps = runs once
-  
+
   const [behaviorState, setBehaviorState] = useState<BehaviorState>({
     editsCount: 0,
     lastEditTime: Date.now(),
@@ -62,7 +68,7 @@ export function useBehaviorTracker({
   const observationTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastObservationRef = useRef<number>(0);
   const behaviorStateRef = useRef<BehaviorState>(behaviorState); // Use ref to access latest state
-  
+
   // Keep ref in sync with state
   useEffect(() => {
     behaviorStateRef.current = behaviorState;
@@ -71,12 +77,12 @@ export function useBehaviorTracker({
   // Calculate code similarity
   const calculateSimilarity = useCallback((code1: string, code2: string): number => {
     if (!code1 || !code2) return 0;
-    
+
     const longer = code1.length > code2.length ? code1 : code2;
     const shorter = code1.length > code2.length ? code2 : code1;
-    
+
     if (longer.length === 0) return 1.0;
-    
+
     const editDistance = levenshteinDistance(longer, shorter);
     return (longer.length - editDistance) / longer.length;
   }, []);
@@ -143,7 +149,7 @@ export function useBehaviorTracker({
     const now = Date.now();
     setBehaviorState(prev => {
       const isSameError = errorType === prev.lastErrorType && errorType !== undefined;
-      
+
       const newState = {
         ...prev,
         lastRunTime: now,
@@ -154,10 +160,10 @@ export function useBehaviorTracker({
         sameErrorCount: isSameError ? prev.sameErrorCount + 1 : 1,
         cursorMovements: 0, // Reset after run
       };
-      console.log('[BehaviorTracker] State after run:', { 
-        totalAttempts: newState.totalAttempts, 
+      console.log('[BehaviorTracker] State after run:', {
+        totalAttempts: newState.totalAttempts,
         consecutiveFailedRuns: newState.consecutiveFailedRuns,
-        sameErrorCount: newState.sameErrorCount 
+        sameErrorCount: newState.sameErrorCount
       });
       return newState;
     });
@@ -178,7 +184,7 @@ export function useBehaviorTracker({
     if (!enabled || isObserving) return;
 
     const now = Date.now();
-    
+
     // Don't observe too frequently (minimum 15 seconds between observations)
     if (now - lastObservationRef.current < 15000) return;
 
@@ -211,6 +217,8 @@ export function useBehaviorTracker({
         weakConcepts,
         strongConcepts,
         masterySnapshot,
+        missionContext: missionData, // Include mission context for tailored hints
+        userProfile: userProfile, // Include user profile for personalization
         lastActivity: new Date(state.lastEditTime).toISOString(),
       };
 
@@ -221,7 +229,7 @@ export function useBehaviorTracker({
       if (observation.intervention) {
         console.log('[BehaviorTracker] ✅ Intervention triggered!');
         setProactiveHint(observation);
-        
+
         // Store full context for chatbot
         if (observation.contextForChatbot) {
           console.log('[BehaviorTracker] 💾 Storing chatbot context:', observation.contextForChatbot);
@@ -258,6 +266,9 @@ export function useBehaviorTracker({
     isObserving,
     userId,
     missionId,
+    missionData,
+    userProfile,
+    getCurrentCode,
     weakConcepts,
     strongConcepts,
     masterySnapshot,
@@ -297,7 +308,7 @@ export function useBehaviorTracker({
   // Set up periodic observation (every 20 seconds)
   useEffect(() => {
     console.log('[BehaviorTracker] Setting up observation timer, enabled:', enabled);
-    
+
     if (!enabled) {
       console.log('[BehaviorTracker] ⚠️ Tracking is DISABLED - check userId and missionId!');
       return;
@@ -307,18 +318,22 @@ export function useBehaviorTracker({
       const currentState = behaviorStateRef.current;
       const now = Date.now();
       const idleTime = Math.floor((now - currentState.lastEditTime) / 1000);
-      
+
       console.log('[BehaviorTracker] Timer tick - edits:', currentState.editsCount, 'attempts:', currentState.totalAttempts, 'idleTime:', idleTime + 's');
-      
+
+      // Get current code from editor (if callback provided), otherwise use lastCode
+      const currentCode = getCurrentCode ? getCurrentCode() : currentState.lastCode;
+      console.log('[BehaviorTracker] Current code length:', currentCode?.length || 0);
+
       // Always observe if:
       // 1. There's been activity (edits or attempts), OR
       // 2. User has been idle for more than 60 seconds (to catch stuck/thinking users)
       if (currentState.editsCount > 0 || currentState.totalAttempts > 0) {
         console.log('[BehaviorTracker] ✅ Activity detected, calling performObservation');
-        performObservation(currentState.lastCode);
+        performObservation(currentCode);
       } else if (idleTime > 60) {
         console.log('[BehaviorTracker] ⏱️ Idle for', idleTime + 's, checking if user needs help');
-        performObservation(currentState.lastCode);
+        performObservation(currentCode);
       } else {
         console.log('[BehaviorTracker] ⏸️ No activity and not idle long enough yet, skipping observation');
       }
