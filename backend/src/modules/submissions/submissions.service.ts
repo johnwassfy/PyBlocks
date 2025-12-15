@@ -14,6 +14,7 @@ import { AiService } from '../ai/ai.service';
 import { SubmissionCompletedEvent } from '../../common/events/submission.events';
 import { AdaptivityService } from '../adaptivity/adaptivity.service';
 import { AiAnalysisResponseDto } from '../ai-connector/dto/ai-analysis.dto';
+import { RubricScorerService } from './services/rubric-scorer.service';
 
 @Injectable()
 export class SubmissionsService {
@@ -47,6 +48,7 @@ export class SubmissionsService {
     private aiService: AiService,
     private eventEmitter: EventEmitter2,
     private adaptivityService: AdaptivityService,
+    private rubricScorerService: RubricScorerService,
   ) { }
 
   async create(
@@ -81,6 +83,13 @@ export class SubmissionsService {
     }
 
     this.logger.log(`✅ [SUBMISSION] Mission found: ${mission.title}`);
+
+    // 🧪 CHECK IF THIS IS A TEST MISSION (Pre1-3, Post1-3)
+    const isTestMission = /^(Pre|Post)[123]$/i.test(mission.title);
+    if (isTestMission) {
+      this.logger.log(`🧪 [TEST MODE] Detected test mission: ${mission.title}`);
+      return this.handleTestSubmission(userId, mission, createSubmissionDto);
+    }
 
     // 🔒 2. Validate code against mission rules
     // TEMPORARILY DISABLED - This validation is incorrectly blocking valid submissions
@@ -569,6 +578,95 @@ export class SubmissionsService {
       );
       // Don't throw - analytics logging should not break submission flow
     }
+  }
+
+  /**
+   * Handle test submission (Pre1-3, Post1-3)
+   * Score using rubric and save with test metadata
+   */
+  private async handleTestSubmission(userId: string, mission: any, dto: CreateSubmissionDto): Promise<any> {
+    this.logger.log(`🧪 [TEST] Scoring test submission for ${mission.title}`);
+
+    // Get test cases from mission
+    const testCases = mission.steps?.[0]?.testCases || [];
+    const requiredConcepts = mission.validationRules?.requiredConcepts || [];
+
+    // Score using rubric
+    const rubricScores = await this.rubricScorerService.scoreCode(
+      dto.code,
+      testCases,
+      requiredConcepts,
+    );
+
+    this.logger.log(`🧪 [TEST] Rubric scores: ${JSON.stringify(rubricScores)}`);
+
+    // Determine experiment group
+    const experimentGroup = mission.title.startsWith('Pre') ? 'PRE_TEST' : 'POST_TEST';
+
+    // Create submission log
+    const submissionLog = new this.submissionLogModel({
+      userId,
+      anonymizedUserId: await this.generateAnonymizedUserId(userId),
+      missionId: mission._id,
+      missionTitle: mission.title,
+      missionDifficulty: mission.difficulty,
+      missionConcepts: mission.concepts || [],
+      
+      // Test-specific fields
+      experimentGroup,
+      testProblemId: mission.title,
+      rubricScores: {
+        pythonSyntax: rubricScores.pythonSyntax,
+        correctness: rubricScores.correctness,
+        codeStructure: rubricScores.codeStructure,
+        requiredFeatures: rubricScores.requiredFeatures,
+        noErrors: rubricScores.noErrors,
+        total: rubricScores.total,
+      },
+      syntaxErrorsDetailed: rubricScores.breakdown.syntaxDetails,
+      submittedCode: dto.code,
+      
+      // Performance metrics
+      success: rubricScores.total >= 70, // 70% passing threshold
+      score: rubricScores.total,
+      attempts: dto.attempts || 1,
+      timeSpent: dto.timeSpent || 0,
+      codeLength: dto.code?.length || 0,
+      codeLines: (dto.code?.split('\n') || []).length,
+      
+      // AI fields (all zero for tests)
+      aiModel: 'N/A - Test Mode',
+      aiProvider: 'N/A',
+      aiHintsRequested: 0,
+      aiHintsProvided: 0,
+      aiProactiveHelp: 0,
+      chatbotInteractions: 0,
+      aiResponseTime: 0,
+      
+      // Test case results
+      totalTestCases: testCases.length,
+      passedTestCases: Math.round((rubricScores.correctness / 30) * testCases.length),
+      failedTestCases: testCases.length - Math.round((rubricScores.correctness / 30) * testCases.length),
+      
+      timestamp: new Date(),
+    });
+
+    await submissionLog.save();
+
+    this.logger.log(`✅ [TEST] Test submission logged for ${mission.title}`);
+
+    // Return formatted response for frontend
+    return {
+      submission: null,
+      isTestMode: true,
+      rubricScores,
+      experimentGroup,
+      testProblemId: mission.title,
+      passed: rubricScores.total >= 70,
+      message: rubricScores.total >= 70 
+        ? `Great job! You scored ${rubricScores.total}/100` 
+        : `You scored ${rubricScores.total}/100. Keep practicing!`,
+    };
   }
 
   /**

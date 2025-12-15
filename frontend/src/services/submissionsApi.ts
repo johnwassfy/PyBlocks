@@ -63,6 +63,14 @@ export interface SubmissionResponse {
   leveledUp: boolean;
   nextMission?: any;
   learningInsights?: any;
+  rubricScores?: {
+    pythonSyntax: number;
+    correctness: number;
+    codeStructure: number;
+    requiredFeatures: number;
+    noErrors: number;
+    total: number;
+  };
 }
 
 /**

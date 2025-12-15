@@ -11,6 +11,7 @@ import { UsersModule } from '../users/users.module';
 import { MissionsModule } from '../missions/missions.module';
 import { AiModule } from '../ai/ai.module';
 import { AdaptivityModule } from '../adaptivity/adaptivity.module';
+import { RubricScorerService } from './services/rubric-scorer.service';
 
 @Module({
   imports: [
@@ -24,7 +25,7 @@ import { AdaptivityModule } from '../adaptivity/adaptivity.module';
     AdaptivityModule, // New: Handles all adaptive logic
   ],
   controllers: [SubmissionsController],
-  providers: [SubmissionsService],
+  providers: [SubmissionsService, RubricScorerService],
   exports: [SubmissionsService],
 })
 export class SubmissionsModule {}

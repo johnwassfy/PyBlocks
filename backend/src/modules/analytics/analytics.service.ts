@@ -372,4 +372,165 @@ export class AnalyticsService {
       .slice(0, limit)
       .map(([concept, count]) => ({ concept, count }));
   }
+
+  // ========== PRE/POST TEST ANALYTICS ==========
+
+  /**
+   * Get all pre-test submissions for a user
+   */
+  async getPreTestResults(userId: string): Promise<SubmissionLogDocument[]> {
+    return this.submissionLogModel
+      .find({
+        userId,
+        experimentGroup: 'PRE_TEST',
+      })
+      .sort({ timestamp: 1 })
+      .exec();
+  }
+
+  /**
+   * Get all post-test submissions for a user
+   */
+  async getPostTestResults(userId: string): Promise<SubmissionLogDocument[]> {
+    return this.submissionLogModel
+      .find({
+        userId,
+        experimentGroup: 'POST_TEST',
+      })
+      .sort({ timestamp: 1 })
+      .exec();
+  }
+
+  /**
+   * Get intervention mission submissions for a user
+   */
+  async getInterventionResults(userId: string): Promise<SubmissionLogDocument[]> {
+    return this.submissionLogModel
+      .find({
+        userId,
+        experimentGroup: 'INTERVENTION',
+      })
+      .sort({ timestamp: 1 })
+      .exec();
+  }
+
+  /**
+   * Compare pre vs post test results for a user
+   */
+  async getTestComparison(userId: string): Promise<any> {
+    const preTests = await this.getPreTestResults(userId);
+    const postTests = await this.getPostTestResults(userId);
+
+    const preAggregate = this.aggregateTestScores(preTests);
+    const postAggregate = this.aggregateTestScores(postTests);
+
+    return {
+      pre: preAggregate,
+      post: postAggregate,
+      improvement: {
+        totalScore: postAggregate.avgTotal - preAggregate.avgTotal,
+        pythonSyntax: postAggregate.avgPythonSyntax - preAggregate.avgPythonSyntax,
+        correctness: postAggregate.avgCorrectness - preAggregate.avgCorrectness,
+        codeStructure: postAggregate.avgCodeStructure - preAggregate.avgCodeStructure,
+        requiredFeatures: postAggregate.avgRequiredFeatures - preAggregate.avgRequiredFeatures,
+        noErrors: postAggregate.avgNoErrors - preAggregate.avgNoErrors,
+        attempts: preAggregate.avgAttempts - postAggregate.avgAttempts,
+        timeSpent: preAggregate.avgTimeSpent - postAggregate.avgTimeSpent,
+        syntaxErrorReduction: preAggregate.avgSyntaxErrors - postAggregate.avgSyntaxErrors,
+      },
+    };
+  }
+
+  /**
+   * Aggregate test scores from multiple submissions
+   */
+  private aggregateTestScores(submissions: SubmissionLogDocument[]): any {
+    if (submissions.length === 0) {
+      return {
+        count: 0,
+        avgTotal: 0,
+        avgPythonSyntax: 0,
+        avgCorrectness: 0,
+        avgCodeStructure: 0,
+        avgRequiredFeatures: 0,
+        avgNoErrors: 0,
+        avgAttempts: 0,
+        avgTimeSpent: 0,
+        avgSyntaxErrors: 0,
+      };
+    }
+
+    const totals = submissions.reduce(
+      (acc, sub) => ({
+        total: acc.total + (sub.rubricScores?.total || 0),
+        pythonSyntax: acc.pythonSyntax + (sub.rubricScores?.pythonSyntax || 0),
+        correctness: acc.correctness + (sub.rubricScores?.correctness || 0),
+        codeStructure: acc.codeStructure + (sub.rubricScores?.codeStructure || 0),
+        requiredFeatures: acc.requiredFeatures + (sub.rubricScores?.requiredFeatures || 0),
+        noErrors: acc.noErrors + (sub.rubricScores?.noErrors || 0),
+        attempts: acc.attempts + (sub.attempts || 0),
+        timeSpent: acc.timeSpent + (sub.timeSpent || 0),
+        syntaxErrors: acc.syntaxErrors + (sub.syntaxErrorsDetailed?.length || 0),
+      }),
+      {
+        total: 0,
+        pythonSyntax: 0,
+        correctness: 0,
+        codeStructure: 0,
+        requiredFeatures: 0,
+        noErrors: 0,
+        attempts: 0,
+        timeSpent: 0,
+        syntaxErrors: 0,
+      },
+    );
+
+    const count = submissions.length;
+
+    return {
+      count,
+      avgTotal: totals.total / count,
+      avgPythonSyntax: totals.pythonSyntax / count,
+      avgCorrectness: totals.correctness / count,
+      avgCodeStructure: totals.codeStructure / count,
+      avgRequiredFeatures: totals.requiredFeatures / count,
+      avgNoErrors: totals.noErrors / count,
+      avgAttempts: totals.attempts / count,
+      avgTimeSpent: totals.timeSpent / count,
+      avgSyntaxErrors: totals.syntaxErrors / count,
+      submissions,
+    };
+  }
+
+  /**
+   * Get all test data for export (CSV/Excel)
+   */
+  async getAllTestData(): Promise<any[]> {
+    const testSubmissions = await this.submissionLogModel
+      .find({
+        experimentGroup: { $in: ['PRE_TEST', 'POST_TEST', 'INTERVENTION'] },
+      })
+      .sort({ userId: 1, timestamp: 1 })
+      .exec();
+
+    return testSubmissions.map((sub) => ({
+      userId: sub.anonymizedUserId,
+      experimentGroup: sub.experimentGroup,
+      testProblemId: sub.testProblemId,
+      missionTitle: sub.missionTitle,
+      timestamp: sub.timestamp,
+      totalScore: sub.rubricScores?.total || 0,
+      pythonSyntax: sub.rubricScores?.pythonSyntax || 0,
+      correctness: sub.rubricScores?.correctness || 0,
+      codeStructure: sub.rubricScores?.codeStructure || 0,
+      requiredFeatures: sub.rubricScores?.requiredFeatures || 0,
+      noErrors: sub.rubricScores?.noErrors || 0,
+      attempts: sub.attempts,
+      timeSpent: sub.timeSpent,
+      syntaxErrorCount: sub.syntaxErrorsDetailed?.length || 0,
+      syntaxErrors: sub.syntaxErrorsDetailed?.join('; ') || '',
+      passed: sub.success,
+    }));
+  }
 }
+

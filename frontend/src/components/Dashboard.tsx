@@ -27,7 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
-import BlocklyWorkspace, { type UserData, type ProfileData, type GamificationData, type Achievement } from './BlocklyWorkspace';
+import BlocklyWorkspace, { type UserData, type ProfileData, type GamificationData } from './BlocklyWorkspace';
 import DashboardWalkthrough from './DashboardWalkthrough';
 import { sendChatMessage, getPredefinedPrompts, checkAIServiceHealth } from '../services/chatbotApi';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -50,9 +50,9 @@ type Mission = {
   expectedOutput?: string;
   estimatedTime?: number;
   testCases?: { input: string; expectedOutput: string }[];
-  config?: any;
+  config?: Record<string, unknown>;
   concepts: string[];
-  analytics?: any;
+  analytics?: Record<string, unknown>;
 };
 
 const missionColors = [
@@ -167,8 +167,8 @@ export default function Dashboard() {
         if (!insightsRes.ok) throw new Error('Failed to fetch adaptive insights');
         const insightsData: AdaptiveInsights = await insightsRes.json();
         setInsights(insightsData);
-      } catch (err: any) {
-        setError(err.message || 'Error loading user');
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Error loading user');
         setInsights(null);
       } finally {
         setLoading(false);
@@ -180,7 +180,11 @@ export default function Dashboard() {
   // Clicking a mission sets workspace data and navigates
   const handleMissionClick = (mission: Mission) => {
     if (!user || !profile) return;
-    console.log('Setting workspace data:', { mission, user, profile, insights, gamification });
+    
+    // 🧪 Check if this is a test mission (Pre1-3 or Post1-3)
+    const isTestMission = /^(Pre|Post)[123]$/i.test(mission.title);
+    
+    console.log('Setting workspace data:', { mission, user, profile, insights, gamification, isTestMission });
 
     // Store in both context AND sessionStorage for reliability
     const workspaceData = { mission, user, profile, insights, gamification };
@@ -189,8 +193,14 @@ export default function Dashboard() {
     // Store in sessionStorage as backup (survives navigation)
     sessionStorage.setItem('workspaceData', JSON.stringify(workspaceData));
 
-    console.log('Navigating to workspace...');
-    router.push('/blockly-workspace');
+    // Route to appropriate workspace based on mission type
+    if (isTestMission) {
+      console.log('🧪 Navigating to TEST workspace...');
+      router.push('/test-workspace');
+    } else {
+      console.log('Navigating to regular workspace...');
+      router.push('/blockly-workspace');
+    }
   };
 
 

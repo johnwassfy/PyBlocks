@@ -149,10 +149,30 @@ export class SubmissionLog {
 
   // ========== Research Metadata ==========
   @Prop({ default: '' })
-  experimentGroup: string; // For A/B testing different AI models
+  experimentGroup: string; // For A/B testing different AI models (or 'PRE_TEST', 'POST_TEST', 'INTERVENTION')
 
   @Prop({ type: Object, default: {} })
   additionalMetrics: Record<string, any>; // Extensible for future metrics
+
+  // ========== Pre/Post Test Specific Fields ==========
+  @Prop({ default: '' })
+  testProblemId: string; // e.g., 'Pre1', 'Pre2', 'Pre3', 'Post1', 'Post2', 'Post3'
+
+  @Prop({ type: Object, default: null })
+  rubricScores?: {
+    pythonSyntax: number; // /40 points
+    correctness: number; // /30 points
+    codeStructure: number; // /15 points
+    requiredFeatures: number; // /10 points
+    noErrors: number; // /5 points
+    total: number; // /100 points
+  };
+
+  @Prop({ type: [String], default: [] })
+  syntaxErrorsDetailed: string[]; // Specific syntax errors: 'missing_colon', 'wrong_indentation', 'missing_return', etc.
+
+  @Prop({ default: '' })
+  submittedCode: string; // Store the actual code for test submissions
 }
 
 export const SubmissionLogSchema = SchemaFactory.createForClass(SubmissionLog);
@@ -162,3 +182,5 @@ SubmissionLogSchema.index({ aiModel: 1, success: 1 });
 SubmissionLogSchema.index({ timestamp: -1 });
 SubmissionLogSchema.index({ anonymizedUserId: 1, timestamp: -1 });
 SubmissionLogSchema.index({ missionId: 1, aiModel: 1 });
+SubmissionLogSchema.index({ experimentGroup: 1, userId: 1 }); // For test data queries
+SubmissionLogSchema.index({ testProblemId: 1 }); // For test-specific queries

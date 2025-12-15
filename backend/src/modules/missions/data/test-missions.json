@@ -1,0 +1,365 @@
+[
+  {
+    "module": "Pre-Test",
+    "title": "Pre1",
+    "description": "Create a function multiply_list(numbers) that multiplies all numbers in a list together using a for loop and returns the product.",
+    "starterCode": "# Create your function here\n",
+    "expectedOutput": "",
+    "difficulty": "medium",
+    "difficultyLevel": 2,
+    "tags": ["functions", "loops", "accumulation", "pre-test"],
+    "objectives": [
+      "Use def keyword for function definition",
+      "Use for loop to iterate through list",
+      "Use return statement",
+      "Proper indentation (4 spaces)"
+    ],
+    "hints": [],
+    "xpReward": 0,
+    "order": 9001,
+    "isActive": true,
+    "estimatedTime": 15,
+    "steps": [
+      {
+        "title": "Product of Numbers",
+        "instructions": "Create a function multiply_list(numbers) that:\n- Takes a list of numbers as input\n- Multiplies all numbers together using a for loop\n- Returns the final product\n\nExample:\nmultiply_list([2, 3, 4]) → 24\nmultiply_list([1, 5, 2]) → 10\nmultiply_list([10]) → 10\n\nPython-specific requirements:\n- Must use 'def' keyword for function definition\n- Must use 'for item in list:' syntax\n- Must use 'return' statement\n- Proper indentation (4 spaces)",
+        "starterCode": "# Create your function here\n",
+        "expectedOutput": "",
+        "testCases": [
+          {
+            "input": "[2, 3, 4]",
+            "expectedOutput": "24"
+          },
+          {
+            "input": "[1, 5, 2]",
+            "expectedOutput": "10"
+          },
+          {
+            "input": "[10]",
+            "expectedOutput": "10"
+          }
+        ],
+        "concepts": ["functions", "loops", "multiplication", "accumulation"],
+        "hints": [],
+        "aiCheckpoint": false,
+        "xpReward": 0
+      }
+    ],
+    "concepts": ["functions", "loops", "multiplication"],
+    "config": {
+      "maxAttempts": 999,
+      "timeLimit": 20,
+      "aiWeighting": 0,
+      "adaptiveHints": false,
+      "allowSkipSteps": false
+    },
+    "validationRules": {
+      "disallowHardcodedOutput": true,
+      "requiredConcepts": ["def", "for", "return"],
+      "forbiddenPatterns": []
+    },
+    "toolboxConfig": {
+      "mode": "hide"
+    }
+  },
+  {
+    "module": "Pre-Test",
+    "title": "Pre2",
+    "description": "Count how many values in a list are greater than or equal to 10. Use a for loop and if statement, then print the count.",
+    "starterCode": "numbers = [5, 12, 0, 33, 7]\n# Write your code here\n",
+    "expectedOutput": "2",
+    "difficulty": "medium",
+    "difficultyLevel": 2,
+    "tags": ["loops", "conditionals", "counting", "pre-test"],
+    "objectives": [
+      "Use for loop to iterate",
+      "Use if statement for condition",
+      "Use counter variable",
+      "Use print() function",
+      "Proper nested indentation"
+    ],
+    "hints": [],
+    "xpReward": 0,
+    "order": 9002,
+    "isActive": true,
+    "estimatedTime": 15,
+    "steps": [
+      {
+        "title": "Count Values >= 10",
+        "instructions": "Given a list of numbers, count how many values are greater than or equal to 10.\nUse a for loop and if statement.\nPrint the count.\n\nExample:\nnumbers = [5, 12, 0, 33, 7]\nOutput: 2\n\nnumbers = [10, 10, 9]\nOutput: 2\n\nPython-specific requirements:\n- Use 'if number >= 10:' to check the condition\n- Use counter variable (e.g., count = 0)\n- Use 'count += 1' or 'count = count + 1' to increment\n- Use 'print()' to display result\n- Proper indentation for if block inside for loop",
+        "starterCode": "numbers = [5, 12, 0, 33, 7]\n# Write your code here\n",
+        "expectedOutput": "2",
+        "testCases": [
+          {
+            "input": "[5, 12, 0, 33, 7]",
+            "expectedOutput": "2"
+          },
+          {
+            "input": "[10, 10, 9]",
+            "expectedOutput": "2"
+          }
+        ],
+        "concepts": ["loops", "conditionals", "counting"],
+        "hints": [],
+        "aiCheckpoint": false,
+        "xpReward": 0
+      }
+    ],
+    "concepts": ["loops", "conditionals", "counting"],
+    "config": {
+      "maxAttempts": 999,
+      "timeLimit": 20,
+      "aiWeighting": 0,
+      "adaptiveHints": false,
+      "allowSkipSteps": false
+    },
+    "validationRules": {
+      "disallowHardcodedOutput": true,
+      "requiredConcepts": ["for", "if", "print"],
+      "forbiddenPatterns": []
+    },
+    "toolboxConfig": {
+      "mode": "hide"
+    }
+  },
+  {
+    "module": "Pre-Test",
+    "title": "Pre3",
+    "description": "Create a function even_not_six(n) that finds all numbers from 1 to n divisible by 2 but NOT by 6, prints the list and count.",
+    "starterCode": "# Create your function here\n",
+    "expectedOutput": "",
+    "difficulty": "hard",
+    "difficultyLevel": 3,
+    "tags": ["functions", "loops", "conditionals", "lists", "pre-test"],
+    "objectives": [
+      "Use def keyword",
+      "Use range() and for loop",
+      "Use if with logical operators",
+      "Use list.append()",
+      "Use len() and print()",
+      "Proper nested indentation"
+    ],
+    "hints": [],
+    "xpReward": 0,
+    "order": 9003,
+    "isActive": true,
+    "estimatedTime": 20,
+    "steps": [
+      {
+        "title": "Even but Not Six",
+        "instructions": "Create a function even_not_six(n) that:\n- Finds all numbers from 1 to n that are divisible by 2 but NOT divisible by 6\n- Stores these numbers in a list\n- Prints the list on the first line\n- Prints the count of numbers on the second line\n\nExample:\neven_not_six(20)\n\nOutput:\n[2, 4, 8, 10, 14, 16, 20]\n7\n\nPython-specific requirements:\n- Use 'def even_not_six(n):' for function\n- Use 'result = []' to initialize empty list\n- Use 'for i in range(1, n+1):' for iteration\n- Use 'if i % 2 == 0 and i % 6 != 0:' for condition\n- Use 'result.append(i)' to add to list\n- Use 'print(result)' and 'print(len(result))'\n- Proper indentation for nested structures",
+        "starterCode": "# Create your function here\n",
+        "expectedOutput": "",
+        "testCases": [
+          {
+            "input": "20",
+            "expectedOutput": "[2, 4, 8, 10, 14, 16, 20]\n7"
+          }
+        ],
+        "concepts": ["functions", "loops", "conditionals", "lists", "modulo"],
+        "hints": [],
+        "aiCheckpoint": false,
+        "xpReward": 0
+      }
+    ],
+    "concepts": ["functions", "loops", "conditionals", "lists"],
+    "config": {
+      "maxAttempts": 999,
+      "timeLimit": 20,
+      "aiWeighting": 0,
+      "adaptiveHints": false,
+      "allowSkipSteps": false
+    },
+    "validationRules": {
+      "disallowHardcodedOutput": true,
+      "requiredConcepts": ["def", "for", "range", "if", "append", "len", "print"],
+      "forbiddenPatterns": []
+    },
+    "toolboxConfig": {
+      "mode": "hide"
+    }
+  },
+  {
+    "module": "Post-Test",
+    "title": "Post1",
+    "description": "Create a function calculate_average(numbers) that sums all numbers using a for loop and returns the average (sum divided by count).",
+    "starterCode": "# Create your function here\n",
+    "expectedOutput": "",
+    "difficulty": "medium",
+    "difficultyLevel": 2,
+    "tags": ["functions", "loops", "accumulation", "post-test"],
+    "objectives": [
+      "Use def keyword",
+      "Use for loop",
+      "Use accumulator variable",
+      "Use len() function",
+      "Use return statement",
+      "Proper indentation"
+    ],
+    "hints": [],
+    "xpReward": 0,
+    "order": 9004,
+    "isActive": true,
+    "estimatedTime": 15,
+    "steps": [
+      {
+        "title": "Average Calculator",
+        "instructions": "Create a function calculate_average(numbers) that:\n- Takes a list of numbers as input\n- Sums all numbers using a for loop\n- Calculates and returns the average (sum divided by count)\n\nExample:\ncalculate_average([10, 20, 30]) → 20.0\ncalculate_average([5, 15, 25, 35]) → 20.0\ncalculate_average([100]) → 100.0\n\nPython-specific requirements:\n- Use 'def' to define function\n- Use 'for num in numbers:' to iterate\n- Use an accumulator variable (e.g., total = 0)\n- Use len(numbers) to get count\n- Use 'return' for the result\n- Proper indentation throughout",
+        "starterCode": "# Create your function here\n",
+        "expectedOutput": "",
+        "testCases": [
+          {
+            "input": "[10, 20, 30]",
+            "expectedOutput": "20.0"
+          },
+          {
+            "input": "[5, 15, 25, 35]",
+            "expectedOutput": "20.0"
+          },
+          {
+            "input": "[100]",
+            "expectedOutput": "100.0"
+          }
+        ],
+        "concepts": ["functions", "loops", "accumulation", "division"],
+        "hints": [],
+        "aiCheckpoint": false,
+        "xpReward": 0
+      }
+    ],
+    "concepts": ["functions", "loops", "accumulation"],
+    "config": {
+      "maxAttempts": 999,
+      "timeLimit": 20,
+      "aiWeighting": 0,
+      "adaptiveHints": false,
+      "allowSkipSteps": false
+    },
+    "validationRules": {
+      "disallowHardcodedOutput": true,
+      "requiredConcepts": ["def", "for", "return", "len"],
+      "forbiddenPatterns": []
+    },
+    "toolboxConfig": {
+      "mode": "hide"
+    }
+  },
+  {
+    "module": "Post-Test",
+    "title": "Post2",
+    "description": "Count how many numbers in a list are negative (less than zero). Use a for loop and if statement, then print the count.",
+    "starterCode": "numbers = [5, -3, 8, -1, 0, -9]\n# Write your code here\n",
+    "expectedOutput": "3",
+    "difficulty": "medium",
+    "difficultyLevel": 2,
+    "tags": ["loops", "conditionals", "counting", "post-test"],
+    "objectives": [
+      "Use for loop",
+      "Use if statement",
+      "Use counter variable",
+      "Use increment syntax",
+      "Use print() function",
+      "Proper indentation"
+    ],
+    "hints": [],
+    "xpReward": 0,
+    "order": 9005,
+    "isActive": true,
+    "estimatedTime": 15,
+    "steps": [
+      {
+        "title": "Count Negatives",
+        "instructions": "Given a list of numbers, count how many are negative (less than zero).\nUse a for loop and if statement.\nPrint the count.\n\nExample:\nnumbers = [5, -3, 8, -1, 0, -9]\nOutput: 3\n\nnumbers = [1, 2, 3, 4]\nOutput: 0\n\nPython-specific requirements:\n- Use 'if number < 0:' to check negative\n- Use counter variable initialized to 0\n- Use increment syntax (count += 1)\n- Use 'print()' for output\n- Proper indentation throughout",
+        "starterCode": "numbers = [5, -3, 8, -1, 0, -9]\n# Write your code here\n",
+        "expectedOutput": "3",
+        "testCases": [
+          {
+            "input": "[5, -3, 8, -1, 0, -9]",
+            "expectedOutput": "3"
+          },
+          {
+            "input": "[1, 2, 3, 4]",
+            "expectedOutput": "0"
+          }
+        ],
+        "concepts": ["loops", "conditionals", "counting"],
+        "hints": [],
+        "aiCheckpoint": false,
+        "xpReward": 0
+      }
+    ],
+    "concepts": ["loops", "conditionals", "counting"],
+    "config": {
+      "maxAttempts": 999,
+      "timeLimit": 20,
+      "aiWeighting": 0,
+      "adaptiveHints": false,
+      "allowSkipSteps": false
+    },
+    "validationRules": {
+      "disallowHardcodedOutput": true,
+      "requiredConcepts": ["for", "if", "print"],
+      "forbiddenPatterns": []
+    },
+    "toolboxConfig": {
+      "mode": "hide"
+    }
+  },
+  {
+    "module": "Post-Test",
+    "title": "Post3",
+    "description": "Create a function divisible_by_4_not_6(n) that finds all numbers from 1 to n divisible by 4 but NOT by 6, prints the list and count.",
+    "starterCode": "# Create your function here\n",
+    "expectedOutput": "",
+    "difficulty": "hard",
+    "difficultyLevel": 3,
+    "tags": ["functions", "loops", "conditionals", "lists", "post-test"],
+    "objectives": [
+      "Use def keyword",
+      "Use range() and for loop",
+      "Use if with logical operators",
+      "Use list.append()",
+      "Use len() and print()",
+      "Proper nested indentation"
+    ],
+    "hints": [],
+    "xpReward": 0,
+    "order": 9006,
+    "isActive": true,
+    "estimatedTime": 20,
+    "steps": [
+      {
+        "title": "Divisible by 4 but Not 6",
+        "instructions": "Create a function divisible_by_4_not_6(n) that:\n- Finds all numbers from 1 to n that are divisible by 4 but NOT divisible by 6\n- Stores these numbers in a list\n- Prints the list on the first line\n- Prints the count of numbers on the second line\n\nExample:\ndivisible_by_4_not_6(25)\n\nOutput:\n[4, 8, 16, 20]\n4\n\nPython-specific requirements:\n- Use 'def divisible_by_4_not_6(n):' for function\n- Use 'result = []' to create empty list\n- Use 'for i in range(1, n+1):' for loop\n- Use 'if i % 4 == 0 and i % 6 != 0:' for condition\n- Use 'result.append(i)' to add items\n- Use 'print(result)' then 'print(len(result))'\n- Proper indentation throughout",
+        "starterCode": "# Create your function here\n",
+        "expectedOutput": "",
+        "testCases": [
+          {
+            "input": "25",
+            "expectedOutput": "[4, 8, 16, 20]\n4"
+          }
+        ],
+        "concepts": ["functions", "loops", "conditionals", "lists", "modulo"],
+        "hints": [],
+        "aiCheckpoint": false,
+        "xpReward": 0
+      }
+    ],
+    "concepts": ["functions", "loops", "conditionals", "lists"],
+    "config": {
+      "maxAttempts": 999,
+      "timeLimit": 20,
+      "aiWeighting": 0,
+      "adaptiveHints": false,
+      "allowSkipSteps": false
+    },
+    "validationRules": {
+      "disallowHardcodedOutput": true,
+      "requiredConcepts": ["def", "for", "range", "if", "append", "len", "print"],
+      "forbiddenPatterns": []
+    },
+    "toolboxConfig": {
+      "mode": "hide"
+    }
+  }
+]

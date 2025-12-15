@@ -105,4 +105,44 @@ export class AnalyticsController {
   async getStudentJourney(@Param('anonymizedUserId') anonymizedUserId: string) {
     return this.analyticsService.getStudentJourney(anonymizedUserId);
   }
+
+  // ========== PRE/POST TEST ANALYTICS ==========
+
+  @Get('tests/pre/:userId')
+  @ApiOperation({ summary: 'Get pre-test results for a user' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'Pre-test results retrieved' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getPreTestResults(@Param('userId') userId: string) {
+    return this.analyticsService.getPreTestResults(userId);
+  }
+
+  @Get('tests/post/:userId')
+  @ApiOperation({ summary: 'Get post-test results for a user' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'Post-test results retrieved' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getPostTestResults(@Param('userId') userId: string) {
+    return this.analyticsService.getPostTestResults(userId);
+  }
+
+  @Get('tests/comparison/:userId')
+  @ApiOperation({ summary: 'Compare pre vs post test results for a user' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'Test comparison retrieved' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getTestComparison(@Param('userId') userId: string) {
+    return this.analyticsService.getTestComparison(userId);
+  }
+
+  @Get('tests/export')
+  @ApiOperation({ summary: 'Export all test data for research analysis' })
+  @ApiResponse({
+    status: 200,
+    description: 'All test data exported (CSV-ready format)',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async exportTestData() {
+    return this.analyticsService.getAllTestData();
+  }
 }
