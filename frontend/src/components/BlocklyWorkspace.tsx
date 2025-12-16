@@ -1448,14 +1448,14 @@ export default function BlocklyWorkspace({
 
         {/* 🤖 Floating Chatbot Button */}
         <button
-          className={`fixed bottom-6 right-6 w-16 h-16 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/40 hover:scale-110 hover:rotate-6 transition-all duration-300 z-50 flex items-center justify-center group ${behaviorTracker.proactiveHint ? 'animate-bounce' : ''
+          className={`fixed bottom-6 right-6 w-16 h-16 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/40 hover:scale-110 hover:rotate-6 transition-all duration-300 z-50 flex items-center justify-center group ${behaviorTracker.proactiveHint ? 'animate-pulse' : ''
             }`}
           onClick={() => chatbot.setIsChatOpen(!chatbot.isChatOpen)}
           title="Ask me anything!"
         >
           <span className="text-3xl group-hover:animate-wiggle">🤖</span>
           {behaviorTracker.proactiveHint && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white animate-ping"></span>
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
           )}
           <div className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
         </button>
