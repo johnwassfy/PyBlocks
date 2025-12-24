@@ -485,7 +485,7 @@ export default function Dashboard() {
         </motion.div>
 
         {/* Horizontal Mission Map - Scrollable */}
-        <div className="overflow-x-auto overflow-y-hidden pb-8 scrollbar-hide">
+        <div className="overflow-x-auto overflow-y-hidden pb-8">
           <div className="relative mx-auto" style={{ width: `${missions.length * 220}px`, height: '450px' }}>
             {/* Winding Path Background */}
             <svg
