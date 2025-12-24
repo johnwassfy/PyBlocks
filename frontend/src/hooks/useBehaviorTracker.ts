@@ -64,6 +64,7 @@ export function useBehaviorTracker({
 
   const [proactiveHint, setProactiveHint] = useState<ObservationResponse | null>(null);
   const [chatbotContext, setChatbotContext] = useState<any>(null); // Store full context for chatbot
+  const [onHintReceived, setOnHintReceived] = useState<((hint: ObservationResponse) => void) | null>(null);
   const [isObserving, setIsObserving] = useState(false);
   const observationTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastObservationRef = useRef<number>(0);
@@ -228,7 +229,16 @@ export function useBehaviorTracker({
 
       if (observation.intervention) {
         console.log('[BehaviorTracker] ✅ Intervention triggered!');
-        setProactiveHint(observation);
+        
+        // If callback is registered (chatbot is open), send hint directly to chatbot
+        if (onHintReceived) {
+          console.log('[BehaviorTracker] 📨 Sending hint directly to chatbot');
+          onHintReceived(observation);
+        } else {
+          // Otherwise show popup
+          console.log('[BehaviorTracker] 💬 Showing hint as popup');
+          setProactiveHint(observation);
+        }
 
         // Store full context for chatbot
         if (observation.contextForChatbot) {
@@ -359,5 +369,6 @@ export function useBehaviorTracker({
     acceptHint,
     dismissHint,
     behaviorState,
+    setOnHintReceived, // NEW: Allow callback registration for smart hint delivery
   };
 }

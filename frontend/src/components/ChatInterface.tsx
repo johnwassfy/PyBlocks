@@ -81,19 +81,34 @@ export default function ChatInterface({ chatbot, className = '' }: ChatInterface
                                 key={index}
                                 className={`flex gap-3 ${message.isUser ? 'flex-row-reverse' : ''}`}
                             >
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm ${message.isUser ? 'bg-indigo-100 text-indigo-600' : 'bg-green-100 text-green-600'
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm ${message.isUser
+                                        ? 'bg-indigo-100 text-indigo-600'
+                                        : message.isAutomatedHint
+                                            ? 'bg-amber-100 text-amber-600'
+                                            : 'bg-green-100 text-green-600'
                                     }`}>
-                                    {message.isUser ? '👤' : '🤖'}
+                                    {message.isUser ? '👤' : message.isAutomatedHint ? '💡' : '🤖'}
                                 </div>
 
-                                <div className={`max-w-[80%] p-3.5 rounded-2xl shadow-sm text-sm leading-relaxed ${message.isUser
-                                    ? 'bg-indigo-600 text-white rounded-tr-none'
-                                    : 'bg-white border border-gray-100 text-gray-800 rounded-tl-none'
+                                <div className={`max-w-[80%] rounded-2xl shadow-sm text-sm leading-relaxed ${message.isUser
+                                        ? 'bg-indigo-600 text-white rounded-tr-none p-3.5'
+                                        : message.isAutomatedHint
+                                            ? 'bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-amber-200 shadow-lg shadow-amber-500/20 rounded-tl-none p-4'
+                                            : 'bg-white border border-gray-100 text-gray-800 rounded-tl-none p-3.5'
                                     }`}>
+                                    {/* Automated Hint Badge */}
+                                    {!message.isUser && message.isAutomatedHint && (
+                                        <div className="flex items-center gap-1.5 mb-2 pb-2 border-b border-amber-200">
+                                            <span className="text-base">✨</span>
+                                            <span className="text-xs font-bold text-amber-700 uppercase tracking-wide">AI Hint</span>
+                                        </div>
+                                    )}
+
                                     {message.isUser ? (
                                         message.text
                                     ) : (
-                                        <div className="prose prose-sm max-w-none prose-p:my-1 prose-pre:bg-gray-800 prose-pre:text-gray-100 prose-pre:rounded-lg prose-code:text-pink-600 prose-code:bg-pink-50 prose-code:px-1 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
+                                        <div className={`prose prose-sm max-w-none prose-p:my-1 prose-pre:bg-gray-800 prose-pre:text-gray-100 prose-pre:rounded-lg prose-code:text-pink-600 prose-code:bg-pink-50 prose-code:px-1 prose-code:rounded prose-code:before:content-none prose-code:after:content-none ${message.isAutomatedHint ? 'prose-headings:text-amber-900 prose-strong:text-amber-900' : ''
+                                            }`}>
                                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                 {message.text}
                                             </ReactMarkdown>

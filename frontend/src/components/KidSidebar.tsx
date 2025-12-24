@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { sendChatMessage, getPredefinedPrompts, type ChatRequest } from '../services/chatbotApi';
 import { useWorkspace } from '../context/WorkspaceContext';
 import '../styles/kid-sidebar.css';
@@ -137,10 +137,9 @@ export default function KidSidebar() {
   );
 }
 
-// Export the chatbot state and handlers for use in BlocklyWorkspace
 export function useChatbot(getCurrentCode?: () => string) {
   const { mission, user, profile, insights } = useWorkspace();
-  const [messages, setMessages] = useState<Array<{ text: string, isUser: boolean }>>([
+  const [messages, setMessages] = useState<Array<{ text: string, isUser: boolean, isAutomatedHint?: boolean }>>([
     { text: "Hi there! 👋 I'm here to help you learn Python! Pick a question below or type your own!", isUser: false }
   ]);
   const [inputValue, setInputValue] = useState('');
@@ -211,6 +210,7 @@ export function useChatbot(getCurrentCode?: () => string) {
             description: mission.description,
             objectives: mission.objectives,
             expectedOutput: mission.expectedOutput,
+            toolboxConfig: mission.toolboxConfig,
           } : undefined,
           userProfile: {
             username: user?.username,
@@ -274,6 +274,7 @@ export function useChatbot(getCurrentCode?: () => string) {
             description: mission.description,
             objectives: mission.objectives,
             expectedOutput: mission.expectedOutput,
+            toolboxConfig: mission.toolboxConfig,
           } : undefined,
           userProfile: {
             username: user?.username,
@@ -296,6 +297,41 @@ export function useChatbot(getCurrentCode?: () => string) {
       setIsTyping(false);
     }
   };
+
+  // NEW: Handle hints received directly from behavior tracker
+  const handleProactiveHintReceived = useCallback((observation: any) => {
+    console.log('[Chatbot] 📨 Received hint directly:', observation);
+
+    // Guard: Check if observation is valid
+    if (!observation || !observation.message) {
+      console.warn('[Chatbot] ⚠️ Invalid observation received:', observation);
+      return;
+    }
+
+    const message = observation.message || '';
+
+    // ALWAYS add the hint as a message in the chatbot
+    console.log('[Chatbot] 💬 Adding hint to chatbot messages');
+    setMessages(prev => [...prev, { text: message, isUser: false, isAutomatedHint: true }]);
+
+    // Check if this is a question that needs user response
+    const isQuestion = message.includes('?') ||
+      message.toLowerCase().includes('would you like') ||
+      message.toLowerCase().includes('need help') ||
+      message.toLowerCase().includes('do you want');
+
+    if (isQuestion) {
+      // For questions, also set context for follow-up help if user says yes
+      console.log('[Chatbot] ❓ Question detected, setting proactive context for follow-up');
+      setProactiveContext({
+        isActive: true,
+        observation,
+      });
+    } else {
+      // For direct hints, clear any existing proactive context
+      setProactiveContext({ isActive: false, observation: null });
+    }
+  }, []);
 
   // NEW: Handle proactive help with full context
   const handleProactiveHelp = async (context: any) => {
@@ -441,5 +477,6 @@ export function useChatbot(getCurrentCode?: () => string) {
     handlePromptClick,
     handleSendMessage,
     handleProactiveHelp, // NEW: Expose proactive help
+    handleProactiveHintReceived, // NEW: Expose hint receiver for smart delivery
   };
 }

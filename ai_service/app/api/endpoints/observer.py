@@ -49,6 +49,9 @@ class BehaviorMetrics(BaseModel):
     # Mission context for code differentiation
     missionContext: Optional[Dict] = None  # NEW: For identifying starter vs user code
     
+    # Toolbox configuration - available blocks
+    toolboxConfig: Optional[Dict] = None  # NEW: Available blocks for this mission
+    
     # User profile for personalization
     userProfile: Optional[Dict] = None  # NEW: Full user profile data
     
@@ -246,16 +249,17 @@ Write ONE SHORT message (max 2 sentences, ~100 chars) that:
 2. Either gives a SMALL HINT or offers help - vary the approach!
 3. Uses a relevant emoji
 4. Is helpful even if they don't click
+5. NEVER reference line numbers - use block-oriented language (e.g., "your for loop block", "print block")
 
 **VARY YOUR APPROACH - Use one of these styles:**
 A) DIRECT SMALL HINT (40% of the time):
-✅ "Check line 3 - Python needs a colon after 'if' statements! 🎯"
-✅ "Hint: That variable name doesn't match what you're using on line 5! 🔍"
-✅ "Your loop is close! Try using 'range(10)' instead of 'rang(10)' 🔄"
+✅ "Your 'if' condition block needs a colon at the end! 🎯"
+✅ "Hint: The variable name in your print block doesn't match your assignment! 🔍"
+✅ "Your for loop block is close! Try using 'range(10)' instead of 'rang(10)' 🔄"
 
 B) OFFER TO HELP (40% of the time):
 ✅ "I see you keep getting 'NameError' with that variable! Want help making sure it's defined first? 🔧"
-✅ "Your loop looks close but line 3 needs a small fix! Should I show you what's missing? 🔄"
+✅ "Your for loop block looks close but needs a small fix! Should I show you what's missing? 🔄"
 
 C) GUIDING QUESTION (20% of the time):
 ✅ "You've been staring at this for a while! What if we broke it into smaller steps? 🧩"
@@ -265,6 +269,7 @@ C) GUIDING QUESTION (20% of the time):
 ❌ "Need some help?" (doesn't show understanding)
 ❌ "Looks like you're stuck!" (obvious, not helpful)
 ❌ "Want a hint?" (too generic)
+❌ "Check line 3" (uses line numbers instead of blocks)
 
 Generate the message now (ONLY the message, no explanation):
 """
@@ -309,11 +314,11 @@ Generate the message now (ONLY the message, no explanation):
                 
         elif analysis.is_repeating and metrics.sameErrorCount >= 3:
             if style == 'hint':
-                return f"Hint: That '{metrics.lastErrorType}' keeps appearing on the same line! Check your spelling 🔍"
+                return f"Hint: That '{metrics.lastErrorType}' keeps appearing in the same block! Check your spelling 🔍"
             elif style == 'help':
                 return f"I see you keep getting the same '{metrics.lastErrorType}' error! Want help fixing it? 🔧"
             else:
-                return f"Same error three times? What if we looked at line {metrics.lastErrorMessage.split('line')[-1] if 'line' in str(metrics.lastErrorMessage) else '?'} together? 👀"
+                return f"Same error three times? Let's look at that code block together! 👀"
                 
         elif struggle_type == "syntax":
             if style == 'hint':
@@ -323,11 +328,11 @@ Generate the message now (ONLY the message, no explanation):
                 
         elif struggle_type == "loops" or "loops" in concept_struggles:
             if style == 'hint':
-                return "Hint: Loops need proper indentation - is your code inside the loop indented? 🔄"
+                return "Hint: Your loop block needs proper indentation - is your code inside the loop indented? 🔄"
             elif style == 'help':
-                return "Loops are confusing you a bit! Want a hint about how to make them work? 🔄"
+                return "Loop blocks are confusing you a bit! Want a hint about how to make them work? 🔄"
             else:
-                return "Having trouble with loops? What do you want the loop to do? 🤔"
+                return "Having trouble with your loop block? What do you want the loop to do? 🤔"
                 
         elif struggle_type == "math" or "math" in concept_struggles:
             if style == 'hint':
@@ -345,7 +350,7 @@ Generate the message now (ONLY the message, no explanation):
                 
         elif analysis.is_frustrated:
             if style == 'hint':
-                return "Deep breath! Hint: Try testing just ONE line at a time to find what works 🌟"
+                return "Deep breath! Hint: Try testing just ONE block at a time to find what works 🌟"
             else:
                 return "This is challenging! Want to try a different approach together? 🌟"
         else:

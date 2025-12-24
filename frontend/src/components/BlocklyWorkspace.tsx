@@ -440,6 +440,26 @@ export default function BlocklyWorkspace({
     enabled: true, // Always enabled for testing - change back to !!user && !!mission in production
   });
 
+  // 🔄 Register callback for smart hint delivery based on chatbot state
+  useEffect(() => {
+    if (chatbot.isChatOpen && chatbot.handleProactiveHintReceived) {
+      // When chatbot is open, register callback to send hints directly
+      console.log('[BlocklyWorkspace] 📝 Registering hint callback - hints will go to chatbot');
+      behaviorTracker.setOnHintReceived(chatbot.handleProactiveHintReceived);
+      
+      // If there's already a hint waiting in the popup, send it to chatbot immediately
+      if (behaviorTracker.proactiveHint) {
+        console.log('[BlocklyWorkspace] 📨 Sending existing hint to chatbot');
+        chatbot.handleProactiveHintReceived(behaviorTracker.proactiveHint);
+        behaviorTracker.dismissHint(); // Clear the popup hint
+      }
+    } else {
+      // When chatbot is closed, unregister callback to show popup instead
+      console.log('[BlocklyWorkspace] 📝 Unregistering hint callback - hints will show as popup');
+      behaviorTracker.setOnHintReceived(null);
+    }
+  }, [chatbot.isChatOpen, chatbot.handleProactiveHintReceived, behaviorTracker.setOnHintReceived, behaviorTracker.proactiveHint, behaviorTracker.dismissHint]);
+
   // Reset editor to starter code when mission changes
   useEffect(() => {
     if (editorRef.current?.components?.editor?.python?.bm?.textEditor && mission?.starterCode !== undefined) {
@@ -1412,33 +1432,58 @@ export default function BlocklyWorkspace({
                 </p>
               </div>
               <div className="flex gap-2 justify-end mt-1">
-                <button
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-500 hover:bg-gray-100 transition-colors"
-                  onClick={behaviorTracker.dismissHint}
-                >
-                  No thanks
-                </button>
-                <button
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-indigo-500/30"
-                  onClick={() => {
-                    console.log('[BlocklyWorkspace] Yes please clicked!');
-                    behaviorTracker.acceptHint();
-                    chatbot.setIsChatOpen(true);
+                {(() => {
+                  const message = behaviorTracker.proactiveHint.message || '';
+                  const isQuestion = message.includes('?') || 
+                                     message.toLowerCase().includes('would you like') ||
+                                     message.toLowerCase().includes('need help') ||
+                                     message.toLowerCase().includes('do you want');
+                  
+                  if (isQuestion) {
+                    // Show Yes/No buttons for questions
+                    return (
+                      <>
+                        <button
+                          className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-500 hover:bg-gray-100 transition-colors"
+                          onClick={behaviorTracker.dismissHint}
+                        >
+                          No thanks
+                        </button>
+                        <button
+                          className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-indigo-500/30"
+                          onClick={() => {
+                            console.log('[BlocklyWorkspace] Yes please clicked!');
+                            behaviorTracker.acceptHint();
+                            chatbot.setIsChatOpen(true);
 
-                    // Trigger proactive help with full context
-                    if (behaviorTracker.chatbotContext) {
-                      console.log('[BlocklyWorkspace] Triggering proactive help with context:', behaviorTracker.chatbotContext);
-                      // Small delay to ensure chatbot is open and ready
-                      setTimeout(() => {
-                        chatbot.handleProactiveHelp(behaviorTracker.chatbotContext);
-                      }, 100);
-                    } else {
-                      console.warn('[BlocklyWorkspace] No chatbot context available!');
-                    }
-                  }}
-                >
-                  Yes please! ✨
-                </button>
+                            // Trigger proactive help with full context
+                            if (behaviorTracker.chatbotContext) {
+                              console.log('[BlocklyWorkspace] Triggering proactive help with context:', behaviorTracker.chatbotContext);
+                              // Small delay to ensure chatbot is open and ready
+                              setTimeout(() => {
+                                chatbot.handleProactiveHelp(behaviorTracker.chatbotContext);
+                              }, 100);
+                            } else {
+                              console.warn('[BlocklyWorkspace] No chatbot context available!');
+                            }
+                          }}
+                        >
+                          Yes please! ✨
+                        </button>
+                      </>
+                    );
+                  } else {
+                    // Show only "Got it!" button for direct hints
+                    return (
+                      <button
+                        className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:shadow-lg hover:scale-105 transition-all duration-200 shadow-indigo-500/30"
+                        onClick={behaviorTracker.dismissHint}
+                      >
+                        Got it! 👍
+                      </button>
+                    );
+                  }
+                })()}
               </div>
             </div>
             {/* Arrow pointing down */}
