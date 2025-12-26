@@ -1131,6 +1131,252 @@
       "missionId": "loops_intro",
       "conversationHistory": []
     }
+  },
+  {
+    "id": "chat_advanced_01_misconception_correction",
+    "name": "[ADVANCED] Correct Deep Misconception About Variable Scope",
+    "evaluation_category": "misconception_diagnosis",
+    "difficulty_level": 5,
+    "expected_behavior": "Student has fundamental misunderstanding that variables inside functions can be accessed outside. AI must identify root misconception and provide conceptual explanation with memory analogy.",
+    "grading_criteria": {
+      "must_include": ["scope", "function", "local", "memory", "cannot access"],
+      "must_not_include": ["just use global", "that's wrong", "doesn't work"],
+      "must_use_analogy": true,
+      "conceptual_depth": 0.9
+    },
+    "payload": {
+      "question": "Why can't I print 'result' after my function? It says undefined!",
+      "userId": "benchmark_user",
+      "missionId": "functions_intro",
+      "code": "def calculate():\n    result = 5 + 3\n    print(result)\n\ncalculate()\nprint(result)",
+      "errorMessage": "NameError: name 'result' is not defined",
+      "conversationHistory": [
+        {"role": "user", "content": "I defined result inside the function"},
+        {"role": "assistant", "content": "Variables defined in functions have local scope"}
+      ],
+      "weakConcepts": ["functions", "scope", "variables"],
+      "strongConcepts": ["arithmetic", "print"],
+      "level": 3,
+      "attemptNumber": 4
+    }
+  },
+  {
+    "id": "chat_advanced_02_multi_concept_integration",
+    "name": "[ADVANCED] Integrate Multiple Weak Concepts in Explanation",
+    "evaluation_category": "multi_concept_teaching",
+    "difficulty_level": 5,
+    "expected_behavior": "Student weak in both loops AND lists. AI must explain how to iterate over list without assuming they understand either concept well. Must build from basics.",
+    "grading_criteria": {
+      "must_include": ["loop", "list", "each", "one by one", "index"],
+      "must_not_include": ["just use for in", "it's simple"],
+      "progressive_building": true,
+      "conceptual_depth": 0.85
+    },
+    "payload": {
+      "question": "How do I look at all the numbers in my list and add them up?",
+      "userId": "benchmark_user",
+      "missionId": "sum_list",
+      "code": "numbers = [1, 2, 3, 4, 5]\ntotal = 0\n# I don't know what to do here",
+      "conversationHistory": [],
+      "weakConcepts": ["loops", "lists", "iteration", "accumulation"],
+      "strongConcepts": ["variables", "arithmetic"],
+      "level": 2,
+      "attemptNumber": 1
+    }
+  },
+  {
+    "id": "chat_advanced_03_debugging_trace_request",
+    "name": "[ADVANCED] Walk Through Code Execution Step-by-Step",
+    "evaluation_category": "debugging_pedagogy",
+    "difficulty_level": 5,
+    "expected_behavior": "Student asks AI to trace through their code. AI must provide line-by-line execution trace with variable values at each step, showing how bug emerges.",
+    "grading_criteria": {
+      "must_include": ["line 1", "line 2", "line 3", "total =", "i ="],
+      "must_show_values": true,
+      "step_by_step": true,
+      "identifies_bug_location": true
+    },
+    "payload": {
+      "question": "Can you walk through my code line by line and show me what's happening? I don't understand why total is wrong.",
+      "userId": "benchmark_user",
+      "missionId": "sum_1_to_10",
+      "code": "total = 0\nfor i in range(1, 11):\n    total = i\nprint(total)",
+      "expected_output": "55",
+      "actual_output": "10",
+      "conversationHistory": [],
+      "weakConcepts": ["accumulation", "loops"],
+      "strongConcepts": ["syntax"],
+      "level": 2,
+      "attemptNumber": 5
+    }
+  },
+  {
+    "id": "chat_advanced_04_detect_xy_problem",
+    "name": "[ADVANCED] Detect XY Problem - Student Asking Wrong Question",
+    "evaluation_category": "problem_reframing",
+    "difficulty_level": 5,
+    "expected_behavior": "Student asks about string concatenation but real problem is they should use arithmetic. AI must recognize the XY problem and redirect to actual goal.",
+    "grading_criteria": {
+      "must_include": ["actually", "instead", "numbers", "arithmetic", "goal"],
+      "must_not_include": ["you can concatenate with", "use + with strings"],
+      "must_reframe": true
+    },
+    "payload": {
+      "question": "How do I add strings together? I'm trying to add '5' and '3' but I want to get 8.",
+      "userId": "benchmark_user",
+      "missionId": "simple_math",
+      "code": "a = '5'\nb = '3'\nresult = a + b\nprint(result)",
+      "actual_output": "53",
+      "conversationHistory": [],
+      "weakConcepts": ["types", "arithmetic"],
+      "strongConcepts": ["strings", "variables"],
+      "level": 2,
+      "attemptNumber": 3
+    }
+  },
+  {
+    "id": "chat_advanced_05_emotional_frustration_handling",
+    "name": "[ADVANCED] Handle Emotional Frustration with Validation + Action",
+    "evaluation_category": "emotional_intelligence",
+    "difficulty_level": 5,
+    "expected_behavior": "Student expresses frustration. AI must: 1) Validate feelings, 2) Normalize struggle, 3) Provide concrete next step, 4) Encourage. Must NOT minimize or dismiss emotions.",
+    "grading_criteria": {
+      "must_include": ["understand", "frustrating", "normal", "many students"],
+      "must_not_include": ["don't worry", "it's easy", "just"],
+      "emotional_validation": true,
+      "actionable_step": true
+    },
+    "payload": {
+      "question": "This is so frustrating! I've tried 10 times and nothing works! I hate programming!",
+      "userId": "benchmark_user",
+      "missionId": "loops_practice",
+      "code": "for i in range(5)\n    print(i)",
+      "errorMessage": "SyntaxError: invalid syntax",
+      "conversationHistory": [],
+      "weakConcepts": ["syntax", "loops"],
+      "strongConcepts": [],
+      "level": 1,
+      "attemptNumber": 10
+    }
+  },
+  {
+    "id": "chat_advanced_06_analogy_generation",
+    "name": "[ADVANCED] Generate Age-Appropriate Analogy for Abstract Concept",
+    "evaluation_category": "analogy_quality",
+    "difficulty_level": 5,
+    "expected_behavior": "Student asks about functions. AI must create concrete analogy from 10-year-old's life (toys, games, school). Must map function concepts clearly to analogy elements.",
+    "grading_criteria": {
+      "must_include": ["like", "imagine", "recipe", "toy", "game", "machine"],
+      "must_map_concepts": ["input", "output", "process"],
+      "age_appropriate": true,
+      "clarity_score": 0.9
+    },
+    "payload": {
+      "question": "I don't understand what a function is. Can you explain it in a simple way?",
+      "userId": "benchmark_user",
+      "missionId": "functions_intro",
+      "conversationHistory": [],
+      "weakConcepts": ["functions"],
+      "strongConcepts": ["print", "variables"],
+      "level": 2,
+      "studentAge": 10
+    }
+  },
+  {
+    "id": "chat_advanced_07_prevent_premature_solution",
+    "name": "[ADVANCED] Prevent Giving Away Solution When Student Close",
+    "evaluation_category": "pedagogical_restraint",
+    "difficulty_level": 5,
+    "expected_behavior": "Student is 90% there (has loop, has accumulator, just wrong operator). AI must resist giving final answer. Provide minimal hint without revealing +=.",
+    "grading_criteria": {
+      "must_not_include": ["+=", "add to", "plus equals", "total = total + i"],
+      "must_include": ["operator", "what happens to total", "think about"],
+      "hint_level": "minimal"
+    },
+    "payload": {
+      "question": "I'm so close! But my total is always just the last number. What am I doing wrong?",
+      "userId": "benchmark_user",
+      "missionId": "sum_1_to_10",
+      "code": "total = 0\nfor i in range(1, 11):\n    total = i\nprint(total)",
+      "conversationHistory": [],
+      "weakConcepts": ["accumulation"],
+      "strongConcepts": ["loops", "variables"],
+      "level": 3,
+      "attemptNumber": 4
+    }
+  },
+  {
+    "id": "chat_advanced_08_context_retention_long_conversation",
+    "name": "[ADVANCED] Long Conversation Context Retention",
+    "evaluation_category": "memory_and_context",
+    "difficulty_level": 5,
+    "expected_behavior": "6th turn in conversation. AI must remember student said 'Alice' in turn 1 and use it naturally. Must build on previous explanations.",
+    "grading_criteria": {
+      "must_include": ["Alice", "earlier", "like we discussed"],
+      "context_references": 2,
+      "continuity_score": 0.9
+    },
+    "payload": {
+      "question": "So if I want to print it 5 times, what do I do?",
+      "userId": "benchmark_user",
+      "missionId": "loops_intro",
+      "conversationHistory": [
+        {"role": "user", "content": "My name is Alice"},
+        {"role": "assistant", "content": "Hi Alice! Let's learn about loops."},
+        {"role": "user", "content": "What's a loop?"},
+        {"role": "assistant", "content": "A loop repeats actions. Like counting to 10."},
+        {"role": "user", "content": "Can I print my name?"},
+        {"role": "assistant", "content": "Yes! You can use print('Alice')"}
+      ],
+      "weakConcepts": ["loops"],
+      "strongConcepts": ["print"],
+      "level": 1
+    }
+  },
+  {
+    "id": "chat_advanced_09_distinguish_similar_concepts",
+    "name": "[ADVANCED] Clearly Differentiate Between Similar Concepts",
+    "evaluation_category": "concept_differentiation",
+    "difficulty_level": 5,
+    "expected_behavior": "Student confuses 'for' and 'while' loops. AI must create comparison table or side-by-side explanation showing when to use each.",
+    "grading_criteria": {
+      "must_include": ["for", "while", "when", "difference", "use"],
+      "must_contrast": true,
+      "examples_for_both": true,
+      "clarity_score": 0.9
+    },
+    "payload": {
+      "question": "What's the difference between for and while? When do I use each one?",
+      "userId": "benchmark_user",
+      "missionId": "loops_advanced",
+      "conversationHistory": [],
+      "weakConcepts": ["loops", "iteration"],
+      "strongConcepts": ["variables"],
+      "level": 3
+    }
+  },
+  {
+    "id": "chat_advanced_10_code_smell_detection",
+    "name": "[ADVANCED] Identify Code Smell Even When Code Works",
+    "evaluation_category": "code_quality_teaching",
+    "difficulty_level": 5,
+    "expected_behavior": "Student's code works but uses nested loops when one would suffice. AI should gently suggest better approach while praising working solution.",
+    "grading_criteria": {
+      "must_include": ["works", "correct", "but", "simpler", "one loop"],
+      "must_not_include": ["wrong", "bad", "inefficient"],
+      "positive_tone": true,
+      "improvement_suggestion": true
+    },
+    "payload": {
+      "question": "My code works! Can you check if it's good?",
+      "userId": "benchmark_user",
+      "missionId": "count_evens",
+      "code": "numbers = [1, 2, 3, 4, 5, 6]\ncount = 0\nfor n in numbers:\n    for check in [2, 4, 6, 8, 10]:\n        if n == check:\n            count += 1\nprint(count)",
+      "actual_output": "3",
+      "expected_output": "3",
+      "conversationHistory": [],
+      "level": 3
+    }
   }
 ]
 

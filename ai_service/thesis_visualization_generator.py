@@ -138,9 +138,20 @@ class ThesisVisualizations:
         """Plot detailed service analysis"""
         print("📊 Generating service breakdown...")
         
-        fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+        # Check which services have data
+        available_services = df['service'].unique()
+        services_to_plot = [s for s in ['analyze', 'chat', 'hint', 'behavior', 'validation'] if s in available_services]
         
-        services = ['analyze', 'chat', 'hint', 'behavior']
+        # Determine grid size based on available services
+        n_services = len(services_to_plot)
+        n_rows = (n_services + 1) // 2
+        n_cols = 2
+        
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(14, 5*n_rows))
+        if n_rows == 1:
+            axes = axes.reshape(1, -1)
+        
+        services = services_to_plot[:n_rows*n_cols]
         
         for idx, service in enumerate(services):
             ax = axes[idx // 2, idx % 2]
@@ -294,6 +305,106 @@ class ThesisVisualizations:
         print(f"✅ Saved: {output_file}")
         plt.close()
     
+    def plot_validation_analysis(self, df):
+        """Plot validation service specific metrics"""
+        print("📊 Generating validation service analysis...")
+        
+        validation_df = df[df['service'] == 'validation'].copy()
+        
+        if validation_df.empty:
+            print("⚠️  No VALIDATION service data found")
+            return
+        
+        # Extract validation metrics
+        validation_df['is_valid'] = validation_df['response_data'].apply(
+            lambda x: x.get('isValid') or x.get('is_valid') if isinstance(x, dict) else None
+        )
+        validation_df['hardcoding_detected'] = validation_df['response_data'].apply(
+            lambda x: x.get('hardcodingDetected', False) if isinstance(x, dict) else False
+        )
+        validation_df['creativity_score'] = validation_df['response_data'].apply(
+            lambda x: x.get('creativityScore', 0) if isinstance(x, dict) else 0
+        )
+        validation_df['complexity_score'] = validation_df['response_data'].apply(
+            lambda x: x.get('complexityScore', 0) if isinstance(x, dict) else 0
+        )
+        validation_df['correct_validation'] = validation_df.apply(
+            lambda row: (
+                row['is_valid'] == row.get('expected_result', {}).get('isValid')
+                if isinstance(row.get('expected_result'), dict) and 'isValid' in row.get('expected_result', {})
+                else None
+            ), axis=1
+        )
+        
+        fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+        
+        # 1. Validation Success Rate by Model
+        success_rate = validation_df.groupby('model_name')['semantic_success'].mean() * 100
+        success_rate.plot(kind='bar', ax=axes[0, 0], color='mediumseagreen')
+        axes[0, 0].set_title('Validation Service Success Rate', fontsize=12, fontweight='bold')
+        axes[0, 0].set_xlabel('Model', fontsize=10)
+        axes[0, 0].set_ylabel('Success Rate (%)', fontsize=10)
+        axes[0, 0].set_ylim(0, 105)
+        axes[0, 0].grid(axis='y', alpha=0.3)
+        plt.setp(axes[0, 0].xaxis.get_majorticklabels(), rotation=45, ha='right')
+        
+        # Add value labels
+        for container in axes[0, 0].containers:
+            axes[0, 0].bar_label(container, fmt='%.1f%%', padding=3)
+        
+        # 2. Hardcoding Detection Rate
+        hardcoding_rate = validation_df.groupby('model_name')['hardcoding_detected'].mean() * 100
+        hardcoding_rate.plot(kind='bar', ax=axes[0, 1], color='coral')
+        axes[0, 1].set_title('Hardcoding Detection Rate', fontsize=12, fontweight='bold')
+        axes[0, 1].set_xlabel('Model', fontsize=10)
+        axes[0, 1].set_ylabel('Detection Rate (%)', fontsize=10)
+        axes[0, 1].set_ylim(0, 105)
+        axes[0, 1].grid(axis='y', alpha=0.3)
+        plt.setp(axes[0, 1].xaxis.get_majorticklabels(), rotation=45, ha='right')
+        
+        for container in axes[0, 1].containers:
+            axes[0, 1].bar_label(container, fmt='%.1f%%', padding=3)
+        
+        # 3. Creativity Score Distribution
+        if validation_df['creativity_score'].sum() > 0:
+            validation_df.boxplot(column='creativity_score', by='model_name', ax=axes[1, 0])
+            axes[1, 0].set_title('Creativity Score Distribution', fontsize=12, fontweight='bold')
+            axes[1, 0].set_xlabel('Model', fontsize=10)
+            axes[1, 0].set_ylabel('Creativity Score', fontsize=10)
+            plt.setp(axes[1, 0].xaxis.get_majorticklabels(), rotation=45, ha='right')
+            plt.suptitle('')
+        else:
+            axes[1, 0].set_title('Creativity Score Distribution', fontsize=12, fontweight='bold')
+            axes[1, 0].text(0.5, 0.5, 'No creativity scores available', ha='center', va='center', fontsize=12)
+            axes[1, 0].set_xticks([])
+            axes[1, 0].set_yticks([])
+        
+        # 4. Validation Accuracy (if expected results exist)
+        accuracy_data = validation_df[validation_df['correct_validation'].notna()]
+        if not accuracy_data.empty:
+            accuracy = accuracy_data.groupby('model_name')['correct_validation'].mean() * 100
+            accuracy.plot(kind='bar', ax=axes[1, 1], color='steelblue')
+            axes[1, 1].set_title('Validation Accuracy', fontsize=12, fontweight='bold')
+            axes[1, 1].set_xlabel('Model', fontsize=10)
+            axes[1, 1].set_ylabel('Accuracy (%)', fontsize=10)
+            axes[1, 1].set_ylim(0, 105)
+            axes[1, 1].grid(axis='y', alpha=0.3)
+            plt.setp(axes[1, 1].xaxis.get_majorticklabels(), rotation=45, ha='right')
+            
+            for container in axes[1, 1].containers:
+                axes[1, 1].bar_label(container, fmt='%.1f%%', padding=3)
+        else:
+            axes[1, 1].set_title('Validation Accuracy', fontsize=12, fontweight='bold')
+            axes[1, 1].text(0.5, 0.5, 'No expected results for comparison', ha='center', va='center', fontsize=12)
+            axes[1, 1].set_xticks([])
+            axes[1, 1].set_yticks([])
+        
+        plt.tight_layout()
+        output_file = self.output_dir / "fig4c_validation_analysis.png"
+        plt.savefig(output_file, bbox_inches='tight')
+        print(f"✅ Saved: {output_file}")
+        plt.close()
+    
     def plot_overall_summary(self, df):
         """Create comprehensive summary visualization"""
         print("📊 Generating overall summary...")
@@ -369,6 +480,7 @@ class ThesisVisualizations:
         self.plot_service_breakdown(df)
         self.plot_quality_metrics(df)
         self.plot_behavior_analysis(df)
+        self.plot_validation_analysis(df)
         self.plot_overall_summary(df)
         
         print("\n" + "="*80)

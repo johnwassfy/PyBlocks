@@ -104,7 +104,18 @@ class ComprehensiveAIBenchmark:
             return []
         
         with open(test_file, 'r', encoding='utf-8') as f:
-            tests = json.load(f)
+            data = json.load(f)
+        
+        # Handle both array format and object format with test_cases key
+        if isinstance(data, list):
+            tests = data
+        elif isinstance(data, dict) and "test_cases" in data:
+            tests = data["test_cases"]
+        elif isinstance(data, dict) and "tests" in data:
+            tests = data["tests"]
+        else:
+            logger.warning(f"[BENCHMARK] Unknown JSON structure in {filename}")
+            tests = []
         
         logger.info(f"[BENCHMARK] Loaded {len(tests)} tests from {filename}")
         return tests
@@ -629,10 +640,44 @@ class ComprehensiveAIBenchmark:
             )
 
         if service_name == "recommend":
-            return (
-                "recommendedMissions" in response_json or
-                "recommendations" in response_json
-            )
+            # Check if response has recommendations
+            if not ("recommendedMissions" in response_json or "recommendations" in response_json):
+                return False
+            
+            # Get validation criteria from test
+            validation = test.get("validation", {})
+            response_text = json.dumps(response_json).lower()
+            
+            # Check must_contain_in_response
+            must_contain = validation.get("must_contain_in_response", [])
+            for term in must_contain:
+                if term.lower() not in response_text:
+                    return False
+            
+            # Check must_contain_one_of
+            must_contain_one_of = validation.get("must_contain_one_of", [])
+            if must_contain_one_of:
+                found_any = any(term.lower() in response_text for term in must_contain_one_of)
+                if not found_any:
+                    return False
+            
+            # Check must_not_contain
+            must_not_contain = validation.get("must_not_contain", [])
+            for term in must_not_contain:
+                if term.lower() in response_text:
+                    return False
+            
+            # Check min_recommendations
+            min_recs = validation.get("min_recommendations", 0)
+            if min_recs > 0:
+                recommendations = response_json.get("recommendedMissions") or response_json.get("recommendations")
+                if isinstance(recommendations, list):
+                    if len(recommendations) < min_recs:
+                        return False
+                elif not recommendations:
+                    return False
+            
+            return True
 
         # Default fallback
         return True
@@ -1112,6 +1157,12 @@ class ComprehensiveAIBenchmark:
         print(f"📈 OVERALL STATISTICS")
         print(f"{'='*60}")
         print(f"  Total Tests: {total_tests}")
+        
+        if total_tests == 0:
+            print(f"  ⚠️  No tests were executed!")
+            print(f"  📋 Check that test case JSON files exist in data/test_cases/")
+            return
+        
         print(f"  HTTP Success: {len(http_successful)} ({len(http_successful)/total_tests*100:.1f}%)")
         print(f"  Semantic Success: {len(semantic_successful)} ({len(semantic_successful)/total_tests*100:.1f}%)")
         # Print aggregated semantic quality and reasoning complexity if available

@@ -1,288 +1,194 @@
 [
   {
-    "id": "recommend_plateau_intervention_01",
-    "name": "Learning Plateau - Needs Different Approach",
-    "evaluation_category": "intervention",
-    "difficulty_level": 5,
-    "expected_behavior": "Detect student stuck at level 2 for 8 missions with declining scores - must recommend EASIER missions or different learning path, NOT harder ones",
+    "id": "recommend_beginner_01",
+    "name": "Complete Beginner",
+    "evaluation_category": "basics",
+    "difficulty_level": 2,
+    "expected_behavior": "New student needs foundational missions",
+    "payload": {
+      "userId": "benchmark_user",
+      "weakConcepts": ["print", "variables"],
+      "strongConcepts": [],
+      "completedMissions": [],
+      "averageScore": 0,
+      "learningVelocity": "new"
+    },
+    "validation": {
+      "must_contain_in_response": ["print", "variables"],
+      "must_not_contain": ["advanced", "expert"],
+      "min_recommendations": 1
+    }
+  },
+  {
+    "id": "recommend_intermediate_01",
+    "name": "Intermediate Student - Focus on Weak Loops",
+    "evaluation_category": "targeted",
+    "difficulty_level": 3,
+    "expected_behavior": "Student weak in loops needs loop practice",
+    "payload": {
+      "userId": "benchmark_user",
+      "weakConcepts": ["loops", "for-loop"],
+      "strongConcepts": ["print", "variables", "conditionals"],
+      "completedMissions": ["hello_world", "variables_intro"],
+      "averageScore": 75,
+      "learningVelocity": "normal"
+    },
+    "validation": {
+      "must_contain_in_response": ["loop"],
+      "min_recommendations": 1
+    }
+  },
+  {
+    "id": "recommend_advanced_01",
+    "name": "Advanced Student",
+    "evaluation_category": "progression",
+    "difficulty_level": 4,
+    "expected_behavior": "High performer needs challenging missions",
+    "payload": {
+      "userId": "benchmark_user",
+      "weakConcepts": [],
+      "strongConcepts": ["print", "variables", "loops", "conditionals", "functions"],
+      "completedMissions": ["basics_complete", "intermediate_done"],
+      "averageScore": 95,
+      "learningVelocity": "fast"
+    },
+    "validation": {
+      "must_contain_in_response": ["challenge", "advanced"],
+      "must_not_contain": ["beginner", "basic"],
+      "min_recommendations": 1
+    }
+  },
+  {
+    "id": "recommend_struggling_01",
+    "name": "Struggling Student - Low Scores",
+    "evaluation_category": "support",
+    "difficulty_level": 3,
+    "expected_behavior": "Student with low scores needs easier missions",
     "payload": {
       "userId": "benchmark_user",
       "weakConcepts": ["loops", "conditionals", "logic"],
-      "strongConcepts": ["print", "variables"],
-      "completedMissions": [
-        {"id": "loops_1", "difficulty": 2, "score": 75, "attempts": 3},
-        {"id": "loops_2", "difficulty": 2, "score": 70, "attempts": 4},
-        {"id": "loops_3", "difficulty": 2, "score": 65, "attempts": 5},
-        {"id": "loops_4", "difficulty": 2, "score": 60, "attempts": 6},
-        {"id": "loops_5", "difficulty": 2, "score": 58, "attempts": 7},
-        {"id": "loops_6", "difficulty": 2, "score": 55, "attempts": 8},
-        {"id": "loops_7", "difficulty": 2, "score": 52, "attempts": 9},
-        {"id": "loops_8", "difficulty": 2, "score": 50, "attempts": 10}
-      ],
-      "averageScore": 60,
-      "learningVelocity": "declining",
-      "studentLevel": 2,
-      "studentXP": 450
+      "strongConcepts": ["print"],
+      "completedMissions": ["mission1", "mission2"],
+      "averageScore": 45,
+      "learningVelocity": "slow"
+    },
+    "validation": {
+      "must_contain_in_response": ["practice", "review"],
+      "min_recommendations": 1
     }
   },
   {
-    "id": "recommend_burnout_detection_01",
-    "name": "Student Burnout Detection",
-    "evaluation_category": "emotional_state",
-    "difficulty_level": 5,
-    "expected_behavior": "Detect burnout signals (10+ recent failures, high attempt counts, low scores) - recommend break or fun/easy missions, NOT challenging ones",
+    "id": "recommend_mixed_skills_01",
+    "name": "Mixed Skills - Strong and Weak Areas",
+    "evaluation_category": "balanced",
+    "difficulty_level": 3,
+    "expected_behavior": "Balance between strengthening weak areas and building on strengths",
     "payload": {
       "userId": "benchmark_user",
-      "weakConcepts": ["recursion", "algorithms", "nested-loops", "functions"],
-      "strongConcepts": ["syntax", "variables"],
-      "completedMissions": [],
-      "failedMissions": [
-        {"id": "recursion_1", "attempts": 12},
-        {"id": "recursion_2", "attempts": 15},
-        {"id": "algorithms_1", "attempts": 10},
-        {"id": "nested_loops_1", "attempts": 14}
-      ],
-      "averageScore": 35,
-      "learningVelocity": "very-slow",
-      "recentSessionLength": 240,
-      "consecutiveFailures": 11,
-      "studentLevel": 3,
-      "studentXP": 580
-    }
-  },
-  {
-    "id": "recommend_false_mastery_01",
-    "name": "False Mastery - High Scores Low Understanding",
-    "evaluation_category": "deep_diagnosis",
-    "difficulty_level": 5,
-    "expected_behavior": "Student has high scores but code analysis shows copy-paste patterns or lack of generalization - recommend conceptual missions, not progression",
-    "payload": {
-      "userId": "benchmark_user",
-      "weakConcepts": [],
-      "strongConcepts": ["loops", "functions", "conditionals"],
-      "completedMissions": [
-        {"id": "loops_basic", "difficulty": 2, "score": 95, "time": 15000, "code_quality": "poor"},
-        {"id": "loops_intermediate", "difficulty": 3, "score": 92, "time": 12000, "code_quality": "poor"},
-        {"id": "functions_1", "difficulty": 2, "score": 98, "time": 10000, "code_quality": "poor"}
-      ],
-      "codeQualityTrend": "declining",
-      "timePerMissionTrend": "decreasing",
-      "averageScore": 95,
-      "learningVelocity": "fast",
-      "suspiciousPatterns": ["rapid_completion", "quality_decline"],
-      "studentLevel": 4,
-      "studentXP": 850
-    }
-  },
-  {
-    "id": "recommend_gap_filling_01",
-    "name": "Critical Concept Gap",
-    "evaluation_category": "prerequisite_detection",
-    "difficulty_level": 5,
-    "expected_behavior": "Student advanced to level 5 but never mastered level 2 concepts (loops) - must recommend BACKFILLING despite high level",
-    "payload": {
-      "userId": "benchmark_user",
-      "weakConcepts": ["loops", "iteration", "range"],
-      "strongConcepts": ["functions", "recursion", "data-structures"],
-      "completedMissions": [
-        {"id": "functions_advanced", "difficulty": 4, "score": 85},
-        {"id": "recursion_intro", "difficulty": 4, "score": 80},
-        {"id": "data_structures_1", "difficulty": 5, "score": 75}
-      ],
-      "skippedConcepts": ["loops", "for-loops", "while-loops"],
+      "weakConcepts": ["loops"],
+      "strongConcepts": ["variables", "print", "math"],
+      "completedMissions": ["basics", "variables_advanced"],
       "averageScore": 80,
-      "learningVelocity": "normal",
-      "studentLevel": 5,
-      "studentXP": 1200
+      "learningVelocity": "normal"
+    },
+    "validation": {
+      "must_contain_in_response": ["loop"],
+      "min_recommendations": 1
     }
   },
   {
-    "id": "recommend_overconfidence_01",
-    "name": "Overconfident Student",
-    "evaluation_category": "behavioral",
-    "difficulty_level": 4,
-    "expected_behavior": "Student rushing through missions (low time spent) with declining scores - recommend slowing down, testing missions, NOT harder challenges",
+    "id": "recommend_fast_learner_01",
+    "name": "Fast Learning Velocity",
+    "evaluation_category": "pace",
+    "difficulty_level": 3,
+    "expected_behavior": "Fast learner can handle increased difficulty",
     "payload": {
       "userId": "benchmark_user",
-      "weakConcepts": ["testing", "debugging", "edge-cases"],
-      "strongConcepts": ["syntax", "basics"],
-      "completedMissions": [
-        {"id": "arrays_1", "difficulty": 3, "score": 70, "time": 8000},
-        {"id": "arrays_2", "difficulty": 3, "score": 65, "time": 6000},
-        {"id": "arrays_3", "difficulty": 3, "score": 60, "time": 5000},
-        {"id": "strings_1", "difficulty": 3, "score": 55, "time": 4500}
-      ],
-      "averageScore": 62,
-      "learningVelocity": "fast",
-      "averageTimePerMission": 6000,
-      "scoresTrend": "declining",
-      "studentLevel": 3,
-      "studentXP": 620
+      "weakConcepts": ["functions"],
+      "strongConcepts": ["loops", "conditionals", "variables"],
+      "completedMissions": ["loops_1", "loops_2", "conditionals_1"],
+      "averageScore": 88,
+      "learningVelocity": "fast"
+    },
+    "validation": {
+      "must_contain_in_response": ["function"],
+      "min_recommendations": 1
     }
   },
   {
-    "id": "recommend_context_switch_addiction_01",
-    "name": "Mission Hopping Pattern",
-    "evaluation_category": "focus_issues",
-    "difficulty_level": 5,
-    "expected_behavior": "Student starts 15+ missions but completes only 2 - recommend focus/persistence missions or guided path with less choice",
+    "id": "recommend_empty_history_01",
+    "name": "No Completed Missions",
+    "evaluation_category": "cold_start",
+    "difficulty_level": 2,
+    "expected_behavior": "Student with no history needs starting point",
     "payload": {
-      "userId": "benchmark_user",
-      "weakConcepts": ["persistence", "problem-solving"],
-      "strongConcepts": ["syntax"],
-      "completedMissions": [
-        {"id": "print_1", "difficulty": 1, "score": 90},
-        {"id": "variables_1", "difficulty": 1, "score": 85}
-      ],
-      "startedMissions": [
-        "loops_1", "conditionals_1", "functions_1", "strings_1", 
-        "lists_1", "dictionaries_1", "classes_1", "files_1",
-        "errors_1", "modules_1", "recursion_1", "algorithms_1",
-        "nested_loops_1", "comprehensions_1", "decorators_1"
-      ],
-      "completionRate": 0.13,
-      "averageAttemptsBeforeAbandoning": 2,
-      "studentLevel": 2,
-      "studentXP": 280
-    }
-  },
-  {
-    "id": "recommend_advanced_ready_01",
-    "name": "Advanced Student Ready for Specialization",
-    "evaluation_category": "progression",
-    "difficulty_level": 5,
-    "expected_behavior": "High-performing student with broad mastery - recommend SPECIALIZED paths (algorithms, data science, web, etc.), not generic next missions",
-    "payload": {
-      "userId": "benchmark_user",
+      "userId": "new_user",
       "weakConcepts": [],
-      "strongConcepts": [
-        "loops", "conditionals", "functions", "classes", "recursion",
-        "data-structures", "algorithms", "file-io", "error-handling"
-      ],
-      "completedMissions": [
-        {"id": "all_basics", "difficulty": 1, "score": 100},
-        {"id": "intermediate_set", "difficulty": 3, "score": 95},
-        {"id": "advanced_fundamentals", "difficulty": 5, "score": 92}
-      ],
-      "averageScore": 95,
-      "learningVelocity": "fast",
-      "masteredCategories": ["fundamentals", "control-flow", "data-structures"],
-      "studentLevel": 7,
-      "studentXP": 2100,
-      "interests": ["algorithms", "problem-solving"]
-    }
-  },
-  {
-    "id": "recommend_mixed_signals_01",
-    "name": "Contradictory Signals - Hard to Diagnose",
-    "evaluation_category": "complex_diagnosis",
-    "difficulty_level": 5,
-    "expected_behavior": "High XP but low scores, strong concepts but many failures - must identify root cause (test anxiety? rushing? etc.) before recommending",
-    "payload": {
-      "userId": "benchmark_user",
-      "weakConcepts": ["confidence", "testing"],
-      "strongConcepts": ["loops", "functions", "conditionals"],
-      "completedMissions": [
-        {"id": "loops_test", "difficulty": 3, "score": 95, "attempts": 1},
-        {"id": "loops_challenge", "difficulty": 3, "score": 45, "attempts": 12},
-        {"id": "functions_test", "difficulty": 4, "score": 92, "attempts": 2},
-        {"id": "functions_challenge", "difficulty": 4, "score": 40, "attempts": 15}
-      ],
-      "testScores": 93,
-      "challengeScores": 42,
-      "averageScore": 68,
-      "learningVelocity": "inconsistent",
-      "studentLevel": 4,
-      "studentXP": 980
-    }
-  },
-  {
-    "id": "recommend_specialization_mismatch_01",
-    "name": "Student on Wrong Learning Path",
-    "evaluation_category": "path_correction",
-    "difficulty_level": 5,
-    "expected_behavior": "Student excels at data/math missions but struggles with OOP/classes - recommend data science path, not general progression",
-    "payload": {
-      "userId": "benchmark_user",
-      "weakConcepts": ["classes", "oop", "inheritance", "polymorphism"],
-      "strongConcepts": ["math", "algorithms", "data-structures", "numpy", "pandas"],
-      "completedMissions": [
-        {"id": "math_1", "difficulty": 4, "score": 95},
-        {"id": "algorithms_1", "difficulty": 5, "score": 92},
-        {"id": "data_analysis_1", "difficulty": 4, "score": 90},
-        {"id": "oop_1", "difficulty": 3, "score": 55, "attempts": 8},
-        {"id": "classes_1", "difficulty": 3, "score": 50, "attempts": 10}
-      ],
-      "categoryScores": {
-        "math_algorithms": 92,
-        "data_science": 90,
-        "oop": 52
-      },
-      "studentLevel": 5,
-      "studentXP": 1350
-    }
-  },
-  {
-    "id": "recommend_return_after_break_01",
-    "name": "Student Returning After Long Break",
-    "evaluation_category": "reentry",
-    "difficulty_level": 4,
-    "expected_behavior": "Student has high level/XP from 6 months ago but likely forgotten - recommend refresher missions, not where they left off",
-    "payload": {
-      "userId": "benchmark_user",
-      "weakConcepts": [],
-      "strongConcepts": ["loops", "functions", "conditionals"],
-      "completedMissions": [
-        {"id": "advanced_1", "difficulty": 5, "score": 90, "date": "2024-05-15"}
-      ],
-      "lastActiveDate": "2024-05-20",
-      "currentDate": "2024-11-18",
-      "daysSinceActive": 180,
-      "studentLevel": 6,
-      "studentXP": 1600
-    }
-  },
-  {
-    "id": "recommend_edge_all_weak_01",
-    "name": "Edge Case - Everything is Weak",
-    "evaluation_category": "edge_cases",
-    "difficulty_level": 4,
-    "expected_behavior": "Student has all concepts marked weak - must prioritize MOST FUNDAMENTAL (print, variables) not random selection",
-    "payload": {
-      "userId": "benchmark_user",
-      "weakConcepts": [
-        "print", "variables", "loops", "conditionals", "functions",
-        "classes", "lists", "strings", "math", "logic"
-      ],
       "strongConcepts": [],
       "completedMissions": [],
-      "averageScore": 20,
-      "learningVelocity": "very-slow",
-      "studentLevel": 1,
-      "studentXP": 30
+      "averageScore": 0,
+      "learningVelocity": "unknown"
+    },
+    "validation": {
+      "must_contain_in_response": ["start", "begin", "intro", "first"],
+      "min_recommendations": 1
     }
   },
   {
-    "id": "recommend_edge_all_strong_01",
-    "name": "Edge Case - Everything is Strong",
-    "evaluation_category": "edge_cases",
+    "id": "recommend_concept_reinforcement_01",
+    "name": "Need Concept Reinforcement",
+    "evaluation_category": "reinforcement",
+    "difficulty_level": 3,
+    "expected_behavior": "Multiple weak concepts need targeted practice",
+    "payload": {
+      "userId": "benchmark_user",
+      "weakConcepts": ["loops", "conditionals", "lists"],
+      "strongConcepts": ["print", "variables"],
+      "completedMissions": ["intro_mission"],
+      "averageScore": 65,
+      "learningVelocity": "slow"
+    },
+    "validation": {
+      "must_contain_one_of": ["loop", "conditional", "list"],
+      "min_recommendations": 1
+    }
+  },
+  {
+    "id": "recommend_high_achiever_01",
+    "name": "High Achiever - Near Perfect Scores",
+    "evaluation_category": "excellence",
     "difficulty_level": 4,
-    "expected_behavior": "Student has mastered all available concepts - recommend advanced challenges, projects, or new learning domains",
+    "expected_behavior": "Top performer needs creative or project-based challenges",
     "payload": {
       "userId": "benchmark_user",
       "weakConcepts": [],
-      "strongConcepts": [
-        "print", "variables", "loops", "conditionals", "functions",
-        "classes", "recursion", "algorithms", "data-structures",
-        "file-io", "error-handling", "testing", "debugging"
-      ],
-      "completedMissions": [
-        {"id": "all_missions", "difficulty": 5, "score": 98}
-      ],
+      "strongConcepts": ["print", "variables", "loops", "conditionals", "functions", "classes"],
+      "completedMissions": ["all_basics", "all_intermediate"],
       "averageScore": 98,
-      "learningVelocity": "fast",
-      "studentLevel": 9,
-      "studentXP": 3000
+      "learningVelocity": "fast"
+    },
+    "validation": {
+      "must_contain_in_response": ["project", "challenge", "advanced", "creative"],
+      "min_recommendations": 1
+    }
+  },
+  {
+    "id": "recommend_progression_path_01",
+    "name": "Natural Progression",
+    "evaluation_category": "sequence",
+    "difficulty_level": 2,
+    "expected_behavior": "Student ready for next logical step in learning",
+    "payload": {
+      "userId": "benchmark_user",
+      "weakConcepts": ["functions"],
+      "strongConcepts": ["print", "variables", "loops", "conditionals"],
+      "completedMissions": ["print_hello", "variables_basics", "loops_intro", "if_statements"],
+      "averageScore": 85,
+      "learningVelocity": "normal"
+    },
+    "validation": {
+      "must_contain_in_response": ["function"],
+      "min_recommendations": 1
     }
   }
 ]

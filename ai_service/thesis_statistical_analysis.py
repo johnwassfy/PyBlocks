@@ -253,6 +253,59 @@ class ThesisStatisticalAnalysis:
             
             print(f"\n✅ Saved to: {output_file}")
             print(f"✅ Saved pattern distribution to: {pattern_file}")
+        
+        # Analyze VALIDATION service
+        validation_df = df[df['service'] == 'validation'].copy()
+        
+        if not validation_df.empty:
+            print("\n✅ VALIDATION Service Quality:")
+            
+            # Extract validation-specific metrics
+            validation_df['is_valid'] = validation_df['response_data'].apply(
+                lambda x: x.get('isValid') or x.get('is_valid') if isinstance(x, dict) else None
+            )
+            validation_df['hardcoding_detected'] = validation_df['response_data'].apply(
+                lambda x: x.get('hardcodingDetected', False) if isinstance(x, dict) else False
+            )
+            validation_df['creativity_score'] = validation_df['response_data'].apply(
+                lambda x: x.get('creativityScore', 0) if isinstance(x, dict) else 0
+            )
+            validation_df['complexity_score'] = validation_df['response_data'].apply(
+                lambda x: x.get('complexityScore', 0) if isinstance(x, dict) else 0
+            )
+            
+            # Calculate validation accuracy (if expected results exist)
+            validation_df['correct_validation'] = validation_df.apply(
+                lambda row: (
+                    row['is_valid'] == row.get('expected_result', {}).get('isValid')
+                    if isinstance(row.get('expected_result'), dict) and 'isValid' in row.get('expected_result', {})
+                    else None
+                ), axis=1
+            )
+            
+            quality_stats = validation_df.groupby('model_name').agg({
+                'hardcoding_detected': ['sum', 'mean'],  # Detection rate
+                'creativity_score': ['mean', 'median', 'std'],
+                'complexity_score': ['mean', 'median', 'std']
+            }).round(2)
+            
+            print(quality_stats)
+            
+            # Validation accuracy
+            accuracy_stats = validation_df[validation_df['correct_validation'].notna()].groupby('model_name')['correct_validation'].agg(['sum', 'count', 'mean'])
+            if not accuracy_stats.empty:
+                print("\n   Validation Accuracy:")
+                print(accuracy_stats)
+            
+            output_file = self.output_dir / "validation_quality_metrics.csv"
+            quality_stats.to_csv(output_file)
+            
+            if not accuracy_stats.empty:
+                accuracy_file = self.output_dir / "validation_accuracy.csv"
+                accuracy_stats.to_csv(accuracy_file)
+                print(f"\n✅ Saved accuracy to: {accuracy_file}")
+            
+            print(f"✅ Saved to: {output_file}")
     
     def generate_comparison_tables(self, df):
         """Generate publication-ready comparison tables"""
@@ -317,7 +370,7 @@ class ThesisStatisticalAnalysis:
         print("="*80)
         print(f"\n📁 All results saved to: {self.output_dir}")
         print("\n📊 Generated files:")
-        for file in self.output_dir.glob("*.csv"):
+        for file in sorted(self.output_dir.glob("*.csv")):
             print(f"   • {file.name}")
 
 if __name__ == "__main__":

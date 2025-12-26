@@ -1302,5 +1302,227 @@
       "success": true,
       "feedback_contains": "objectives met"
     }
+  },
+  {
+    "id": "test_051_subtle_logic_off_by_one",
+    "name": "[ADVANCED LOGIC] Off-By-One Error - Subtle Bug Detection",
+    "evaluation_category": "deep_logic_analysis",
+    "difficulty_level": 5,
+    "expected_behavior": "AI must detect off-by-one error in range causing incorrect output (prints 0-9 not 1-10). MUST say NO and explain the fence-post error.",
+    "missionId": "sum_1_to_10",
+    "mission_context": {
+      "title": "Sum Numbers 1 to 10",
+      "description": "Calculate sum of numbers from 1 to 10 inclusive",
+      "objectives": ["Use a loop", "Calculate sum correctly", "Include both 1 and 10"],
+      "concepts": ["loops", "arithmetic", "accumulation"],
+      "difficulty": 3,
+      "validation_mode": "strict"
+    },
+    "submission_context": {
+      "code": "total = 0\nfor i in range(10):\n    total += i + 1\nprint(total)",
+      "expected_output": "55",
+      "actual_output": "55",
+      "line_count": 4
+    },
+    "expected_ai_response": {
+      "success": false,
+      "feedback_starts_with": "NO",
+      "should_mention": ["range", "off-by-one", "0", "10", "1 to 10", "fence"],
+      "should_explain": "loop iterates 0-9 but adds i+1, creating confusing logic"
+    }
+  },
+  {
+    "id": "test_052_clever_hardcoding_disguised",
+    "name": "[ADVANCED CHEATING] Disguised Hardcoding with Fake Loop",
+    "evaluation_category": "sophisticated_cheating_detection",
+    "difficulty_level": 5,
+    "expected_behavior": "AI MUST detect student is using loop as decoy but output is actually hardcoded dictionary lookup. Say NO.",
+    "missionId": "fibonacci_sequence",
+    "mission_context": {
+      "title": "Fibonacci Sequence",
+      "description": "Generate first 8 Fibonacci numbers",
+      "objectives": ["Use iteration", "Calculate each number from previous two", "Print sequence"],
+      "concepts": ["loops", "arithmetic", "variables"],
+      "difficulty": 4,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "fib_dict = {0:1, 1:1, 2:2, 3:3, 4:5, 5:8, 6:13, 7:21}\nfor i in range(8):\n    print(fib_dict[i])",
+      "expected_output": "1\n1\n2\n3\n5\n8\n13\n21",
+      "actual_output": "1\n1\n2\n3\n5\n8\n13\n21",
+      "line_count": 3
+    },
+    "expected_ai_response": {
+      "success": false,
+      "feedback_starts_with": "NO",
+      "should_mention": ["hardcoded", "dictionary", "not calculating", "lookup", "objective"],
+      "should_explain": "values are pre-stored, not computed"
+    }
+  },
+  {
+    "id": "test_053_correct_output_wrong_algorithm",
+    "name": "[ALGORITHM ANALYSIS] Correct Output But Inefficient Algorithm",
+    "evaluation_category": "algorithm_quality",
+    "difficulty_level": 5,
+    "expected_behavior": "AI should recognize code works but uses O(n²) when O(n) is expected. Depending on mission strictness, may say YES with improvement suggestion or NO.",
+    "missionId": "find_max_number",
+    "mission_context": {
+      "title": "Find Maximum Number",
+      "description": "Find the largest number in a list efficiently",
+      "objectives": ["Iterate through list once", "Track maximum", "Print result"],
+      "concepts": ["loops", "comparison", "variables"],
+      "difficulty": 3,
+      "validation_mode": "efficiency-aware"
+    },
+    "submission_context": {
+      "code": "numbers = [3, 7, 2, 9, 1, 5]\nfor i in range(len(numbers)):\n    is_max = True\n    for j in range(len(numbers)):\n        if numbers[j] > numbers[i]:\n            is_max = False\n    if is_max:\n        print(numbers[i])",
+      "expected_output": "9",
+      "actual_output": "9",
+      "line_count": 7
+    },
+    "expected_ai_response": {
+      "success": false,
+      "should_mention": ["nested loop", "inefficient", "O(n²)", "once", "objective"],
+      "should_suggest": "single loop with max tracking"
+    }
+  },
+  {
+    "id": "test_054_ambiguous_requirements_interpretation",
+    "name": "[EDGE CASE] Ambiguous Requirement - Multiple Valid Solutions",
+    "evaluation_category": "requirement_interpretation",
+    "difficulty_level": 5,
+    "expected_behavior": "Mission says 'print even numbers' but doesn't specify if 0 is included. Student includes 0. AI must recognize this as valid interpretation, say YES.",
+    "missionId": "print_even_numbers",
+    "mission_context": {
+      "title": "Print Even Numbers",
+      "description": "Print even numbers from the list",
+      "objectives": ["Check if number is even", "Print only even numbers"],
+      "concepts": ["loops", "conditionals", "modulo"],
+      "difficulty": 2,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "numbers = [0, 1, 2, 3, 4, 5]\nfor n in numbers:\n    if n % 2 == 0:\n        print(n)",
+      "expected_output": "2\n4",
+      "actual_output": "0\n2\n4",
+      "line_count": 4
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES",
+      "should_mention": ["correct", "zero", "valid", "even"],
+      "should_explain": "0 is mathematically even"
+    }
+  },
+  {
+    "id": "test_055_semantic_equivalence_different_syntax",
+    "name": "[SEMANTIC ANALYSIS] Same Logic Different Syntax",
+    "evaluation_category": "semantic_equivalence",
+    "difficulty_level": 4,
+    "expected_behavior": "Student uses list comprehension instead of explicit loop. AI must recognize this as equivalent and valid. Say YES.",
+    "missionId": "double_numbers",
+    "mission_context": {
+      "title": "Double Each Number",
+      "description": "Multiply each number in list by 2",
+      "objectives": ["Process each number", "Multiply by 2", "Print results"],
+      "concepts": ["loops", "arithmetic", "lists"],
+      "difficulty": 2,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "numbers = [1, 2, 3, 4, 5]\ndoubled = [n * 2 for n in numbers]\nfor d in doubled:\n    print(d)",
+      "expected_output": "2\n4\n6\n8\n10",
+      "actual_output": "2\n4\n6\n8\n10",
+      "line_count": 4
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES",
+      "should_mention": ["list comprehension", "advanced", "correct", "objectives"],
+      "should_praise": "elegant solution"
+    }
+  },
+  {
+    "id": "test_056_misleading_variable_names",
+    "name": "[CODE QUALITY] Misleading Variable Names Causing Logic Confusion",
+    "evaluation_category": "code_readability_analysis",
+    "difficulty_level": 4,
+    "expected_behavior": "Variable names are misleading (max stores min, min stores max) but code logic is actually correct. AI must look past naming and verify logic. Say YES but suggest better names.",
+    "missionId": "find_min_max",
+    "mission_context": {
+      "title": "Find Min and Max",
+      "description": "Find smallest and largest numbers",
+      "objectives": ["Find minimum", "Find maximum", "Print both"],
+      "concepts": ["loops", "comparison", "variables"],
+      "difficulty": 2,
+      "validation_mode": "strict"
+    },
+    "submission_context": {
+      "code": "numbers = [5, 2, 9, 1, 7]\nmax = numbers[0]\nmin = numbers[0]\nfor n in numbers:\n    if n < max:\n        max = n\n    if n > min:\n        min = n\nprint(f'Min: {max}, Max: {min}')",
+      "expected_output": "Min: 1, Max: 9",
+      "actual_output": "Min: 1, Max: 9",
+      "line_count": 9
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES",
+      "should_mention": ["confusing", "variable names", "correct logic", "min", "max", "swapped"],
+      "should_suggest": "rename variables for clarity"
+    }
+  },
+  {
+    "id": "test_057_multi_layer_abstraction",
+    "name": "[ADVANCED REASONING] Helper Function Abstraction",
+    "evaluation_category": "abstraction_analysis",
+    "difficulty_level": 5,
+    "expected_behavior": "Student creates helper function to solve problem. AI must trace through function call to verify correctness. Say YES and praise abstraction.",
+    "missionId": "count_vowels",
+    "mission_context": {
+      "title": "Count Vowels",
+      "description": "Count number of vowels in a string",
+      "objectives": ["Check each character", "Identify vowels", "Count total"],
+      "concepts": ["loops", "strings", "conditionals"],
+      "difficulty": 3,
+      "validation_mode": "concept-required"
+    },
+    "submission_context": {
+      "code": "def is_vowel(char):\n    return char.lower() in 'aeiou'\n\ntext = 'Hello World'\ncount = 0\nfor c in text:\n    if is_vowel(c):\n        count += 1\nprint(count)",
+      "expected_output": "3",
+      "actual_output": "3",
+      "line_count": 9
+    },
+    "expected_ai_response": {
+      "success": true,
+      "feedback_starts_with": "YES",
+      "should_mention": ["helper function", "abstraction", "excellent", "advanced"],
+      "should_praise": "clean code structure"
+    }
+  },
+  {
+    "id": "test_058_boundary_condition_failure",
+    "name": "[EDGE CASE TESTING] Empty Input Not Handled",
+    "evaluation_category": "edge_case_analysis",
+    "difficulty_level": 5,
+    "expected_behavior": "Code works for normal input but crashes on empty list (not tested). AI should identify this weakness even without seeing the crash. Partial credit or NO depending on strictness.",
+    "missionId": "find_average",
+    "mission_context": {
+      "title": "Calculate Average",
+      "description": "Calculate average of numbers in list",
+      "objectives": ["Sum all numbers", "Divide by count", "Handle edge cases"],
+      "concepts": ["loops", "arithmetic", "error-handling"],
+      "difficulty": 3,
+      "validation_mode": "robust"
+    },
+    "submission_context": {
+      "code": "numbers = [10, 20, 30, 40]\ntotal = 0\nfor n in numbers:\n    total += n\naverage = total / len(numbers)\nprint(average)",
+      "expected_output": "25.0",
+      "actual_output": "25.0",
+      "line_count": 6
+    },
+    "expected_ai_response": {
+      "success": false,
+      "should_mention": ["empty list", "division by zero", "edge case", "crash"],
+      "should_suggest": "check if list is empty before dividing"
+    }
   }
 ]

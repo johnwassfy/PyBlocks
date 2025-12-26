@@ -324,5 +324,170 @@
       "weakConcepts": [],
       "strongConcepts": ["syntax", "loops", "variables", "print"]
     }
+  },
+  {
+    "id": "hint_advanced_01_trace_logic_bug",
+    "name": "[ADVANCED] Logic Bug Requiring Multi-Step Mental Trace",
+    "evaluation_category": "deep_debugging",
+    "difficulty_level": 5,
+    "expected_behavior": "Bug is subtle: loop starts at 0 but problem wants 1-10. Hint must guide student to trace first iteration without giving away the fix. Ask Socratic question.",
+    "payload": {
+      "userId": "benchmark_user",
+      "code": "total = 0\nfor i in range(10):\n    total += i\nprint(total)",
+      "missionId": "sum_1_to_10",
+      "expectedOutput": "55",
+      "actualOutput": "45",
+      "attemptNumber": 6,
+      "weakConcepts": ["loops", "range"],
+      "strongConcepts": ["arithmetic", "variables"]
+    }
+  },
+  {
+    "id": "hint_advanced_02_algorithm_direction",
+    "name": "[ADVANCED] Student On Wrong Algorithmic Path",
+    "evaluation_category": "algorithm_guidance",
+    "difficulty_level": 5,
+    "expected_behavior": "Student trying to solve with nested loop when single loop suffices. Hint must redirect strategy without showing solution. Focus on 'do you need to compare each to all?'",
+    "payload": {
+      "userId": "benchmark_user",
+      "code": "numbers = [3, 7, 2, 9, 1]\nmax_num = numbers[0]\nfor i in numbers:\n    for j in numbers:\n        if i > j:\n            max_num = i",
+      "missionId": "find_maximum",
+      "attemptNumber": 4,
+      "weakConcepts": ["algorithms", "comparison"],
+      "strongConcepts": ["loops", "conditionals"]
+    }
+  },
+  {
+    "id": "hint_advanced_03_type_confusion_subtle",
+    "name": "[ADVANCED] Subtle Type Confusion in Calculation",
+    "evaluation_category": "type_awareness",
+    "difficulty_level": 5,
+    "expected_behavior": "Student concatenating strings instead of adding numbers. Hint must point out type issue without using technical jargon for 10-year-old.",
+    "payload": {
+      "userId": "benchmark_user",
+      "code": "num1 = input('Enter first number: ')\nnum2 = input('Enter second number: ')\ntotal = num1 + num2\nprint(total)",
+      "missionId": "add_two_numbers",
+      "expectedOutput": "8",
+      "actualOutput": "53",
+      "attemptNumber": 3,
+      "weakConcepts": ["types", "input"],
+      "strongConcepts": ["variables", "print"]
+    }
+  },
+  {
+    "id": "hint_advanced_04_missing_accumulator_pattern",
+    "name": "[ADVANCED] Missing Accumulator Pattern Recognition",
+    "evaluation_category": "pattern_teaching",
+    "difficulty_level": 5,
+    "expected_behavior": "Student trying to keep running total but reassigning instead of accumulating. Hint must teach accumulator pattern conceptually without showing +=.",
+    "payload": {
+      "userId": "benchmark_user",
+      "code": "total = 0\nfor i in range(1, 6):\n    total = i\nprint(total)",
+      "missionId": "sum_five_numbers",
+      "expectedOutput": "15",
+      "actualOutput": "5",
+      "attemptNumber": 7,
+      "hintLevel": 2,
+      "weakConcepts": ["accumulation", "arithmetic"],
+      "strongConcepts": ["loops", "variables"]
+    }
+  },
+  {
+    "id": "hint_advanced_05_off_by_one_fence_post",
+    "name": "[ADVANCED] Classic Off-By-One Fence Post Problem",
+    "evaluation_category": "conceptual_bug",
+    "difficulty_level": 5,
+    "expected_behavior": "range(10) gives 0-9 not 1-10. Hint must explain range behavior and fence-post concept without technical terms. Use counting analogy.",
+    "payload": {
+      "userId": "benchmark_user",
+      "code": "for i in range(10):\n    print(i)",
+      "missionId": "print_1_to_10",
+      "expectedOutput": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10",
+      "actualOutput": "0\n1\n2\n3\n4\n5\n6\n7\n8\n9",
+      "attemptNumber": 5,
+      "weakConcepts": ["range", "loops"],
+      "strongConcepts": ["print"]
+    }
+  },
+  {
+    "id": "hint_advanced_06_conditional_logic_flaw",
+    "name": "[ADVANCED] Flawed Conditional Logic - Edge Case",
+    "evaluation_category": "logic_debugging",
+    "difficulty_level": 5,
+    "expected_behavior": "Student uses >= for positive check, so 0 incorrectly classified. Hint must guide to think about zero as special case without revealing the fix.",
+    "payload": {
+      "userId": "benchmark_user",
+      "code": "n = 0\nif n >= 0:\n    print('Positive')\nelse:\n    print('Negative')",
+      "missionId": "positive_negative_zero",
+      "expectedOutput": "Zero",
+      "actualOutput": "Positive",
+      "attemptNumber": 4,
+      "weakConcepts": ["conditionals", "logic"],
+      "strongConcepts": ["comparison", "print"]
+    }
+  },
+  {
+    "id": "hint_advanced_07_infinite_loop_detection",
+    "name": "[ADVANCED] Infinite Loop - Missing Update",
+    "evaluation_category": "infinite_loop_prevention",
+    "difficulty_level": 5,
+    "expected_behavior": "While loop never updates condition variable. Hint must teach loop exit concept and ask student to trace: 'what changes each time?'",
+    "payload": {
+      "userId": "benchmark_user",
+      "code": "count = 0\nwhile count < 5:\n    print(count)",
+      "missionId": "count_to_five",
+      "errorMessage": "Execution timeout - possible infinite loop",
+      "attemptNumber": 8,
+      "weakConcepts": ["while-loops", "loop-control"],
+      "strongConcepts": ["variables", "print"]
+    }
+  },
+  {
+    "id": "hint_advanced_08_scope_violation",
+    "name": "[ADVANCED] Variable Scope Issue",
+    "evaluation_category": "scope_understanding",
+    "difficulty_level": 5,
+    "expected_behavior": "Variable defined in if block only, not accessible outside. Hint must explain scope using 'visibility' or 'where variables live' analogy for kids.",
+    "payload": {
+      "userId": "benchmark_user",
+      "code": "if True:\n    message = 'Hello'\nprint(message)",
+      "missionId": "conditionals_variables",
+      "errorMessage": "NameError: name 'message' is not defined",
+      "attemptNumber": 6,
+      "weakConcepts": ["scope", "variables"],
+      "strongConcepts": ["conditionals", "print"]
+    }
+  },
+  {
+    "id": "hint_advanced_09_list_index_out_of_range",
+    "name": "[ADVANCED] List Index Error - Boundary Understanding",
+    "evaluation_category": "boundary_awareness",
+    "difficulty_level": 5,
+    "expected_behavior": "Student accessing list[5] when list has 5 items (0-4). Hint must teach 0-indexing concept using real-world analogy (building floors, egg cartons).",
+    "payload": {
+      "userId": "benchmark_user",
+      "code": "numbers = [1, 2, 3, 4, 5]\nprint(numbers[5])",
+      "missionId": "list_access",
+      "errorMessage": "IndexError: list index out of range",
+      "attemptNumber": 3,
+      "weakConcepts": ["lists", "indexing"],
+      "strongConcepts": ["variables", "print"]
+    }
+  },
+  {
+    "id": "hint_advanced_10_string_immutability",
+    "name": "[ADVANCED] String Immutability Confusion",
+    "evaluation_category": "data_structure_concepts",
+    "difficulty_level": 5,
+    "expected_behavior": "Student trying to modify string character by index. Hint must explain strings can't be changed after creation, suggest building new string instead.",
+    "payload": {
+      "userId": "benchmark_user",
+      "code": "word = 'hello'\nword[0] = 'H'\nprint(word)",
+      "missionId": "string_manipulation",
+      "errorMessage": "TypeError: 'str' object does not support item assignment",
+      "attemptNumber": 5,
+      "weakConcepts": ["strings", "mutability"],
+      "strongConcepts": ["variables", "indexing"]
+    }
   }
 ]
