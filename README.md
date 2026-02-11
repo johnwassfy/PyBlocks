@@ -57,7 +57,6 @@ PyBlocks is a comprehensive educational platform designed to teach programming c
 - **Python**: v3.9 or higher
 - **pip**: v21.0 or higher (comes with Python)
 - **MongoDB**: v6.0 or higher
-- **Redis**: v7.0 or higher (for queue management)
 
 ### Recommended
 
@@ -85,9 +84,6 @@ pip --version
 
 # Check MongoDB (if installed locally)
 mongod --version
-
-# Check Redis (if installed locally)
-redis-server --version
 ```
 
 ## 📦 Installation
@@ -127,74 +123,78 @@ cd ..
 
 **Option A: Local Installation**
 - Download and install MongoDB from [mongodb.com](https://www.mongodb.com/try/download/community)
-- Start MongoDB service
+- Start MongoDB service:
+  - Windows: MongoDB runs as a service automatically after installation
+  - macOS: `brew services start mongodb-community`
+  - Linux: `sudo systemctl start mongod`
 
-**Option B: MongoDB Atlas (Cloud)**
+**Option B: MongoDB Atlas (Cloud - Recommended)**
 - Create a free account at [mongodb.com/atlas](https://www.mongodb.com/atlas)
 - Create a cluster and get your connection string
-
-### 6. Setup Redis
-
-**Option A: Local Installation (Windows)**
-```bash
-# Download Redis for Windows from: https://github.com/microsoftarchive/redis/releases
-# Or use WSL2 and install via apt:
-sudo apt-get install redis-server
-```
-
-**Option B: Docker**
-```bash
-docker run -d -p 6379:6379 redis:latest
-```
-
-**Option C: Redis Cloud**
-- Create a free account at [redis.com/try-free](https://redis.com/try-free/)
-- Get your connection details
+- No local installation needed!
 
 ## 🚀 Running the Application
 
-### Quick Start (All Services)
+### Quick Start Guide
 
-You'll need to run three services in separate terminal windows:
+**Important**: Make sure MongoDB is running before starting the application!
 
-#### Terminal 1: Backend
+You need to run **three services** in **separate terminal windows**. Follow these steps in order:
+
+#### Step 1: Start the Backend
+
+Open a terminal and run:
 
 ```bash
 cd backend
 npm run start:dev
 ```
 
-The backend will run on `http://localhost:3001`
+✅ **Backend running at**: `http://localhost:3001`  
+📚 **API Docs**: `http://localhost:3001/api`
 
-#### Terminal 2: Frontend
+#### Step 2: Start the AI Service
 
-```bash
-cd frontend
-npm run dev
-```
-
-The frontend will run on `http://localhost:3000`
-
-#### Terminal 3: AI Service
+Open a **second terminal** and run:
 
 ```bash
 cd ai_service
 python -m uvicorn app.main:app --reload --port 8000
 ```
 
-Or use the provided PowerShell script (Windows):
+**Windows Users**: You can also use the PowerShell script:
 ```powershell
 cd ai_service
 .\start_server.ps1
 ```
 
-The AI service will run on `http://localhost:8000`
+✅ **AI Service running at**: `http://localhost:8000`  
+📚 **API Docs**: `http://localhost:8000/docs`
 
-### Verify Services are Running
+#### Step 3: Start the Frontend
 
-- **Frontend**: Open `http://localhost:3000` in your browser
-- **Backend API Docs**: Open `http://localhost:3001/api` (Swagger UI)
-- **AI Service Docs**: Open `http://localhost:8000/docs` (FastAPI docs)
+Open a **third terminal** and run:
+
+```bash
+cd frontend
+npm run dev
+```
+
+✅ **Frontend running at**: `http://localhost:3000`
+
+#### Step 4: Access the Application
+
+Open your browser and navigate to:
+
+🌐 **http://localhost:3000**
+
+### Verify All Services
+
+Check that all services are responding:
+
+- ✅ **Frontend**: [http://localhost:3000](http://localhost:3000) - Main application
+- ✅ **Backend API**: [http://localhost:3001/api](http://localhost:3001/api) - Swagger documentation
+- ✅ **AI Service**: [http://localhost:8000/docs](http://localhost:8000/docs) - FastAPI documentation
 
 ### Production Build
 
@@ -233,14 +233,6 @@ MONGO_URI=mongodb://localhost:27017/pyblocks
 # JWT Authentication
 JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
 JWT_EXPIRATION=24h
-
-# Redis Configuration
-REDIS_HOST=localhost
-REDIS_PORT=6379
-# For Redis Cloud:
-# REDIS_HOST=your-redis-cloud-host
-# REDIS_PORT=your-redis-port
-# REDIS_PASSWORD=your-redis-password
 
 # AI Service Configuration
 AI_SERVICE_URL=http://localhost:8000
@@ -313,24 +305,22 @@ PyBlocks uses a modern three-tier architecture:
 │  • REST API                    │←──│  • Code analysis      │
 │  • JWT Authentication          │   │  • Feedback engine    │
 │  • Event-driven architecture   │   │  • AI integration     │
-│  • BullMQ queue system        │   │  • Validation         │
+│  • Progress tracking          │   │  • Validation         │
 └────────────┬───────────────────┘   └───────────────────────┘
              │
              ↓
 ┌────────────────────────────────┐
 │      Data Layer                │
 │  • MongoDB (Data storage)      │
-│  • Redis (Queue & Cache)       │
 └────────────────────────────────┘
 ```
 
 ### Key Components
 
 - **Frontend**: React with Next.js, TypeScript, Tailwind CSS, Blockly
-- **Backend**: NestJS with TypeScript, MongoDB, BullMQ, Event Emitter
+- **Backend**: NestJS with TypeScript, MongoDB, Event Emitter
 - **AI Service**: FastAPI with Python, AI model integration, Code execution
 - **Database**: MongoDB for persistent storage
-- **Queue**: Redis with BullMQ for background jobs
 
 ## 📁 Project Structure
 
@@ -439,13 +429,12 @@ taskkill /PID <PID> /F
 ```
 
 **MongoDB Connection Failed**
-- Verify MongoDB is running: `mongod --version`
+- Verify MongoDB is running:
+  - Windows: Check Services for "MongoDB"
+  - macOS/Linux: `sudo systemctl status mongod`
 - Check connection string in `.env` file
-- Ensure database user has proper permissions
-
-**Redis Connection Failed**
-- Verify Redis is running: `redis-cli ping` (should return PONG)
-- Check Redis host and port in `.env` file
+- Ensure database user has proper permissions (for MongoDB Atlas)
+- For local MongoDB, default connection is: `mongodb://localhost:27017/pyblocks`
 
 **Module Not Found Errors**
 - Delete `node_modules` and reinstall: `rm -rf node_modules && npm install`
